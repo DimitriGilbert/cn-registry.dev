@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, serial, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
 					id: text("id").primaryKey(),
@@ -6,9 +7,18 @@ export const user = pgTable("user", {
  email: text('email').notNull().unique(),
  emailVerified: boolean('email_verified').notNull(),
  image: text('image'),
+ username: text('username').unique(), // Added for registry functionality
+ role: text('role').notNull().default('user'), // Added for access control: 'user', 'creator', 'admin'
  createdAt: timestamp('created_at').notNull(),
  updatedAt: timestamp('updated_at').notNull()
 				});
+
+export const userSettings = pgTable("user_settings", {
+	userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+	theme: text("theme").notNull().default("light"),
+	notifications: jsonb("notifications").notNull().default({}),
+	locale: text("locale").notNull().default("en")
+});
 
 export const session = pgTable("session", {
 					id: text("id").primaryKey(),

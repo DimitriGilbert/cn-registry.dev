@@ -1,0 +1,20 @@
+import { pgTable, text, timestamp, boolean, uuid, jsonb } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+
+export const users = pgTable("users", {
+	id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+	username: text("username").notNull().unique(),
+	email: text("email").notNull().unique(),
+	passwordHash: text("password_hash").notNull(),
+	role: text("role").notNull().default("user"), // 'user', 'creator', 'admin'
+	avatarUrl: text("avatar_url"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`)
+});
+
+export const userSettings = pgTable("user_settings", {
+	userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+	theme: text("theme").notNull().default("light"),
+	notifications: jsonb("notifications").notNull().default({}),
+	locale: text("locale").notNull().default("en")
+});

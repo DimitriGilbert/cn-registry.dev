@@ -1,12 +1,25 @@
-import { useState } from "react"
-import { Container } from "@/components/layout/container"
-import { PageTitle } from "@/components/layout/page-title"
-import { SearchBar } from "@/components/features/search-bar"
-import { FilterPanel } from "@/components/features/filter-panel"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+"use client";
+import { useState } from "react";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { SearchBar } from "@/components/features/search-bar";
+import { FilterPanel } from "@/components/features/filter-panel";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Pagination,
   PaginationContent,
@@ -14,9 +27,16 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination"
-import { MoreHorizontal, Plus, Edit, BarChart3, Trash2, Eye } from "lucide-react"
-import Link from "next/link"
+} from "@/components/ui/pagination";
+import {
+  MoreHorizontal,
+  Plus,
+  Edit,
+  BarChart3,
+  Trash2,
+  Eye,
+} from "lucide-react";
+import Link from "next/link";
 
 // Mock data
 const tools = [
@@ -65,7 +85,7 @@ const tools = [
     downloads: 3400,
     status: "published",
   },
-]
+];
 
 const filterGroups = [
   {
@@ -88,37 +108,45 @@ const filterGroups = [
       { id: "archived", label: "Archived", count: 2 },
     ],
   },
-]
+];
 
 export default function ManageToolsPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredTools = tools.filter((tool) => tool.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredTools = tools.filter((tool) =>
+    tool.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const itemsPerPage = 10
-  const totalPages = Math.ceil(filteredTools.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedTools = filteredTools.slice(startIndex, startIndex + itemsPerPage)
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredTools.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTools = filteredTools.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "published":
-        return <Badge variant="default">Published</Badge>
+        return <Badge variant="default">Published</Badge>;
       case "draft":
-        return <Badge variant="secondary">Draft</Badge>
+        return <Badge variant="secondary">Draft</Badge>;
       case "archived":
-        return <Badge variant="outline">Archived</Badge>
+        return <Badge variant="outline">Archived</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return <Badge variant="outline">{status}</Badge>;
     }
-  }
+  };
 
   return (
     <Container>
       <div className="py-8">
-        <PageTitle title="Manage Tools" subtitle="View and manage all developer tools in the registry">
+        <PageTitle
+          title="Manage Tools"
+          subtitle="View and manage all developer tools in the registry"
+        >
           <Button asChild>
             <Link href="/admin/tools/new">
               <Plus className="h-4 w-4 mr-2" />
@@ -129,7 +157,10 @@ export default function ManageToolsPage() {
 
         <div className="flex flex-col lg:flex-row gap-6 mb-8">
           <div className="flex-1">
-            <SearchBar placeholder="Search tools..." onSearch={setSearchQuery} />
+            <SearchBar
+              placeholder="Search tools..."
+              onSearch={setSearchQuery}
+            />
           </div>
           <FilterPanel
             filterGroups={filterGroups}
@@ -155,7 +186,10 @@ export default function ManageToolsPage() {
               {paginatedTools.map((tool) => (
                 <TableRow key={tool.id}>
                   <TableCell className="font-medium">
-                    <Link href={`/tools/${tool.id}`} className="hover:underline">
+                    <Link
+                      href={`/tools/${tool.id}`}
+                      className="hover:underline"
+                    >
                       {tool.name}
                     </Link>
                   </TableCell>
@@ -208,17 +242,31 @@ export default function ManageToolsPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious href="#" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} />
+                  <PaginationPrevious
+                    href="#"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  />
                 </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink href="#" isActive={page === currentPage} onClick={() => setCurrentPage(page)}>
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === currentPage}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
                 <PaginationItem>
-                  <PaginationNext href="#" onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} />
+                  <PaginationNext
+                    href="#"
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
+                  />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
@@ -226,5 +274,5 @@ export default function ManageToolsPage() {
         )}
       </div>
     </Container>
-  )
+  );
 }

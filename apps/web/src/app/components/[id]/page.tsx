@@ -1,18 +1,20 @@
-import { useState } from "react"
-import { Container } from "@/components/layout/container"
-import { PageTitle } from "@/components/layout/page-title"
-import { StarButton } from "@/components/features/star-button"
-import { CopyInstallCommand } from "@/components/features/copy-install-command"
-import { RepoStats } from "@/components/features/repo-stats"
-import { ReadmeViewer } from "@/components/features/readme-viewer"
-import { Showcase } from "@/components/features/showcase"
-import { CommentList } from "@/components/features/comment-list"
-import { CommentForm } from "@/components/features/comment-form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Github, ExternalLink, ArrowLeft } from "lucide-react"
-import Link from "next/link"
+"use client";
+
+import { useState } from "react";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { StarButton } from "@/components/features/star-button";
+import { CopyInstallCommand } from "@/components/features/copy-install-command";
+import { RepoStats } from "@/components/features/repo-stats";
+import { ReadmeViewer } from "@/components/features/readme-viewer";
+import { Showcase } from "@/components/features/showcase";
+import { CommentList } from "@/components/features/comment-list";
+import { CommentForm } from "@/components/features/comment-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Github, ExternalLink, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,13 +22,14 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/components/ui/breadcrumb";
 
 // Mock data
 const componentData = {
   id: "1",
   name: "Advanced Data Table",
-  description: "A powerful data table with sorting, filtering, and pagination built with shadcn/ui components",
+  description:
+    "A powerful data table with sorting, filtering, and pagination built with shadcn/ui components",
   category: "Tables",
   stars: 245,
   downloads: 1200,
@@ -54,13 +57,14 @@ const componentData = {
     <h2>Usage</h2>
     <pre><code>import { DataTable } from "@/components/ui/data-table"</code></pre>
   `,
-}
+};
 
 const mockComments = [
   {
     id: "1",
     author: { name: "John Doe", avatar: "/placeholder-user.jpg" },
-    content: "This is an amazing component! Really well designed and easy to use.",
+    content:
+      "This is an amazing component! Really well designed and easy to use.",
     timestamp: "2 hours ago",
     likes: 5,
     replies: [
@@ -80,7 +84,7 @@ const mockComments = [
     timestamp: "4 hours ago",
     likes: 3,
   },
-]
+];
 
 const ExampleComponent = () => (
   <div className="p-4 border rounded-lg">
@@ -103,7 +107,7 @@ const ExampleComponent = () => (
       </div>
     </div>
   </div>
-)
+);
 
 const exampleCode = `import { DataTable } from "@/components/ui/data-table"
 
@@ -128,11 +132,15 @@ export function Example() {
       paginated 
     />
   )
-}`
+}`;
 
-export default function ComponentDetailPage({ params }: { params: { id: string } }) {
-  const [isStarred, setIsStarred] = useState(false)
-  const [comments, setComments] = useState(mockComments)
+export default function ComponentDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [isStarred, setIsStarred] = useState(false);
+  const [comments, setComments] = useState(mockComments);
 
   const handleAddComment = (content: string, parentId?: string) => {
     const newComment = {
@@ -141,20 +149,22 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
       content,
       timestamp: "Just now",
       likes: 0,
-    }
+    };
 
     if (parentId) {
       // Add as reply
       setComments((prev) =>
         prev.map((comment) =>
-          comment.id === parentId ? { ...comment, replies: [...(comment.replies || []), newComment] } : comment,
-        ),
-      )
+          comment.id === parentId
+            ? { ...comment, replies: [...(comment.replies || []), newComment] }
+            : comment
+        )
+      );
     } else {
       // Add as new comment
-      setComments((prev) => [newComment, ...prev])
+      setComments((prev) => [newComment, ...prev]);
     }
-  }
+  };
 
   const handleLikeComment = (commentId: string) => {
     setComments((prev) =>
@@ -164,12 +174,14 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
           : {
               ...comment,
               replies: comment.replies?.map((reply) =>
-                reply.id === commentId ? { ...reply, likes: reply.likes + 1 } : reply,
+                reply.id === commentId
+                  ? { ...reply, likes: reply.likes + 1 }
+                  : reply
               ),
-            },
-      ),
-    )
-  }
+            }
+      )
+    );
+  };
 
   return (
     <Container>
@@ -193,9 +205,16 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
         </div>
 
         <div className="mb-8">
-          <PageTitle title={componentData.name} subtitle={componentData.description}>
+          <PageTitle
+            title={componentData.name}
+            subtitle={componentData.description}
+          >
             <div className="flex items-center gap-2">
-              <StarButton isStarred={isStarred} onToggle={() => setIsStarred(!isStarred)} size="default" />
+              <StarButton
+                isStarred={isStarred}
+                onToggle={() => setIsStarred(!isStarred)}
+                size="default"
+              />
               <Button variant="outline" asChild>
                 <Link href="/components">
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -241,18 +260,26 @@ export default function ComponentDetailPage({ params }: { params: { id: string }
                   <ReadmeViewer content={componentData.readme} />
                 </TabsContent>
                 <TabsContent value="showcase" className="mt-6">
-                  <Showcase component={<ExampleComponent />} code={exampleCode} title="Interactive Preview" />
+                  <Showcase
+                    component={<ExampleComponent />}
+                    code={exampleCode}
+                    title="Interactive Preview"
+                  />
                 </TabsContent>
               </Tabs>
             </div>
 
             <div className="space-y-6">
               <CommentForm onSubmit={handleAddComment} />
-              <CommentList comments={comments} onAddComment={handleAddComment} onLikeComment={handleLikeComment} />
+              <CommentList
+                comments={comments}
+                onAddComment={handleAddComment}
+                onLikeComment={handleLikeComment}
+              />
             </div>
           </div>
         </div>
       </div>
     </Container>
-  )
+  );
 }

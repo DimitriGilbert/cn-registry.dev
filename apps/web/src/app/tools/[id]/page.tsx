@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react"
 import { Container } from "@/components/layout/container"
 import { PageTitle } from "@/components/layout/page-title"

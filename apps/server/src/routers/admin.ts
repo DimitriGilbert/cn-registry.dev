@@ -1,8 +1,14 @@
+import { and, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { router, adminProcedure } from "../lib/trpc";
 import { db } from "../db";
-import { adminNotifications, editsLog, user, components, tools } from "../db/schema";
-import { eq, desc, count, and } from "drizzle-orm";
+import {
+	adminNotifications,
+	components,
+	editsLog,
+	tools,
+	user,
+} from "../db/schema";
+import { adminProcedure, router } from "../lib/trpc";
 import { createAdminNotificationSchema, idSchema } from "../lib/validation";
 
 export const adminRouter = router({
@@ -10,7 +16,9 @@ export const adminRouter = router({
 	getDashboard: adminProcedure.query(async () => {
 		// Get counts
 		const [usersCount] = await db.select({ count: count() }).from(user);
-		const [componentsCount] = await db.select({ count: count() }).from(components);
+		const [componentsCount] = await db
+			.select({ count: count() })
+			.from(components);
 		const [toolsCount] = await db.select({ count: count() }).from(tools);
 		const [unreadNotifications] = await db
 			.select({ count: count() })
@@ -49,10 +57,12 @@ export const adminRouter = router({
 
 	// Get all notifications
 	getNotifications: adminProcedure
-		.input(z.object({
-			page: z.number().int().min(1).default(1),
-			limit: z.number().int().min(1).max(100).default(20),
-		}))
+		.input(
+			z.object({
+				page: z.number().int().min(1).default(1),
+				limit: z.number().int().min(1).max(100).default(20),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { page, limit } = input;
 			const offset = (page - 1) * limit;
@@ -124,13 +134,15 @@ export const adminRouter = router({
 
 	// Get edit history
 	getEditHistory: adminProcedure
-		.input(z.object({
-			itemId: z.string().uuid().optional(),
-			itemType: z.enum(["component", "tool"]).optional(),
-			editorId: z.string().optional(),
-			page: z.number().int().min(1).default(1),
-			limit: z.number().int().min(1).max(100).default(20),
-		}))
+		.input(
+			z.object({
+				itemId: z.string().uuid().optional(),
+				itemType: z.enum(["component", "tool"]).optional(),
+				editorId: z.string().optional(),
+				page: z.number().int().min(1).default(1),
+				limit: z.number().int().min(1).max(100).default(20),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { itemId, itemType, editorId, page, limit } = input;
 			const offset = (page - 1) * limit;
@@ -161,15 +173,21 @@ export const adminRouter = router({
 				.limit(limit)
 				.offset(offset);
 
-			const edits = conditions.length > 0 
-				? await baseQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
-				: await baseQuery;
+			const edits =
+				conditions.length > 0
+					? await baseQuery.where(
+							conditions.length === 1 ? conditions[0] : and(...conditions),
+						)
+					: await baseQuery;
 
 			// Get total count for pagination
 			const baseCountQuery = db.select({ count: count() }).from(editsLog);
-			const [{ count: totalCount }] = conditions.length > 0
-				? await baseCountQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions))
-				: await baseCountQuery;
+			const [{ count: totalCount }] =
+				conditions.length > 0
+					? await baseCountQuery.where(
+							conditions.length === 1 ? conditions[0] : and(...conditions),
+						)
+					: await baseCountQuery;
 
 			return {
 				edits,
@@ -181,17 +199,19 @@ export const adminRouter = router({
 
 	// Get user management data
 	getUsersForManagement: adminProcedure
-		.input(z.object({
-			search: z.string().optional(),
-			role: z.enum(["user", "creator", "admin"]).optional(),
-			page: z.number().int().min(1).default(1),
-			limit: z.number().int().min(1).max(100).default(20),
-		}))
+		.input(
+			z.object({
+				search: z.string().optional(),
+				role: z.enum(["user", "creator", "admin"]).optional(),
+				page: z.number().int().min(1).default(1),
+				limit: z.number().int().min(1).max(100).default(20),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { search, role, page, limit } = input;
 			const offset = (page - 1) * limit;
 
-			let query = db
+			const baseQuery = db
 				.select({
 					id: user.id,
 					name: user.name,
@@ -203,22 +223,19 @@ export const adminRouter = router({
 					createdAt: user.createdAt,
 					updatedAt: user.updatedAt,
 				})
-				.from(user)
-				.limit(limit)
-				.offset(offset);
+				.from(user);
 
-			// Apply filters (simplified - in real implementation would use proper WHERE conditions)
-			if (role) {
-				query = query.where(eq(user.role, role));
-			}
+			// Apply filters and pagination
+			const query = role
+				? baseQuery.where(eq(user.role, role)).limit(limit).offset(offset)
+				: baseQuery.limit(limit).offset(offset);
 
 			const users = await query;
 
 			// Get total count
-			let countQuery = db.select({ count: count() }).from(user);
-			if (role) {
-				countQuery = countQuery.where(eq(user.role, role));
-			}
+			const countQuery = role
+				? db.select({ count: count() }).from(user).where(eq(user.role, role))
+				: db.select({ count: count() }).from(user);
 			const [{ count: totalCount }] = await countQuery;
 
 			return {

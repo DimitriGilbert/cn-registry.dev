@@ -1,195 +1,317 @@
-"use client"
-import { useState } from "react"
-import { Container } from "@/components/layout/container"
-import { PageTitle } from "@/components/layout/page-title"
-import { StarButton } from "@/components/features/star-button"
-import { CopyInstallCommand } from "@/components/features/copy-install-command"
-import { RepoStats } from "@/components/features/repo-stats"
-import { ReadmeViewer } from "@/components/features/readme-viewer"
-import { CommentList } from "@/components/features/comment-list"
-import { CommentForm } from "@/components/features/comment-form"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Github, ExternalLink, ArrowLeft } from "lucide-react"
-import Link from "next/link"
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ExternalLink, Github } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
+import { CommentForm } from "@/components/features/comment-form";
+import { CommentList } from "@/components/features/comment-list";
+import { CopyInstallCommand } from "@/components/features/copy-install-command";
+import { ReadmeViewer } from "@/components/features/readme-viewer";
+import { RepoStats } from "@/components/features/repo-stats";
+import { Showcase } from "@/components/features/showcase";
+import { StarButton } from "@/components/features/star-button";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { Badge } from "@/components/ui/badge";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc, trpcClient } from "@/utils/trpc";
 
-// Mock data
-const toolData = {
-  id: "1",
-  name: "shadcn/ui CLI",
-  description: "Official CLI tool for adding components to your project with ease",
-  category: "CLI Tools",
-  stars: 1200,
-  downloads: 5000,
-  githubUrl: "https://github.com/shadcn/ui",
-  websiteUrl: "https://ui.shadcn.com",
-  installCommand: "npx shadcn@latest init",
-  repoStats: {
-    stars: 1200,
-    forks: 180,
-    issues: 15,
-    watchers: 890,
-  },
-  readme: `
-    <h1>shadcn/ui CLI</h1>
-    <p>The official command-line interface for shadcn/ui components.</p>
-    <h2>Features</h2>
-    <ul>
-      <li>Initialize new projects with shadcn/ui</li>
-      <li>Add individual components to your project</li>
-      <li>Update existing components</li>
-      <li>Manage dependencies automatically</li>
-    </ul>
-    <h2>Installation</h2>
-    <pre><code>npx shadcn@latest init</code></pre>
-    <h2>Usage</h2>
-    <pre><code>npx shadcn@latest add button</code></pre>
-  `,
-}
+export default function ToolDetailPage({
+	params,
+}: {
+	params: Promise<{ id: string }>;
+}) {
+	const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+		null,
+	);
+	const queryClient = useQueryClient();
 
-const mockComments = [
-  {
-    id: "1",
-    author: { name: "Developer Mike", avatar: "/placeholder-user.jpg" },
-    content: "This CLI tool is a game changer! Makes adding components so much easier.",
-    timestamp: "3 hours ago",
-    likes: 8,
-  },
-  {
-    id: "2",
-    author: { name: "Sarah Chen", avatar: "/placeholder-user.jpg" },
-    content: "Love how it handles dependencies automatically. No more manual setup!",
-    timestamp: "1 day ago",
-    likes: 12,
-    replies: [
-      {
-        id: "3",
-        author: { name: "Alex Johnson", avatar: "/placeholder-user.jpg" },
-        content: "Agreed! The dependency management is fantastic.",
-        timestamp: "20 hours ago",
-        likes: 4,
-      },
-    ],
-  },
-]
+	// Resolve params
+	useState(() => {
+		params.then(setResolvedParams);
+	});
 
-export default function ToolDetailPage({ params }: { params: { id: string } }) {
-  const [isStarred, setIsStarred] = useState(false)
-  const [comments, setComments] = useState(mockComments)
+	const id = resolvedParams?.id;
 
-  const handleAddComment = (content: string, parentId?: string) => {
-    const newComment = {
-      id: Date.now().toString(),
-      author: { name: "Current User", avatar: "/placeholder-user.jpg" },
-      content,
-      timestamp: "Just now",
-      likes: 0,
-    }
+	// Fetch tool data
+	const {
+		data: tool,
+		isLoading,
+		error,
+	} = useQuery({
+		...trpc.tools.getById.queryOptions({ id: id! }),
+		enabled: !!id,
+	});
 
-    if (parentId) {
-      setComments((prev) =>
-        prev.map((comment) =>
-          comment.id === parentId ? { ...comment, replies: [...(comment.replies || []), newComment] } : comment,
-        ),
-      )
-    } else {
-      setComments((prev) => [newComment, ...prev])
-    }
-  }
+	// Fetch comments
+	const { data: comments = [] } = useQuery({
+		...trpc.tools.getComments.queryOptions({ id: id! }),
+		enabled: !!id,
+	});
 
-  const handleLikeComment = (commentId: string) => {
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === commentId
-          ? { ...comment, likes: comment.likes + 1 }
-          : {
-              ...comment,
-              replies: comment.replies?.map((reply) =>
-                reply.id === commentId ? { ...reply, likes: reply.likes + 1 } : reply,
-              ),
-            },
-      ),
-    )
-  }
+	// Star mutation
+	const starMutation = useMutation({
+		mutationFn: async () => {
+			const result = await trpcClient.tools.toggleStar.mutate({ itemId: id! });
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tools", "getById", { id }] });
+			toast.success("Star toggled successfully");
+		},
+		onError: () => {
+			toast.error("Failed to toggle star");
+		},
+	});
 
-  return (
-    <Container>
-      <div className="py-8">
-        <div className="mb-6">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Home</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/tools">Tools</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{toolData.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
+	// Add comment mutation
+	const addCommentMutation = useMutation({
+		mutationFn: async (data: { content: string; parentId?: string }) => {
+			const result = await trpcClient.tools.addComment.mutate({
+				itemId: id!,
+				content: data.content,
+				parentId: data.parentId,
+			});
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["tools", "getComments", { id }],
+			});
+			toast.success("Comment added successfully");
+		},
+		onError: () => {
+			toast.error("Failed to add comment");
+		},
+	});
 
-        <div className="mb-8">
-          <PageTitle title={toolData.name} subtitle={toolData.description}>
-            <div className="flex items-center gap-2">
-              <StarButton isStarred={isStarred} onToggle={() => setIsStarred(!isStarred)} size="default" />
-              <Button variant="outline" asChild>
-                <Link href="/tools">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Tools
-                </Link>
-              </Button>
-            </div>
-          </PageTitle>
+	const handleAddComment = (content: string, parentId?: string) => {
+		addCommentMutation.mutate({ content, parentId });
+	};
 
-          <div className="flex items-center gap-4 mb-6">
-            <Badge variant="secondary">{toolData.category}</Badge>
-            <div className="flex items-center gap-2">
-              {toolData.githubUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={toolData.githubUrl} target="_blank">
-                    <Github className="h-4 w-4 mr-2" />
-                    GitHub
-                  </Link>
-                </Button>
-              )}
-              {toolData.websiteUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={toolData.websiteUrl} target="_blank">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Website
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
+	const handleToggleStar = () => {
+		starMutation.mutate();
+	};
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              {toolData.installCommand && <CopyInstallCommand command={toolData.installCommand} />}
-              <RepoStats {...toolData.repoStats} />
-              <ReadmeViewer content={toolData.readme} />
-            </div>
+	if (!id || isLoading) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="mb-6">
+						<Skeleton className="mb-2 h-4 w-64" />
+					</div>
+					<div className="mb-6">
+						<Skeleton className="mb-2 h-8 w-96" />
+						<Skeleton className="h-4 w-full max-w-2xl" />
+					</div>
+					<div className="space-y-4">
+						<Skeleton className="h-32 w-full" />
+						<Skeleton className="h-64 w-full" />
+					</div>
+				</div>
+			</Container>
+		);
+	}
 
-            <div className="space-y-6">
-              <CommentForm onSubmit={handleAddComment} />
-              <CommentList comments={comments} onAddComment={handleAddComment} onLikeComment={handleLikeComment} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Container>
-  )
+	if (error || !tool) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="text-center">
+						<h1 className="mb-2 font-bold text-2xl">Tool Not Found</h1>
+						<p className="mb-4 text-muted-foreground">
+							The tool you're looking for doesn't exist.
+						</p>
+						<Button asChild>
+							<Link href="/tools">
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back to Tools
+							</Link>
+						</Button>
+					</div>
+				</div>
+			</Container>
+		);
+	}
+
+	return (
+		<Container>
+			<div className="py-8">
+				<div className="mb-6">
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink href="/tools">Tools</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator />
+							<BreadcrumbItem>
+								<BreadcrumbPage>{tool.name}</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
+				</div>
+
+				<div className="mb-8">
+					<PageTitle title={tool.name} subtitle={tool.description}>
+						<div className="flex items-center gap-4">
+							<div className="flex gap-2">
+								{tool.categories
+									?.filter(
+										(category): category is NonNullable<typeof category> =>
+											Boolean(category),
+									)
+									.map((category) => (
+										<Badge key={category.id} variant="secondary">
+											{category.name}
+										</Badge>
+									))}
+							</div>
+							<div className="flex items-center gap-2">
+								<StarButton
+									isStarred={tool.isStarred || false}
+									count={tool.starsCount || 0}
+									onToggle={handleToggleStar}
+									isLoading={starMutation.isPending}
+								/>
+								{tool.githubUrl && (
+									<Button variant="outline" size="sm" asChild>
+										<a
+											href={tool.githubUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<Github className="mr-2 h-4 w-4" />
+											GitHub
+										</a>
+									</Button>
+								)}
+								{tool.websiteUrl && (
+									<Button variant="outline" size="sm" asChild>
+										<a
+											href={tool.websiteUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<ExternalLink className="mr-2 h-4 w-4" />
+											Website
+										</a>
+									</Button>
+								)}
+							</div>
+						</div>
+					</PageTitle>
+				</div>
+
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+					<div className="lg:col-span-2">
+						<Tabs defaultValue="readme" className="w-full">
+							<TabsList className="grid w-full grid-cols-3">
+								<TabsTrigger value="readme">Documentation</TabsTrigger>
+								<TabsTrigger value="showcase">Examples</TabsTrigger>
+								<TabsTrigger value="comments">Comments</TabsTrigger>
+							</TabsList>
+
+							<TabsContent value="readme" className="space-y-4">
+								<ReadmeViewer
+									content={tool.readme || "No documentation available."}
+								/>
+							</TabsContent>
+
+							<TabsContent value="showcase" className="space-y-4">
+								<Showcase
+									code={tool.exampleCode || "// No example code available"}
+									preview={tool.previewUrl}
+								/>
+							</TabsContent>
+
+							<TabsContent value="comments" className="space-y-4">
+								<CommentForm
+									onSubmit={(content) => handleAddComment(content)}
+									isLoading={addCommentMutation.isPending}
+								/>
+								<CommentList
+									comments={comments}
+									onReply={(parentId: string, content: string) =>
+										handleAddComment(content, parentId)
+									}
+								/>
+							</TabsContent>
+						</Tabs>
+					</div>
+
+					<div className="space-y-6">
+						<CopyInstallCommand
+							command={
+								tool.installCommand ||
+								`npm install ${tool.name.toLowerCase().replace(/\s+/g, "-")}`
+							}
+						/>
+
+						{tool.githubUrl && (
+							<RepoStats
+								stars={tool.starsCount || 0}
+								forks={tool.forksCount || 0}
+								issues={tool.issuesCount || 0}
+								watchers={tool.watchersCount || 0}
+							/>
+						)}
+
+						<div className="space-y-4">
+							<h3 className="font-semibold">Created by</h3>
+							<div className="flex items-center gap-3">
+								<img
+									src={tool.creator?.image || "/placeholder-user.jpg"}
+									alt={tool.creator?.name || "Unknown"}
+									className="h-10 w-10 rounded-full"
+								/>
+								<div>
+									<p className="font-medium">
+										{tool.creator?.name || "Unknown"}
+									</p>
+									<p className="text-muted-foreground text-sm">
+										{tool.creator?.username ? `@${tool.creator.username}` : ""}
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{tool.averageRating && (
+							<div className="space-y-4">
+								<h3 className="font-semibold">Rating</h3>
+								<div className="flex items-center gap-2">
+									<div className="flex">
+										{Array.from({ length: 5 }).map((_, i) => (
+											<svg
+												key={i}
+												className={`h-4 w-4 ${i < Math.floor(tool.averageRating || 0) ? "text-yellow-400" : "text-gray-300"}`}
+												fill="currentColor"
+												viewBox="0 0 20 20"
+											>
+												<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+											</svg>
+										))}
+									</div>
+									<span className="text-muted-foreground text-sm">
+										{tool.averageRating.toFixed(1)} out of 5
+									</span>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+		</Container>
+	);
 }

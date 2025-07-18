@@ -1,172 +1,224 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Container } from "@/components/layout/container"
-import { PageTitle } from "@/components/layout/page-title"
-import { SearchBar } from "@/components/features/search-bar"
-import { FilterPanel } from "@/components/features/filter-panel"
-import { ComponentCard } from "@/components/features/component-card"
-import { ToolCard } from "@/components/features/tool-card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-
-// Mock search results
-const searchResults = {
-  components: [
-    {
-      id: "1",
-      name: "Advanced Data Table",
-      description: "A powerful data table with sorting, filtering, and pagination",
-      category: "Tables",
-      stars: 245,
-      downloads: 1200,
-      githubUrl: "https://github.com/example/data-table",
-    },
-    {
-      id: "2",
-      name: "Multi-Step Form",
-      description: "Beautiful multi-step form with validation and progress tracking",
-      category: "Forms",
-      stars: 189,
-      downloads: 890,
-      githubUrl: "https://github.com/example/multi-step-form",
-    },
-  ],
-  tools: [
-    {
-      id: "1",
-      name: "shadcn/ui CLI",
-      description: "Official CLI tool for adding components to your project",
-      category: "CLI Tools",
-      stars: 1200,
-      downloads: 5000,
-      githubUrl: "https://github.com/shadcn/ui",
-      installCommand: "npx shadcn@latest init",
-    },
-    {
-      id: "2",
-      name: "Theme Builder",
-      description: "Visual theme builder for shadcn/ui components",
-      category: "Design Tools",
-      stars: 567,
-      downloads: 1800,
-      githubUrl: "https://github.com/example/theme-builder",
-    },
-  ],
-}
-
-const filterGroups = [
-  {
-    id: "category",
-    label: "Category",
-    options: [
-      { id: "tables", label: "Tables", count: 5 },
-      { id: "forms", label: "Forms", count: 3 },
-      { id: "cli-tools", label: "CLI Tools", count: 2 },
-      { id: "design-tools", label: "Design Tools", count: 4 },
-    ],
-  },
-  {
-    id: "type",
-    label: "Type",
-    options: [
-      { id: "component", label: "Component", count: 8 },
-      { id: "tool", label: "Tool", count: 6 },
-    ],
-  },
-]
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { ComponentCard } from "@/components/features/component-card";
+import { FilterPanel } from "@/components/features/filter-panel";
+import { SearchBar } from "@/components/features/search-bar";
+import { ToolCard } from "@/components/features/tool-card";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc } from "@/utils/trpc";
 
 export default function SearchPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([])
-  const [activeTab, setActiveTab] = useState("components")
+	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedCategory, setSelectedCategory] = useState<string>("");
+	const [activeTab, setActiveTab] = useState("components");
+	const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredComponents = searchResults.components.filter(
-    (component) =>
-      component.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      component.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+	const itemsPerPage = 12;
 
-  const filteredTools = searchResults.tools.filter(
-    (tool) =>
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+	// Fetch categories for filtering
+	const { data: categories } = useQuery(trpc.categories.getAll.queryOptions());
 
-  const totalResults = filteredComponents.length + filteredTools.length
+	// Fetch components with search and filters
+	const { data: componentsData, isLoading: isComponentsLoading } = useQuery({
+		...trpc.components.getAll.queryOptions({
+			query: searchQuery || undefined,
+			categoryId: selectedCategory || undefined,
+			page: currentPage,
+			limit: itemsPerPage,
+		}),
+		enabled: activeTab === "components",
+	});
 
-  return (
-    <Container>
-      <div className="py-8">
-        <PageTitle title="Search" subtitle="Find components and tools for your projects" />
+	// Fetch tools with search and filters
+	const { data: toolsData, isLoading: isToolsLoading } = useQuery({
+		...trpc.tools.getAll.queryOptions({
+			query: searchQuery || undefined,
+			categoryId: selectedCategory || undefined,
+			page: currentPage,
+			limit: itemsPerPage,
+		}),
+		enabled: activeTab === "tools",
+	});
 
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          <div className="flex-1">
-            <SearchBar
-              placeholder="Search components and tools..."
-              onSearch={setSearchQuery}
-              suggestions={["data table", "form", "cli", "theme"]}
-            />
-          </div>
-          <FilterPanel
-            filterGroups={filterGroups}
-            selectedFilters={selectedFilters}
-            onFiltersChange={setSelectedFilters}
-          />
-        </div>
+	// Reset page when search or filter changes
+	useEffect(() => {
+		setCurrentPage(1);
+	}, [searchQuery, selectedCategory, activeTab]);
 
-        {searchQuery && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Found {totalResults} results for</span>
-              <Badge variant="outline">"{searchQuery}"</Badge>
-            </div>
-          </div>
-        )}
+	const components = componentsData?.components || [];
+	const tools = toolsData?.tools || [];
+	const totalComponents = componentsData?.totalCount || 0;
+	const totalTools = toolsData?.totalCount || 0;
+	const totalResults =
+		activeTab === "components" ? totalComponents : totalTools;
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="components" className="flex items-center gap-2">
-              Components
-              <Badge variant="secondary" className="text-xs">
-                {filteredComponents.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="tools" className="flex items-center gap-2">
-              Tools
-              <Badge variant="secondary" className="text-xs">
-                {filteredTools.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+	// Build filter groups from categories and type
+	const filterGroups = [
+		...(categories
+			? [
+					{
+						id: "category",
+						label: "Category",
+						options: categories.map((cat) => ({
+							id: cat.id,
+							label: cat.name,
+							count: (cat.componentCount || 0) + (cat.toolCount || 0),
+						})),
+					},
+				]
+			: []),
+		{
+			id: "type",
+			label: "Type",
+			options: [
+				{ id: "component", label: "Component", count: totalComponents },
+				{ id: "tool", label: "Tool", count: totalTools },
+			],
+		},
+	];
 
-          <TabsContent value="components" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredComponents.map((component) => (
-                <ComponentCard key={component.id} {...component} />
-              ))}
-            </div>
-            {filteredComponents.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No components found.</p>
-              </div>
-            )}
-          </TabsContent>
+	const handleFilterChange = (filters: string[]) => {
+		// Simple approach: assume first filter is category, second is type
+		const categoryFilter =
+			filters.find((f) => categories?.some((cat) => cat.id === f)) || "";
+		const typeFilter = filters.find((f) => ["component", "tool"].includes(f));
 
-          <TabsContent value="tools" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTools.map((tool) => (
-                <ToolCard key={tool.id} {...tool} />
-              ))}
-            </div>
-            {filteredTools.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No tools found.</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
-    </Container>
-  )
+		setSelectedCategory(categoryFilter);
+		if (typeFilter === "component" || typeFilter === "tool") {
+			setActiveTab(typeFilter + "s"); // "component" -> "components", "tool" -> "tools"
+		}
+	};
+
+	const selectedFilters = [selectedCategory].filter(Boolean);
+
+	return (
+		<Container>
+			<div className="py-8">
+				<PageTitle
+					title="Search"
+					subtitle="Find components and tools for your projects"
+				/>
+
+				<div className="mb-8 flex flex-col gap-6 lg:flex-row">
+					<div className="flex-1">
+						<SearchBar
+							placeholder="Search components and tools..."
+							onSearch={setSearchQuery}
+							suggestions={["data table", "form", "cli", "theme"]}
+						/>
+					</div>
+					<FilterPanel
+						filterGroups={filterGroups}
+						selectedFilters={selectedFilters}
+						onFiltersChange={handleFilterChange}
+					/>
+				</div>
+
+				{(searchQuery || selectedCategory) && (
+					<div className="mb-6">
+						<div className="flex items-center gap-2 text-muted-foreground text-sm">
+							<span>Found {totalResults} results</span>
+							{searchQuery && (
+								<>
+									<span>for</span>
+									<Badge variant="outline">"{searchQuery}"</Badge>
+								</>
+							)}
+							{selectedCategory && (
+								<>
+									<span>in</span>
+									<Badge variant="outline">
+										{categories?.find((c) => c.id === selectedCategory)?.name}
+									</Badge>
+								</>
+							)}
+						</div>
+					</div>
+				)}
+
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+					<TabsList className="grid w-full max-w-md grid-cols-2">
+						<TabsTrigger value="components" className="flex items-center gap-2">
+							Components
+							<Badge variant="secondary" className="text-xs">
+								{totalComponents}
+							</Badge>
+						</TabsTrigger>
+						<TabsTrigger value="tools" className="flex items-center gap-2">
+							Tools
+							<Badge variant="secondary" className="text-xs">
+								{totalTools}
+							</Badge>
+						</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="components" className="mt-6">
+						{isComponentsLoading ? (
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+								{Array.from({ length: 6 }).map((_, i) => (
+									<div key={i} className="space-y-3">
+										<Skeleton className="h-[200px] w-full rounded-xl" />
+										<div className="space-y-2">
+											<Skeleton className="h-4 w-[250px]" />
+											<Skeleton className="h-4 w-[200px]" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<>
+								<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+									{components.map((component) => (
+										<ComponentCard key={component.id} {...component} />
+									))}
+								</div>
+								{components.length === 0 && (
+									<div className="py-12 text-center">
+										<p className="text-muted-foreground">
+											No components found.
+										</p>
+									</div>
+								)}
+							</>
+						)}
+					</TabsContent>
+
+					<TabsContent value="tools" className="mt-6">
+						{isToolsLoading ? (
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+								{Array.from({ length: 6 }).map((_, i) => (
+									<div key={i} className="space-y-3">
+										<Skeleton className="h-[200px] w-full rounded-xl" />
+										<div className="space-y-2">
+											<Skeleton className="h-4 w-[250px]" />
+											<Skeleton className="h-4 w-[200px]" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<>
+								<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+									{tools.map((tool) => (
+										<ToolCard key={tool.id} {...tool} />
+									))}
+								</div>
+								{tools.length === 0 && (
+									<div className="py-12 text-center">
+										<p className="text-muted-foreground">No tools found.</p>
+									</div>
+								)}
+							</>
+						)}
+					</TabsContent>
+				</Tabs>
+			</div>
+		</Container>
+	);
 }

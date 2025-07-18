@@ -1,153 +1,241 @@
+import {
+	and,
+	avg,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	or,
+	sql,
+} from "drizzle-orm";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure, creatorProcedure } from "../lib/trpc";
 import { db } from "../db";
-import { tools, toolCategories, categories, user, stars, ratings, comments } from "../db/schema";
-import { eq, and, ilike, count, avg, desc, sql, or, inArray } from "drizzle-orm";
-import { 
-	createToolSchema, 
-	updateToolSchema, 
-	idSchema, 
+import {
+	categories,
+	comments,
+	ratings,
+	stars,
+	toolCategories,
+	tools,
+	user,
+} from "../db/schema";
+import {
+	creatorProcedure,
+	protectedProcedure,
+	publicProcedure,
+	router,
+} from "../lib/trpc";
+import {
+	createCommentSchema,
+	createToolSchema,
+	idSchema,
+	rateItemSchema,
 	searchSchema,
 	starItemSchema,
-	rateItemSchema,
-	createCommentSchema 
+	updateToolSchema,
 } from "../lib/validation";
 
 export const toolsRouter = router({
 	// Public: Get all tools with filters and pagination
-	getAll: publicProcedure
-		.input(searchSchema)
-		.query(async ({ input }) => {
-			const { query, categoryId, page, limit } = input;
-			const offset = (page - 1) * limit;
+	getAll: publicProcedure.input(searchSchema).query(async ({ input }) => {
+		const { query, categoryId, page, limit } = input;
+		const offset = (page - 1) * limit;
 
-			// Build WHERE conditions
-			const whereConditions = [];
-			
-			if (query) {
-				whereConditions.push(
-					or(
-						ilike(tools.name, `%${query}%`),
-						ilike(tools.description, `%${query}%`)
-					)
-				);
-			}
+		// Build WHERE conditions
+		const whereConditions = [];
 
-			if (categoryId) {
-				// Get tool IDs that belong to this category
-				const toolIdsInCategory = db
-					.select({ toolId: toolCategories.toolId })
-					.from(toolCategories)
-					.where(eq(toolCategories.categoryId, categoryId));
-				
-				whereConditions.push(
-					inArray(tools.id, toolIdsInCategory)
-				);
-			}
+		if (query) {
+			whereConditions.push(
+				or(
+					ilike(tools.name, `%${query}%`),
+					ilike(tools.description, `%${query}%`),
+				),
+			);
+		}
 
-			const baseToolsQuery = db
-				.select({
-					id: tools.id,
-					name: tools.name,
-					description: tools.description,
-					repoUrl: tools.repoUrl,
-					websiteUrl: tools.websiteUrl,
-					installUrl: tools.installUrl,
-					createdAt: tools.createdAt,
-					updatedAt: tools.updatedAt,
-					creator: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						image: user.image,
-					},
-				})
-				.from(tools)
-				.leftJoin(user, eq(tools.creatorId, user.id))
-				.limit(limit)
-				.offset(offset)
-				.orderBy(desc(tools.createdAt));
+		if (categoryId) {
+			// Get tool IDs that belong to this category
+			const toolIdsInCategory = db
+				.select({ toolId: toolCategories.toolId })
+				.from(toolCategories)
+				.where(eq(toolCategories.categoryId, categoryId));
 
-			const results = whereConditions.length > 0
+			whereConditions.push(inArray(tools.id, toolIdsInCategory));
+		}
+
+		const baseToolsQuery = db
+			.select({
+				id: tools.id,
+				name: tools.name,
+				description: tools.description,
+				repoUrl: tools.repoUrl,
+				websiteUrl: tools.websiteUrl,
+				installUrl: tools.installUrl,
+				installCommand: tools.installCommand,
+				tags: tools.tags,
+				status: tools.status,
+				createdAt: tools.createdAt,
+				updatedAt: tools.updatedAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(tools)
+			.leftJoin(user, eq(tools.creatorId, user.id))
+			.limit(limit)
+			.offset(offset)
+			.orderBy(desc(tools.createdAt));
+
+		const results =
+			whereConditions.length > 0
 				? await baseToolsQuery.where(
-					whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-				)
+						whereConditions.length === 1
+							? whereConditions[0]
+							: and(...whereConditions),
+					)
 				: await baseToolsQuery;
-			
-			// Get total count
-			const baseTotalCountQuery = db
-				.select({ count: count() })
-				.from(tools);
-			
-			const [{ count: totalCount }] = whereConditions.length > 0
+
+		// Get categories and stats for each tool
+		const toolsWithDetails = await Promise.all(
+			results.map(async (tool) => {
+				// Get categories
+				const toolCategoriesData = await db
+					.select({ category: categories })
+					.from(toolCategories)
+					.leftJoin(categories, eq(toolCategories.categoryId, categories.id))
+					.where(eq(toolCategories.toolId, tool.id));
+
+				// Get stats
+				const [starsCount] = await db
+					.select({ count: count() })
+					.from(stars)
+					.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, tool.id)));
+
+				return {
+					...tool,
+					categories: toolCategoriesData
+						.map((tc) => tc.category)
+						.filter(Boolean),
+					starsCount: starsCount.count,
+					githubUrl: tool.repoUrl,
+					isStarred: false, // Will be updated in protected queries
+					forksCount: 0,
+					issuesCount: 0,
+					watchersCount: 0,
+					readme: null,
+					exampleCode: null,
+					previewUrl: null,
+				};
+			}),
+		);
+
+		// Get total count
+		const baseTotalCountQuery = db.select({ count: count() }).from(tools);
+
+		const [{ count: totalCount }] =
+			whereConditions.length > 0
 				? await baseTotalCountQuery.where(
-					whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-				)
+						whereConditions.length === 1
+							? whereConditions[0]
+							: and(...whereConditions),
+					)
 				: await baseTotalCountQuery;
 
-			return {
-				tools: results,
-				totalCount,
-				totalPages: Math.ceil(totalCount / limit),
-				currentPage: page,
-			};
-		}),
+		return {
+			tools: toolsWithDetails,
+			totalCount,
+			totalPages: Math.ceil(totalCount / limit),
+			currentPage: page,
+		};
+	}),
 
 	// Public: Get tool by ID with detailed info
-	getById: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const tool = await db
-				.select({
-					id: tools.id,
-					name: tools.name,
-					description: tools.description,
-					repoUrl: tools.repoUrl,
-					websiteUrl: tools.websiteUrl,
-					installUrl: tools.installUrl,
-					createdAt: tools.createdAt,
-					updatedAt: tools.updatedAt,
-					creator: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						image: user.image,
-					},
-				})
-				.from(tools)
-				.leftJoin(user, eq(tools.creatorId, user.id))
-				.where(eq(tools.id, input.id))
-				.limit(1);
+	getById: publicProcedure.input(idSchema).query(async ({ ctx, input }) => {
+		const tool = await db
+			.select({
+				id: tools.id,
+				name: tools.name,
+				description: tools.description,
+				repoUrl: tools.repoUrl,
+				websiteUrl: tools.websiteUrl,
+				installUrl: tools.installUrl,
+				installCommand: tools.installCommand,
+				tags: tools.tags,
+				status: tools.status,
+				createdAt: tools.createdAt,
+				updatedAt: tools.updatedAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(tools)
+			.leftJoin(user, eq(tools.creatorId, user.id))
+			.where(eq(tools.id, input.id))
+			.limit(1);
 
-			if (!tool[0]) {
-				throw new Error("Tool not found");
-			}
+		if (!tool[0]) {
+			throw new Error("Tool not found");
+		}
 
-			// Get categories
-			const toolCategoriesResult = await db
-				.select({ category: categories })
-				.from(toolCategories)
-				.leftJoin(categories, eq(toolCategories.categoryId, categories.id))
-				.where(eq(toolCategories.toolId, input.id));
+		// Get categories
+		const toolCategoriesResult = await db
+			.select({ category: categories })
+			.from(toolCategories)
+			.leftJoin(categories, eq(toolCategories.categoryId, categories.id))
+			.where(eq(toolCategories.toolId, input.id));
 
-			// Get stats
-			const [starsCount] = await db
-				.select({ count: count() })
+		// Get stats
+		const [starsCount] = await db
+			.select({ count: count() })
+			.from(stars)
+			.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, input.id)));
+
+		const [avgRating] = await db
+			.select({ average: avg(ratings.rating) })
+			.from(ratings)
+			.where(and(eq(ratings.itemType, "tool"), eq(ratings.itemId, input.id)));
+
+		// Check if current user has starred this tool (if authenticated)
+		let isStarred = false;
+		if (ctx?.session?.user?.id) {
+			const [userStar] = await db
+				.select()
 				.from(stars)
-				.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, input.id)));
+				.where(
+					and(
+						eq(stars.userId, ctx.session.user.id),
+						eq(stars.itemType, "tool"),
+						eq(stars.itemId, input.id),
+					),
+				)
+				.limit(1);
+			isStarred = !!userStar;
+		}
 
-			const [avgRating] = await db
-				.select({ average: avg(ratings.rating) })
-				.from(ratings)
-				.where(and(eq(ratings.itemType, "tool"), eq(ratings.itemId, input.id)));
-
-			return {
-				...tool[0],
-				categories: toolCategoriesResult.map(tc => tc.category).filter(Boolean),
-				starsCount: starsCount.count,
-				averageRating: avgRating.average ? parseFloat(avgRating.average) : null,
-			};
-		}),
+		return {
+			...tool[0],
+			categories: toolCategoriesResult.map((tc) => tc.category).filter(Boolean),
+			starsCount: starsCount.count,
+			averageRating: avgRating.average
+				? Number.parseFloat(avgRating.average)
+				: null,
+			githubUrl: tool[0].repoUrl,
+			isStarred,
+			forksCount: 0,
+			issuesCount: 0,
+			watchersCount: 0,
+			readme: null,
+			exampleCode: null,
+			previewUrl: null,
+		};
+	}),
 
 	// Creator: Create tool
 	create: creatorProcedure
@@ -166,10 +254,10 @@ export const toolsRouter = router({
 			// Add categories if provided
 			if (categoryIds && categoryIds.length > 0) {
 				await db.insert(toolCategories).values(
-					categoryIds.map(categoryId => ({
+					categoryIds.map((categoryId) => ({
 						toolId: newTool.id,
 						categoryId,
-					}))
+					})),
 				);
 			}
 
@@ -208,10 +296,10 @@ export const toolsRouter = router({
 				await db.delete(toolCategories).where(eq(toolCategories.toolId, id));
 				if (categoryIds.length > 0) {
 					await db.insert(toolCategories).values(
-						categoryIds.map(categoryId => ({
+						categoryIds.map((categoryId) => ({
 							toolId: id,
 							categoryId,
-						}))
+						})),
 					);
 				}
 			}
@@ -252,8 +340,8 @@ export const toolsRouter = router({
 					and(
 						eq(stars.userId, ctx.user.id),
 						eq(stars.itemType, "tool"),
-						eq(stars.itemId, input.itemId)
-					)
+						eq(stars.itemId, input.itemId),
+					),
 				)
 				.limit(1);
 
@@ -265,19 +353,18 @@ export const toolsRouter = router({
 						and(
 							eq(stars.userId, ctx.user.id),
 							eq(stars.itemType, "tool"),
-							eq(stars.itemId, input.itemId)
-						)
+							eq(stars.itemId, input.itemId),
+						),
 					);
 				return { starred: false };
-			} else {
-				// Star
-				await db.insert(stars).values({
-					userId: ctx.user.id,
-					itemType: "tool",
-					itemId: input.itemId,
-				});
-				return { starred: true };
 			}
+			// Star
+			await db.insert(stars).values({
+				userId: ctx.user.id,
+				itemType: "tool",
+				itemId: input.itemId,
+			});
+			return { starred: true };
 		}),
 
 	// Protected: Rate tool
@@ -320,32 +407,100 @@ export const toolsRouter = router({
 		}),
 
 	// Public: Get comments for tool
-	getComments: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const toolComments = await db
+	getComments: publicProcedure.input(idSchema).query(async ({ input }) => {
+		const toolComments = await db
+			.select({
+				id: comments.id,
+				content: comments.content,
+				createdAt: comments.createdAt,
+				parentId: comments.parentId,
+				user: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(comments)
+			.leftJoin(user, eq(comments.userId, user.id))
+			.where(and(eq(comments.itemType, "tool"), eq(comments.itemId, input.id)))
+			.orderBy(desc(comments.createdAt));
+
+		return toolComments;
+	}),
+
+	// Protected: Get user's starred tools
+	getStarred: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().int().min(1).max(100).default(10),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			const { limit } = input;
+
+			const starredTools = await db
 				.select({
-					id: comments.id,
-					content: comments.content,
-					createdAt: comments.createdAt,
-					parentId: comments.parentId,
-					user: {
+					id: tools.id,
+					name: tools.name,
+					description: tools.description,
+					repoUrl: tools.repoUrl,
+					websiteUrl: tools.websiteUrl,
+					installUrl: tools.installUrl,
+					installCommand: tools.installCommand,
+					tags: tools.tags,
+					status: tools.status,
+					createdAt: tools.createdAt,
+					updatedAt: tools.updatedAt,
+					starredAt: stars.starredAt,
+					creator: {
 						id: user.id,
 						name: user.name,
 						username: user.username,
 						image: user.image,
 					},
 				})
-				.from(comments)
-				.leftJoin(user, eq(comments.userId, user.id))
-				.where(
-					and(
-						eq(comments.itemType, "tool"),
-						eq(comments.itemId, input.id)
-					)
-				)
-				.orderBy(desc(comments.createdAt));
+				.from(stars)
+				.innerJoin(tools, eq(stars.itemId, tools.id))
+				.leftJoin(user, eq(tools.creatorId, user.id))
+				.where(and(eq(stars.userId, ctx.user.id), eq(stars.itemType, "tool")))
+				.orderBy(desc(stars.starredAt))
+				.limit(limit);
 
-			return toolComments;
+			// Get categories and stats for each tool
+			const toolsWithDetails = await Promise.all(
+				starredTools.map(async (tool) => {
+					// Get categories
+					const toolCategoriesData = await db
+						.select({ category: categories })
+						.from(toolCategories)
+						.leftJoin(categories, eq(toolCategories.categoryId, categories.id))
+						.where(eq(toolCategories.toolId, tool.id));
+
+					// Get stats
+					const [starsCount] = await db
+						.select({ count: count() })
+						.from(stars)
+						.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, tool.id)));
+
+					return {
+						...tool,
+						categories: toolCategoriesData
+							.map((tc) => tc.category)
+							.filter(Boolean),
+						starsCount: starsCount.count,
+						githubUrl: tool.repoUrl,
+						isStarred: false, // Will be updated in protected queries
+						forksCount: 0,
+						issuesCount: 0,
+						watchersCount: 0,
+						readme: null,
+						exampleCode: null,
+						previewUrl: null,
+					};
+				}),
+			);
+
+			return toolsWithDetails;
 		}),
 });

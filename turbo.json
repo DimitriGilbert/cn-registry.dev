@@ -32,9 +32,7 @@
 		"db:generate": {
 			"cache": false,
 			"persistent": true
-		}
-		
-		,
+		},
 		"db:start": {
 			"cache": false,
 			"persistent": true

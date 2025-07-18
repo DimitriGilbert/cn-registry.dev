@@ -1,5 +1,13 @@
-import { pgTable, bigserial, text, uuid, timestamp, date, integer } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import {
+	bigserial,
+	date,
+	integer,
+	pgTable,
+	text,
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
 export const analyticsEvents = pgTable("analytics_events", {
@@ -8,7 +16,9 @@ export const analyticsEvents = pgTable("analytics_events", {
 	itemType: text("item_type").notNull(), // 'component' or 'tool'
 	itemId: uuid("item_id").notNull(),
 	userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-	createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`)
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.default(sql`now()`),
 });
 
 export const countersCache = pgTable("counters_cache", {
@@ -19,5 +29,5 @@ export const countersCache = pgTable("counters_cache", {
 	viewsCount: integer("views_count").notNull().default(0),
 	installsCount: integer("installs_count").notNull().default(0),
 	starsCount: integer("stars_count").notNull().default(0),
-	commentsCount: integer("comments_count").notNull().default(0)
+	commentsCount: integer("comments_count").notNull().default(0),
 });

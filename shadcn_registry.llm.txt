@@ -1,0 +1,169 @@
+# LLM Guide: Working with shadcn/ui Registries
+
+This document provides a comprehensive guide for an AI assistant to understand, create, and modify items for a `shadcn/ui` component registry. It is based on the official shadcn/ui documentation.
+
+---
+
+## 1. Core Concepts
+
+A shadcn/ui registry is a collection of JSON files that define components, hooks, styles, and other assets. It allows for the distribution and installation of these assets via the `shadcn-ui` CLI.
+
+The two fundamental files are:
+1.  `registry.json`: The main index file for the entire registry.
+2.  `registry-item.json`: A file that defines a single asset (like a component or a style).
+
+---
+
+## 2. The `registry.json` File
+
+This is the root file that lists all available items in the registry.
+
+**Schema:**
+
+*   `$schema` (string, optional): The URL to the schema definition. It should be `https://ui.shadcn.com/schema.json`.
+*   `name` (string, required): The name of the registry (e.g., `shadcn-ui`).
+*   `homepage` (string, required): The URL to the registry's homepage.
+*   `items` (array, required): An array of objects, where each object points to a `registry-item.json` file.
+
+**Example `registry.json`:**
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "name": "shadcn-ui",
+  "homepage": "https://ui.shadcn.com",
+  "items": [
+    {
+      "name": "button",
+      "path": "./components/ui/button.json"
+    },
+    {
+      "name": "new-york-style",
+      "path": "./styles/new-york.json"
+    }
+  ]
+}
+```
+
+---
+
+## 3. The `registry-item.json` File
+
+This file defines a single item within the registry. It contains all the metadata the CLI needs to install the item correctly.
+
+### 3.1. Key Properties
+
+*   `name` (string, required): The unique identifier for the item (e.g., `button`, `use-debounce`). This is what the user types in the CLI.
+*   `title` (string, optional): A human-readable title for the item.
+*   `description` (string, optional): A brief description of the item.
+*   `type` (string, required): The type of the item. This is crucial for the CLI to know how to handle it. Common types are:
+    *   `components:ui`: For UI components like buttons, cards, etc.
+    *   `components:component`: For more complex, multi-file components.
+    *   `components:example`: For example components.
+    *   `styles:new-york`: For a base style.
+    *   `styles:theme`: For a theme definition.
+*   `author` (string, optional): The author of the item.
+*   `files` (array, required): An array of strings, where each string is a relative path to a source file that should be copied into the user's project.
+*   `dependencies` (array, optional): An array of strings listing any **npm package dependencies** required by the item (e.g., `react-day-picker`, `cmdk`).
+*   `registryDependencies` (array, optional): An array of strings listing other **items from the same registry** that this item depends on (e.g., a `dialog` component might depend on the `button` component).
+
+### 3.2. Styling & Configuration Properties
+
+These properties allow an item to inject styles and configurations into the user's project.
+
+*   `tailwind.config` (object, optional): An object representing Tailwind CSS configuration to be merged into the user's `tailwind.config.js` file. You can add utilities, plugins, etc.
+*   `tailwind.css` (string, optional): A string of CSS to be added to the user's global CSS file, typically for `@tailwind` directives.
+*   `tailwind.baseColor` (string, optional): The base color used for the component (e.g., `slate`, `zinc`).
+*   `cssVars` (object, optional): An object defining CSS variables to be added to the user's project. The key is the theme name (e.g., `light` or `dark`), and the value is an object of variable-value pairs.
+*   `css` (string, optional): A string of raw CSS to be added to the user's global CSS file.
+
+### 3.3. Metadata Properties
+
+*   `docs` (string, optional): A URL to the documentation page for the item.
+*   `categories` (array, optional): An array of strings for categorizing the item (e.g., `Forms`, `UI`).
+*   `meta` (object, optional): An object for storing any other custom metadata.
+
+### 3.4. Example: A Simple UI Component (`button.json`)
+
+```json
+{
+  "name": "button",
+  "title": "Button",
+  "description": "Displays a button or a link that looks like a button.",
+  "type": "components:ui",
+  "author": "shadcn",
+  "files": [
+    "src/components/ui/button.tsx"
+  ],
+  "dependencies": [],
+  "registryDependencies": [],
+  "docs": "https://ui.shadcn.com/docs/components/button",
+  "categories": ["UI"],
+  "meta": {}
+}
+```
+
+### 3.5. Example: A Component with Dependencies (`calendar.json`)
+
+```json
+{
+  "name": "calendar",
+  "title": "Calendar",
+  "description": "A date-picker component that allows users to select a date or date range.",
+  "type": "components:ui",
+  "author": "shadcn",
+  "files": [
+    "src/components/ui/calendar.tsx"
+  ],
+  "dependencies": [
+    "react-day-picker",
+    "date-fns"
+  ],
+  "registryDependencies": [
+    "button"
+  ],
+  "docs": "https://ui.shadcn.com/docs/components/calendar",
+  "categories": ["Forms", "Date & Time"],
+  "meta": {}
+}
+```
+
+### 3.6. Example: A Style with CSS Variables (`new-york-style.json`)
+
+```json
+{
+  "name": "new-york-style",
+  "title": "New York Style",
+  "description": "The default style for shadcn/ui.",
+  "type": "styles:new-york",
+  "author": "shadcn",
+  "files": [],
+  "cssVars": {
+    "light": {
+      "--background": "0 0% 100%",
+      "--foreground": "222.2 84% 4.9%",
+      "--primary": "222.2 47.4% 11.2%",
+      "--primary-foreground": "210 40% 98%"
+    },
+    "dark": {
+      "--background": "222.2 84% 4.9%",
+      "--foreground": "210 40% 98%",
+      "--primary": "210 40% 98%",
+      "--primary-foreground": "222.2 47.4% 11.2%"
+    }
+  },
+  "tailwind": {
+    "baseColor": "slate"
+  }
+}
+```
+
+---
+
+## 4. Workflow for Adding a New Component
+
+1.  **Create the Component File(s):** Write the actual source code for the component (e.g., `src/components/ui/my-component.tsx`).
+2.  **Create the `registry-item.json`:** Create a new JSON file (e.g., `components/ui/my-component.json`).
+3.  **Fill in the Metadata:** Populate the JSON file with the `name`, `type`, `files`, `dependencies`, etc., as detailed above.
+4.  **Update `registry.json`:** Add a new entry to the `items` array in the main `registry.json` file, pointing to the new `my-component.json` file.
+5.  **Build the Registry:** Run the `shadcn-ui build` command to validate the registry and generate the final output.

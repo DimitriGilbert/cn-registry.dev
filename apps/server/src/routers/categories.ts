@@ -1,32 +1,45 @@
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { router, publicProcedure, adminProcedure } from "../lib/trpc";
 import { db } from "../db";
-import { categories } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { categories, componentCategories, toolCategories } from "../db/schema";
+import { adminProcedure, publicProcedure, router } from "../lib/trpc";
 import { createCategorySchema, idSchema } from "../lib/validation";
 
 export const categoriesRouter = router({
-	// Public: Get all categories
+	// Public: Get all categories with counts
 	getAll: publicProcedure.query(async () => {
-		return await db.select().from(categories);
+		const categoriesWithCounts = await db
+			.select({
+				id: categories.id,
+				name: categories.name,
+				componentCount: count(componentCategories.componentId),
+				toolCount: count(toolCategories.toolId),
+			})
+			.from(categories)
+			.leftJoin(
+				componentCategories,
+				eq(categories.id, componentCategories.categoryId),
+			)
+			.leftJoin(toolCategories, eq(categories.id, toolCategories.categoryId))
+			.groupBy(categories.id, categories.name);
+
+		return categoriesWithCounts;
 	}),
 
 	// Public: Get category by ID
-	getById: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const category = await db
-				.select()
-				.from(categories)
-				.where(eq(categories.id, input.id))
-				.limit(1);
+	getById: publicProcedure.input(idSchema).query(async ({ input }) => {
+		const category = await db
+			.select()
+			.from(categories)
+			.where(eq(categories.id, input.id))
+			.limit(1);
 
-			if (!category[0]) {
-				throw new Error("Category not found");
-			}
+		if (!category[0]) {
+			throw new Error("Category not found");
+		}
 
-			return category[0];
-		}),
+		return category[0];
+	}),
 
 	// Admin: Create category
 	create: adminProcedure
@@ -56,10 +69,8 @@ export const categoriesRouter = router({
 		}),
 
 	// Admin: Delete category
-	delete: adminProcedure
-		.input(idSchema)
-		.mutation(async ({ input }) => {
-			await db.delete(categories).where(eq(categories.id, input.id));
-			return { success: true };
-		}),
+	delete: adminProcedure.input(idSchema).mutation(async ({ input }) => {
+		await db.delete(categories).where(eq(categories.id, input.id));
+		return { success: true };
+	}),
 });

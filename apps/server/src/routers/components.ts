@@ -1,153 +1,253 @@
+import {
+	and,
+	avg,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	or,
+	sql,
+} from "drizzle-orm";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure, creatorProcedure } from "../lib/trpc";
 import { db } from "../db";
-import { components, componentCategories, categories, user, stars, ratings, comments } from "../db/schema";
-import { eq, and, ilike, count, avg, desc, sql, or, inArray } from "drizzle-orm";
-import { 
-	createComponentSchema, 
-	updateComponentSchema, 
-	idSchema, 
+import {
+	categories,
+	comments,
+	componentCategories,
+	components,
+	ratings,
+	stars,
+	user,
+} from "../db/schema";
+import {
+	creatorProcedure,
+	protectedProcedure,
+	publicProcedure,
+	router,
+} from "../lib/trpc";
+import {
+	createCommentSchema,
+	createComponentSchema,
+	idSchema,
+	rateItemSchema,
 	searchSchema,
 	starItemSchema,
-	rateItemSchema,
-	createCommentSchema 
+	updateComponentSchema,
 } from "../lib/validation";
 
 export const componentsRouter = router({
 	// Public: Get all components with filters and pagination
-	getAll: publicProcedure
-		.input(searchSchema)
-		.query(async ({ input }) => {
-			const { query, categoryId, page, limit } = input;
-			const offset = (page - 1) * limit;
+	getAll: publicProcedure.input(searchSchema).query(async ({ input }) => {
+		const { query, categoryId, page, limit } = input;
+		const offset = (page - 1) * limit;
 
-			// Build WHERE conditions
-			const whereConditions = [];
-			
-			if (query) {
-				whereConditions.push(
-					or(
-						ilike(components.name, `%${query}%`),
-						ilike(components.description, `%${query}%`)
-					)
-				);
-			}
+		// Build WHERE conditions
+		const whereConditions = [];
 
-			if (categoryId) {
-				// Get component IDs that belong to this category
-				const componentIdsInCategory = db
-					.select({ componentId: componentCategories.componentId })
-					.from(componentCategories)
-					.where(eq(componentCategories.categoryId, categoryId));
-				
-				whereConditions.push(
-					inArray(components.id, componentIdsInCategory)
-				);
-			}
+		if (query) {
+			whereConditions.push(
+				or(
+					ilike(components.name, `%${query}%`),
+					ilike(components.description, `%${query}%`),
+				),
+			);
+		}
 
-			const baseComponentsQuery = db
-				.select({
-					id: components.id,
-					name: components.name,
-					description: components.description,
-					repoUrl: components.repoUrl,
-					websiteUrl: components.websiteUrl,
-					installUrl: components.installUrl,
-					createdAt: components.createdAt,
-					updatedAt: components.updatedAt,
-					creator: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						image: user.image,
-					},
-				})
-				.from(components)
-				.leftJoin(user, eq(components.creatorId, user.id))
-				.limit(limit)
-				.offset(offset)
-				.orderBy(desc(components.createdAt));
+		if (categoryId) {
+			// Get component IDs that belong to this category
+			const componentIdsInCategory = db
+				.select({ componentId: componentCategories.componentId })
+				.from(componentCategories)
+				.where(eq(componentCategories.categoryId, categoryId));
 
-			const results = whereConditions.length > 0
+			whereConditions.push(inArray(components.id, componentIdsInCategory));
+		}
+
+		const baseComponentsQuery = db
+			.select({
+				id: components.id,
+				name: components.name,
+				description: components.description,
+				repoUrl: components.repoUrl,
+				websiteUrl: components.websiteUrl,
+				installUrl: components.installUrl,
+				installCommand: components.installCommand,
+				tags: components.tags,
+				status: components.status,
+				createdAt: components.createdAt,
+				updatedAt: components.updatedAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(components)
+			.leftJoin(user, eq(components.creatorId, user.id))
+			.limit(limit)
+			.offset(offset)
+			.orderBy(desc(components.createdAt));
+
+		const results =
+			whereConditions.length > 0
 				? await baseComponentsQuery.where(
-					whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-				)
+						whereConditions.length === 1
+							? whereConditions[0]
+							: and(...whereConditions),
+					)
 				: await baseComponentsQuery;
-			
-			// Get total count
-			const baseTotalCountQuery = db
-				.select({ count: count() })
-				.from(components);
-			
-			const [{ count: totalCount }] = whereConditions.length > 0
+
+		// Get categories and stats for each component
+		const componentsWithDetails = await Promise.all(
+			results.map(async (component) => {
+				// Get categories
+				const componentCategoriesData = await db
+					.select({ category: categories })
+					.from(componentCategories)
+					.leftJoin(
+						categories,
+						eq(componentCategories.categoryId, categories.id),
+					)
+					.where(eq(componentCategories.componentId, component.id));
+
+				// Get stats
+				const [starsCount] = await db
+					.select({ count: count() })
+					.from(stars)
+					.where(
+						and(
+							eq(stars.itemType, "component"),
+							eq(stars.itemId, component.id),
+						),
+					);
+
+				return {
+					...component,
+					categories: componentCategoriesData
+						.map((cc) => cc.category)
+						.filter(Boolean),
+					starsCount: starsCount.count,
+					githubUrl: component.repoUrl,
+					isStarred: false, // Will be updated in protected queries
+					forksCount: 0,
+					issuesCount: 0,
+					watchersCount: 0,
+					readme: null,
+					exampleCode: null,
+					previewUrl: null,
+				};
+			}),
+		);
+
+		// Get total count
+		const baseTotalCountQuery = db.select({ count: count() }).from(components);
+
+		const [{ count: totalCount }] =
+			whereConditions.length > 0
 				? await baseTotalCountQuery.where(
-					whereConditions.length === 1 ? whereConditions[0] : and(...whereConditions)
-				)
+						whereConditions.length === 1
+							? whereConditions[0]
+							: and(...whereConditions),
+					)
 				: await baseTotalCountQuery;
 
-			return {
-				components: results,
-				totalCount,
-				totalPages: Math.ceil(totalCount / limit),
-				currentPage: page,
-			};
-		}),
+		return {
+			components: componentsWithDetails,
+			totalCount,
+			totalPages: Math.ceil(totalCount / limit),
+			currentPage: page,
+		};
+	}),
 
 	// Public: Get component by ID with detailed info
-	getById: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const component = await db
-				.select({
-					id: components.id,
-					name: components.name,
-					description: components.description,
-					repoUrl: components.repoUrl,
-					websiteUrl: components.websiteUrl,
-					installUrl: components.installUrl,
-					createdAt: components.createdAt,
-					updatedAt: components.updatedAt,
-					creator: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						image: user.image,
-					},
-				})
-				.from(components)
-				.leftJoin(user, eq(components.creatorId, user.id))
-				.where(eq(components.id, input.id))
-				.limit(1);
+	getById: publicProcedure.input(idSchema).query(async ({ ctx, input }) => {
+		const component = await db
+			.select({
+				id: components.id,
+				name: components.name,
+				description: components.description,
+				repoUrl: components.repoUrl,
+				websiteUrl: components.websiteUrl,
+				installUrl: components.installUrl,
+				installCommand: components.installCommand,
+				tags: components.tags,
+				status: components.status,
+				createdAt: components.createdAt,
+				updatedAt: components.updatedAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(components)
+			.leftJoin(user, eq(components.creatorId, user.id))
+			.where(eq(components.id, input.id))
+			.limit(1);
 
-			if (!component[0]) {
-				throw new Error("Component not found");
-			}
+		if (!component[0]) {
+			throw new Error("Component not found");
+		}
 
-			// Get categories
-			const componentCategories = await db
-				.select({ category: categories })
-				.from(componentCategories)
-				.leftJoin(categories, eq(componentCategories.categoryId, categories.id))
-				.where(eq(componentCategories.componentId, input.id));
+		// Get categories
+		const componentCategoriesData = await db
+			.select({ category: categories })
+			.from(componentCategories)
+			.leftJoin(categories, eq(componentCategories.categoryId, categories.id))
+			.where(eq(componentCategories.componentId, input.id));
 
-			// Get stats
-			const [starsCount] = await db
-				.select({ count: count() })
+		// Get stats
+		const [starsCount] = await db
+			.select({ count: count() })
+			.from(stars)
+			.where(and(eq(stars.itemType, "component"), eq(stars.itemId, input.id)));
+
+		const [avgRating] = await db
+			.select({ average: avg(ratings.rating) })
+			.from(ratings)
+			.where(
+				and(eq(ratings.itemType, "component"), eq(ratings.itemId, input.id)),
+			);
+
+		// Check if current user has starred this component (if authenticated)
+		let isStarred = false;
+		if (ctx?.session?.user?.id) {
+			const [userStar] = await db
+				.select()
 				.from(stars)
-				.where(and(eq(stars.itemType, "component"), eq(stars.itemId, input.id)));
+				.where(
+					and(
+						eq(stars.userId, ctx.session.user.id),
+						eq(stars.itemType, "component"),
+						eq(stars.itemId, input.id),
+					),
+				)
+				.limit(1);
+			isStarred = !!userStar;
+		}
 
-			const [avgRating] = await db
-				.select({ average: avg(ratings.rating) })
-				.from(ratings)
-				.where(and(eq(ratings.itemType, "component"), eq(ratings.itemId, input.id)));
-
-			return {
-				...component[0],
-				categories: componentCategories.map(cc => cc.category).filter(Boolean),
-				starsCount: starsCount.count,
-				averageRating: avgRating.average ? parseFloat(avgRating.average) : null,
-			};
-		}),
+		return {
+			...component[0],
+			categories: componentCategoriesData
+				.map((cc) => cc.category)
+				.filter(Boolean),
+			starsCount: starsCount.count,
+			averageRating: avgRating.average
+				? Number.parseFloat(avgRating.average)
+				: null,
+			githubUrl: component[0].repoUrl,
+			isStarred,
+			forksCount: 0,
+			issuesCount: 0,
+			watchersCount: 0,
+			readme: null,
+			exampleCode: null,
+			previewUrl: null,
+		};
+	}),
 
 	// Creator: Create component
 	create: creatorProcedure
@@ -166,10 +266,10 @@ export const componentsRouter = router({
 			// Add categories if provided
 			if (categoryIds && categoryIds.length > 0) {
 				await db.insert(componentCategories).values(
-					categoryIds.map(categoryId => ({
+					categoryIds.map((categoryId) => ({
 						componentId: newComponent.id,
 						categoryId,
-					}))
+					})),
 				);
 			}
 
@@ -205,13 +305,15 @@ export const componentsRouter = router({
 
 			// Update categories if provided
 			if (categoryIds) {
-				await db.delete(componentCategories).where(eq(componentCategories.componentId, id));
+				await db
+					.delete(componentCategories)
+					.where(eq(componentCategories.componentId, id));
 				if (categoryIds.length > 0) {
 					await db.insert(componentCategories).values(
-						categoryIds.map(categoryId => ({
+						categoryIds.map((categoryId) => ({
 							componentId: id,
 							categoryId,
-						}))
+						})),
 					);
 				}
 			}
@@ -252,8 +354,8 @@ export const componentsRouter = router({
 					and(
 						eq(stars.userId, ctx.user.id),
 						eq(stars.itemType, "component"),
-						eq(stars.itemId, input.itemId)
-					)
+						eq(stars.itemId, input.itemId),
+					),
 				)
 				.limit(1);
 
@@ -265,19 +367,18 @@ export const componentsRouter = router({
 						and(
 							eq(stars.userId, ctx.user.id),
 							eq(stars.itemType, "component"),
-							eq(stars.itemId, input.itemId)
-						)
+							eq(stars.itemId, input.itemId),
+						),
 					);
 				return { starred: false };
-			} else {
-				// Star
-				await db.insert(stars).values({
-					userId: ctx.user.id,
-					itemType: "component",
-					itemId: input.itemId,
-				});
-				return { starred: true };
 			}
+			// Star
+			await db.insert(stars).values({
+				userId: ctx.user.id,
+				itemType: "component",
+				itemId: input.itemId,
+			});
+			return { starred: true };
 		}),
 
 	// Protected: Rate component
@@ -320,32 +421,112 @@ export const componentsRouter = router({
 		}),
 
 	// Public: Get comments for component
-	getComments: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const componentComments = await db
+	getComments: publicProcedure.input(idSchema).query(async ({ input }) => {
+		const componentComments = await db
+			.select({
+				id: comments.id,
+				content: comments.content,
+				createdAt: comments.createdAt,
+				parentId: comments.parentId,
+				user: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(comments)
+			.leftJoin(user, eq(comments.userId, user.id))
+			.where(
+				and(eq(comments.itemType, "component"), eq(comments.itemId, input.id)),
+			)
+			.orderBy(desc(comments.createdAt));
+
+		return componentComments;
+	}),
+
+	// Protected: Get user's starred components
+	getStarred: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().int().min(1).max(100).default(10),
+			}),
+		)
+		.query(async ({ ctx, input }) => {
+			const { limit } = input;
+
+			const starredComponents = await db
 				.select({
-					id: comments.id,
-					content: comments.content,
-					createdAt: comments.createdAt,
-					parentId: comments.parentId,
-					user: {
+					id: components.id,
+					name: components.name,
+					description: components.description,
+					repoUrl: components.repoUrl,
+					websiteUrl: components.websiteUrl,
+					installUrl: components.installUrl,
+					installCommand: components.installCommand,
+					tags: components.tags,
+					status: components.status,
+					createdAt: components.createdAt,
+					updatedAt: components.updatedAt,
+					starredAt: stars.starredAt,
+					creator: {
 						id: user.id,
 						name: user.name,
 						username: user.username,
 						image: user.image,
 					},
 				})
-				.from(comments)
-				.leftJoin(user, eq(comments.userId, user.id))
+				.from(stars)
+				.innerJoin(components, eq(stars.itemId, components.id))
+				.leftJoin(user, eq(components.creatorId, user.id))
 				.where(
-					and(
-						eq(comments.itemType, "component"),
-						eq(comments.itemId, input.id)
-					)
+					and(eq(stars.userId, ctx.user.id), eq(stars.itemType, "component")),
 				)
-				.orderBy(desc(comments.createdAt));
+				.orderBy(desc(stars.starredAt))
+				.limit(limit);
 
-			return componentComments;
+			// Get categories and stats for each component
+			const componentsWithDetails = await Promise.all(
+				starredComponents.map(async (component) => {
+					// Get categories
+					const componentCategoriesData = await db
+						.select({ category: categories })
+						.from(componentCategories)
+						.leftJoin(
+							categories,
+							eq(componentCategories.categoryId, categories.id),
+						)
+						.where(eq(componentCategories.componentId, component.id));
+
+					// Get stats
+					const [starsCount] = await db
+						.select({ count: count() })
+						.from(stars)
+						.where(
+							and(
+								eq(stars.itemType, "component"),
+								eq(stars.itemId, component.id),
+							),
+						);
+
+					return {
+						...component,
+						categories: componentCategoriesData
+							.map((cc) => cc.category)
+							.filter(Boolean),
+						starsCount: starsCount.count,
+						githubUrl: component.repoUrl,
+						isStarred: false, // Will be updated in protected queries
+						forksCount: 0,
+						issuesCount: 0,
+						watchersCount: 0,
+						readme: null,
+						exampleCode: null,
+						previewUrl: null,
+					};
+				}),
+			);
+
+			return componentsWithDetails;
 		}),
 });

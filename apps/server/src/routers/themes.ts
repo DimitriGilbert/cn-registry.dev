@@ -1,8 +1,13 @@
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure, adminProcedure } from "../lib/trpc";
 import { db } from "../db";
 import { themes, user } from "../db/schema";
-import { eq, desc } from "drizzle-orm";
+import {
+	adminProcedure,
+	protectedProcedure,
+	publicProcedure,
+	router,
+} from "../lib/trpc";
 import { createThemeSchema, idSchema } from "../lib/validation";
 
 export const themesRouter = router({
@@ -29,33 +34,31 @@ export const themesRouter = router({
 	}),
 
 	// Public: Get theme by ID
-	getById: publicProcedure
-		.input(idSchema)
-		.query(async ({ input }) => {
-			const theme = await db
-				.select({
-					id: themes.id,
-					name: themes.name,
-					tokens: themes.tokens,
-					isDefault: themes.isDefault,
-					createdAt: themes.createdAt,
-					creator: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-					},
-				})
-				.from(themes)
-				.leftJoin(user, eq(themes.createdBy, user.id))
-				.where(eq(themes.id, input.id))
-				.limit(1);
+	getById: publicProcedure.input(idSchema).query(async ({ input }) => {
+		const theme = await db
+			.select({
+				id: themes.id,
+				name: themes.name,
+				tokens: themes.tokens,
+				isDefault: themes.isDefault,
+				createdAt: themes.createdAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+				},
+			})
+			.from(themes)
+			.leftJoin(user, eq(themes.createdBy, user.id))
+			.where(eq(themes.id, input.id))
+			.limit(1);
 
-			if (!theme[0]) {
-				throw new Error("Theme not found");
-			}
+		if (!theme[0]) {
+			throw new Error("Theme not found");
+		}
 
-			return theme[0];
-		}),
+		return theme[0];
+	}),
 
 	// Public: Get default theme
 	getDefault: publicProcedure.query(async () => {
@@ -123,7 +126,7 @@ export const themesRouter = router({
 			}
 
 			// Only admins can modify default status
-			if ('isDefault' in updateData && ctx.user.role !== "admin") {
+			if ("isDefault" in updateData && ctx.user.role !== "admin") {
 				delete updateData.isDefault;
 			}
 
@@ -177,22 +180,20 @@ export const themesRouter = router({
 		}),
 
 	// Admin: Set default theme
-	setDefault: adminProcedure
-		.input(idSchema)
-		.mutation(async ({ input }) => {
-			// Unset current default
-			await db
-				.update(themes)
-				.set({ isDefault: false })
-				.where(eq(themes.isDefault, true));
+	setDefault: adminProcedure.input(idSchema).mutation(async ({ input }) => {
+		// Unset current default
+		await db
+			.update(themes)
+			.set({ isDefault: false })
+			.where(eq(themes.isDefault, true));
 
-			// Set new default
-			const [updatedTheme] = await db
-				.update(themes)
-				.set({ isDefault: true })
-				.where(eq(themes.id, input.id))
-				.returning();
+		// Set new default
+		const [updatedTheme] = await db
+			.update(themes)
+			.set({ isDefault: true })
+			.where(eq(themes.id, input.id))
+			.returning();
 
-			return updatedTheme;
-		}),
+		return updatedTheme;
+	}),
 });

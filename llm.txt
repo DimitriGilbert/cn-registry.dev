@@ -1,0 +1,92 @@
+This is a full-stack Next.js monorepo using Turborepo, tRPC, Drizzle ORM, and shadcn/ui. The goal is to build a custom component registry similar to the official shadcn/ui registry.
+
+## Key Concepts
+
+- **API:** Uses tRPC. Routers are in `apps/server/src/routers/`. The main router is `apps/server/src/routers/index.ts`.
+- **Database:** Uses Drizzle ORM with PostgreSQL. Schema files are in `apps/server/src/db/schema/`.
+- **Frontend:** Uses Next.js App Router. Pages are in `apps/web/src/app/`.
+- **Data Fetching (Client):** Uses `@tanstack/react-query` with a tRPC client wrapper in `apps/web/src/utils/trpc.ts`.
+
+## Shadcn/UI Registry Concepts
+
+### `registry.json`
+
+This file is the main entry point for a custom registry. It contains a list of all the items available in the registry.
+
+- **`name`:** The name of the registry.
+- **`homepage`:** The URL of the registry's homepage.
+- **`items`:** An array of `registry-item.json` objects.
+
+### `registry-item.json`
+
+This file defines a single item in the registry. It can be a component, hook, page, or any other file.
+
+- **`name`:** The unique name of the item.
+- **`type`:** The type of the item (e.g., `components:ui`, `components:component`, `styles:new-york`).
+- **`files`:** An array of file paths for the item.
+- **`dependencies`:** An array of npm package dependencies.
+- **`registryDependencies`:** An array of other items in the registry that this item depends on.
+- **`tailwind`:** An object for adding custom Tailwind CSS configuration.
+- **`cssVars`:** An object for adding custom CSS variables.
+
+## Common Tasks
+
+### 1. Add a new API endpoint
+
+1.  Define input schema in `apps/server/src/lib/validation.ts` using Zod.
+2.  Add a new procedure to a router in `apps/server/src/routers/`.
+
+    *Example from `apps/server/src/routers/categories.ts`:*
+    ```typescript
+    // ...
+    import { createCategorySchema, idSchema } from "../lib/validation";
+
+    export const categoriesRouter = router({
+      // ...
+      create: adminProcedure
+        .input(createCategorySchema)
+        .mutation(async ({ input }) => {
+          const [newCategory] = await db
+            .insert(categories)
+            .values(input)
+            .returning();
+          return newCategory;
+        }),
+    });
+    ```
+
+### 2. Add a new database table
+
+1.  Create or modify a schema file in `apps/server/src/db/schema/`.
+2.  Export the new schema from `apps/server/src/db/schema/index.ts`.
+
+    *Example from `apps/server/src/db/schema/content.ts`:*
+    ```typescript
+    import { pgTable, text, uuid } from "drizzle-orm/pg-core";
+
+    export const categories = pgTable("categories", {
+      id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+      name: text("name").notNull().unique(),
+    });
+    ```
+
+### 3. Add a new frontend page that fetches data
+
+1.  Create a new page file in `apps/web/src/app/`.
+2.  Use the `useQuery` hook from `@tanstack/react-query` and the `trpc` client.
+
+    *Example from `apps/web/src/app/components/page.tsx`:*
+    ```typescript
+    "use client";
+
+    import { useQuery } from "@tanstack/react-query";
+    import { trpc } from "@/utils/trpc";
+
+    export default function ComponentsPage() {
+      const { data, isLoading } = useQuery(
+        trpc.components.getAll.queryOptions({ ... })
+      );
+
+      // ... render data
+    }
+    ```

@@ -1,255 +1,362 @@
-import { Container } from "@/components/layout/container"
-import { PageTitle } from "@/components/layout/page-title"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Package, Users, MessageSquare, Star, Plus } from "lucide-react"
-import Link from "next/link"
+"use client";
 
-// Mock data
-const statsData = {
-  totalComponents: 156,
-  totalTools: 42,
-  totalUsers: 2847,
-  totalComments: 1293,
-  totalStars: 8456,
-  totalViews: 45678,
-  totalDownloads: 23456,
-}
+import { useQuery } from "@tanstack/react-query";
+import {
+	MessageSquare,
+	Package,
+	Plus,
+	Star,
+	TrendingDown,
+	TrendingUp,
+	Users,
+} from "lucide-react";
+import Link from "next/link";
+import {
+	CartesianGrid,
+	Cell,
+	Line,
+	LineChart,
+	Pie,
+	PieChart,
+	ResponsiveContainer,
+	XAxis,
+	YAxis,
+} from "recharts";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpc } from "@/utils/trpc";
 
-const viewsData = [
-  { name: "Mon", views: 1200 },
-  { name: "Tue", views: 1900 },
-  { name: "Wed", views: 800 },
-  { name: "Thu", views: 2400 },
-  { name: "Fri", views: 1800 },
-  { name: "Sat", views: 1600 },
-  { name: "Sun", views: 2200 },
-]
+// Simple date formatting function
+const formatDate = (date: string | Date) => {
+	const d = new Date(date);
+	return d.toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+};
 
-const categoryData = [
-  { name: "Forms", value: 25, color: "hsl(var(--chart-1))" },
-  { name: "Tables", value: 20, color: "hsl(var(--chart-2))" },
-  { name: "Navigation", value: 15, color: "hsl(var(--chart-3))" },
-  { name: "Input", value: 18, color: "hsl(var(--chart-4))" },
-  { name: "Layout", value: 12, color: "hsl(var(--chart-5))" },
-  { name: "Other", value: 10, color: "hsl(var(--muted))" },
-]
-
-const recentActivity = [
-  {
-    id: "1",
-    type: "component",
-    action: "created",
-    item: "Advanced Data Table",
-    user: "John Doe",
-    timestamp: "2 hours ago",
-  },
-  {
-    id: "2",
-    type: "tool",
-    action: "updated",
-    item: "Theme Builder",
-    user: "Jane Smith",
-    timestamp: "4 hours ago",
-  },
-  {
-    id: "3",
-    type: "component",
-    action: "starred",
-    item: "Multi-Step Form",
-    user: "Bob Wilson",
-    timestamp: "6 hours ago",
-  },
-  {
-    id: "4",
-    type: "comment",
-    action: "posted",
-    item: "Interactive Charts",
-    user: "Alice Johnson",
-    timestamp: "8 hours ago",
-  },
-]
+const formatChartDate = (date: string | Date) => {
+	const d = new Date(date);
+	return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
 
 export default function AdminDashboard() {
-  return (
-    <Container>
-      <div className="py-8">
-        <PageTitle title="Admin Dashboard" subtitle="Overview of cn-registry analytics and management">
-          <Button asChild>
-            <Link href="/admin/components/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Component
-            </Link>
-          </Button>
-        </PageTitle>
+	// Fetch dashboard data
+	const { data: dashboardData, isLoading: isDashboardLoading } = useQuery(
+		trpc.admin.getDashboard.queryOptions(),
+	);
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Components</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statsData.totalComponents}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+12%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+	// Fetch recent notifications
+	const { data: notificationsData } = useQuery(
+		trpc.admin.getNotifications.queryOptions({ page: 1, limit: 5 }),
+	);
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tools</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statsData.totalTools}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+8%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+	// Fetch analytics summary for the last 30 days
+	const { data: analyticsData } = useQuery(
+		trpc.analytics.getSummary.queryOptions({
+			startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+			endDate: new Date().toISOString(),
+		}),
+	);
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statsData.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+23%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+	if (isDashboardLoading) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="mb-8">
+						<Skeleton className="mb-2 h-8 w-64" />
+						<Skeleton className="h-4 w-96" />
+					</div>
+					<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<Card key={i}>
+								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-4 w-4" />
+								</CardHeader>
+								<CardContent>
+									<Skeleton className="mb-2 h-8 w-16" />
+									<Skeleton className="h-3 w-32" />
+								</CardContent>
+							</Card>
+						))}
+					</div>
+				</div>
+			</Container>
+		);
+	}
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Stars</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statsData.totalStars.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+15%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+	const stats = dashboardData?.stats || {
+		usersCount: 0,
+		componentsCount: 0,
+		toolsCount: 0,
+		unreadNotificationsCount: 0,
+	};
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Views Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Views This Week</CardTitle>
-              <CardDescription>Daily page views across the platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  views: {
-                    label: "Views",
-                    color: "hsl(var(--chart-1))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={viewsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="views" stroke="var(--color-views)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+	const notifications = notificationsData?.notifications || [];
 
-          {/* Category Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Component Categories</CardTitle>
-              <CardDescription>Distribution of components by category</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  value: {
-                    label: "Components",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {categoryData.map((category) => (
-                  <div key={category.name} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
-                    <span className="text-sm">{category.name}</span>
-                    <span className="text-sm text-muted-foreground ml-auto">{category.value}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+	return (
+		<Container>
+			<div className="py-8">
+				<PageTitle
+					title="Admin Dashboard"
+					subtitle="Overview of cn-registry analytics and management"
+				>
+					<Button asChild>
+						<Link href="/admin/components/new">
+							<Plus className="mr-2 h-4 w-4" />
+							Add Component
+						</Link>
+					</Button>
+				</PageTitle>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions across the platform</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                  <div className="flex-shrink-0">
-                    {activity.type === "component" && <Package className="h-5 w-5 text-blue-500" />}
-                    {activity.type === "tool" && <Package className="h-5 w-5 text-green-500" />}
-                    {activity.type === "comment" && <MessageSquare className="h-5 w-5 text-purple-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.user}</span>{" "}
-                      <span className="text-muted-foreground">{activity.action}</span>{" "}
-                      <span className="font-medium">{activity.item}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                  </div>
-                  <Badge variant="outline" className="capitalize">
-                    {activity.type}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </Container>
-  )
+				{/* Stats Overview */}
+				<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">Components</CardTitle>
+							<Package className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">{stats.componentsCount}</div>
+							<p className="text-muted-foreground text-xs">
+								Total components in registry
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">Tools</CardTitle>
+							<Package className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">{stats.toolsCount}</div>
+							<p className="text-muted-foreground text-xs">
+								Total tools available
+							</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">Users</CardTitle>
+							<Users className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">
+								{stats.usersCount.toLocaleString()}
+							</div>
+							<p className="text-muted-foreground text-xs">Registered users</p>
+						</CardContent>
+					</Card>
+
+					<Card>
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="font-medium text-sm">
+								Notifications
+							</CardTitle>
+							<MessageSquare className="h-4 w-4 text-muted-foreground" />
+						</CardHeader>
+						<CardContent>
+							<div className="font-bold text-2xl">
+								{stats.unreadNotificationsCount}
+							</div>
+							<p className="text-muted-foreground text-xs">
+								Unread notifications
+							</p>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+					{/* Analytics Chart */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Analytics Overview</CardTitle>
+							<CardDescription>
+								Platform activity over the last 30 days
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{analyticsData?.dailyStats ? (
+								<ChartContainer
+									config={{
+										views: {
+											label: "Views",
+											color: "hsl(var(--chart-1))",
+										},
+										installs: {
+											label: "Installs",
+											color: "hsl(var(--chart-2))",
+										},
+									}}
+									className="h-[300px]"
+								>
+									<ResponsiveContainer width="100%" height="100%">
+										<LineChart
+											data={analyticsData.dailyStats.map((stat) => ({
+												date: formatChartDate(stat.date),
+												views: stat.views,
+												installs: stat.installs,
+											}))}
+										>
+											<CartesianGrid strokeDasharray="3 3" />
+											<XAxis dataKey="date" />
+											<YAxis />
+											<ChartTooltip content={<ChartTooltipContent />} />
+											<Line
+												type="monotone"
+												dataKey="views"
+												stroke="var(--color-views)"
+												strokeWidth={2}
+											/>
+											<Line
+												type="monotone"
+												dataKey="installs"
+												stroke="var(--color-installs)"
+												strokeWidth={2}
+											/>
+										</LineChart>
+									</ResponsiveContainer>
+								</ChartContainer>
+							) : (
+								<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+									No analytics data available
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* Event Types Distribution */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Event Distribution</CardTitle>
+							<CardDescription>Breakdown of user actions</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{analyticsData?.eventCounts ? (
+								<ChartContainer
+									config={{
+										count: {
+											label: "Events",
+										},
+									}}
+									className="h-[300px]"
+								>
+									<ResponsiveContainer width="100%" height="100%">
+										<PieChart>
+											<Pie
+												data={analyticsData.eventCounts.map((event, index) => ({
+													name: event.eventType,
+													value: event.count,
+													color: `hsl(var(--chart-${(index % 5) + 1}))`,
+												}))}
+												cx="50%"
+												cy="50%"
+												innerRadius={60}
+												outerRadius={120}
+												paddingAngle={5}
+												dataKey="value"
+											>
+												{analyticsData.eventCounts.map((_, index) => (
+													<Cell
+														key={`cell-${index}`}
+														fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+													/>
+												))}
+											</Pie>
+											<ChartTooltip content={<ChartTooltipContent />} />
+										</PieChart>
+									</ResponsiveContainer>
+								</ChartContainer>
+							) : (
+								<div className="flex h-[300px] items-center justify-center text-muted-foreground">
+									No event data available
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				</div>
+
+				{/* Recent Notifications */}
+				<Card>
+					<CardHeader>
+						<CardTitle>Recent Notifications</CardTitle>
+						<CardDescription>
+							Latest system notifications and alerts
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-4">
+							{notifications.length > 0 ? (
+								notifications.map((notification) => (
+									<div
+										key={notification.id}
+										className="flex items-center gap-4 rounded-lg border p-4"
+									>
+										<div className="flex-shrink-0">
+											<MessageSquare
+												className={`h-5 w-5 ${
+													notification.isRead
+														? "text-muted-foreground"
+														: "text-blue-500"
+												}`}
+											/>
+										</div>
+										<div className="flex-1">
+											<h4 className="font-medium">Notification</h4>
+											<p className="text-muted-foreground text-sm">
+												{notification.message}
+											</p>
+											<p className="mt-1 text-muted-foreground text-xs">
+												{formatDate(notification.createdAt)}
+											</p>
+										</div>
+										<div className="flex-shrink-0">
+											{/* <Badge variant={notification.type === 'error' ? 'destructive' : 
+                                    notification.type === 'warning' ? 'secondary' : 'default'}>
+                        {notification.type}
+                      </Badge> */}
+										</div>
+									</div>
+								))
+							) : (
+								<div className="py-8 text-center text-muted-foreground">
+									No notifications available
+								</div>
+							)}
+						</div>
+						{notifications.length > 0 && (
+							<div className="mt-4 text-center">
+								<Button variant="outline" asChild>
+									<Link href="/admin/notifications">
+										View All Notifications
+									</Link>
+								</Button>
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			</div>
+		</Container>
+	);
 }

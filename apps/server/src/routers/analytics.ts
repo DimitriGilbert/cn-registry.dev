@@ -1,9 +1,22 @@
+import { and, count, desc, eq, gt, gte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
-import { router, publicProcedure, protectedProcedure, adminProcedure } from "../lib/trpc";
 import { db } from "../db";
-import { analyticsEvents, countersCache, components, tools } from "../db/schema";
-import { eq, and, desc, sql, gt, gte } from "drizzle-orm";
-import { trackEventSchema, idSchema } from "../lib/validation";
+import {
+	analyticsEvents,
+	comments,
+	components,
+	countersCache,
+	stars,
+	tools,
+	user,
+} from "../db/schema";
+import {
+	adminProcedure,
+	protectedProcedure,
+	publicProcedure,
+	router,
+} from "../lib/trpc";
+import { idSchema, trackEventSchema } from "../lib/validation";
 
 export const analyticsRouter = router({
 	// Public/Protected: Track event
@@ -23,34 +36,39 @@ export const analyticsRouter = router({
 
 	// Public: Get trending components/tools
 	getTrending: publicProcedure
-		.input(z.object({
-			itemType: z.enum(["component", "tool"]).optional(),
-			period: z.enum(["day", "week", "month"]).default("week"),
-			limit: z.number().int().min(1).max(50).default(10),
-		}))
+		.input(
+			z.object({
+				itemType: z.enum(["component", "tool"]).optional(),
+				period: z.enum(["day", "week", "month"]).default("week"),
+				limit: z.number().int().min(1).max(50).default(10),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { itemType, period, limit } = input;
-			
+
 			// Calculate date threshold
 			const now = new Date();
 			const daysAgo = period === "day" ? 1 : period === "week" ? 7 : 30;
 			const threshold = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
 
-			let baseQuery = db
+			const baseQuery = db
 				.select({
 					itemId: analyticsEvents.itemId,
 					itemType: analyticsEvents.itemType,
 					eventCount: sql<number>`count(*)`,
 				})
 				.from(analyticsEvents)
-				.where(gte(analyticsEvents.createdAt, threshold))
+				.where(
+					itemType
+						? and(
+								gte(analyticsEvents.createdAt, threshold),
+								eq(analyticsEvents.itemType, itemType),
+							)
+						: gte(analyticsEvents.createdAt, threshold),
+				)
 				.groupBy(analyticsEvents.itemId, analyticsEvents.itemType)
 				.orderBy(desc(sql`count(*)`))
 				.limit(limit);
-
-			if (itemType) {
-				baseQuery = baseQuery.where(eq(analyticsEvents.itemType, itemType));
-			}
 
 			const trending = await baseQuery;
 
@@ -67,38 +85,39 @@ export const analyticsRouter = router({
 							...item,
 							details: component[0] || null,
 						};
-					} else {
-						const tool = await db
-							.select()
-							.from(tools)
-							.where(eq(tools.id, item.itemId))
-							.limit(1);
-						return {
-							...item,
-							details: tool[0] || null,
-						};
 					}
-				})
+					const tool = await db
+						.select()
+						.from(tools)
+						.where(eq(tools.id, item.itemId))
+						.limit(1);
+					return {
+						...item,
+						details: tool[0] || null,
+					};
+				}),
 			);
 
-			return detailedResults.filter(item => item.details !== null);
+			return detailedResults.filter((item) => item.details !== null);
 		}),
 
 	// Admin: Get analytics summary
 	getSummary: adminProcedure
-		.input(z.object({
-			startDate: z.string().optional(),
-			endDate: z.string().optional(),
-		}))
+		.input(
+			z.object({
+				startDate: z.string().optional(),
+				endDate: z.string().optional(),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { startDate, endDate } = input;
-			
+
 			let whereClause = sql`1=1`;
-			
+
 			if (startDate) {
 				whereClause = sql`${whereClause} AND ${analyticsEvents.createdAt} >= ${startDate}`;
 			}
-			
+
 			if (endDate) {
 				whereClause = sql`${whereClause} AND ${analyticsEvents.createdAt} <= ${endDate}`;
 			}
@@ -123,12 +142,13 @@ export const analyticsRouter = router({
 				.where(whereClause)
 				.groupBy(analyticsEvents.itemType);
 
-			// Get daily event counts for the last 30 days
+			// Get daily event counts for the last 30 days with separate view and install counts
 			const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 			const dailyStats = await db
 				.select({
 					date: sql<string>`DATE(${analyticsEvents.createdAt})`,
-					count: sql<number>`count(*)`,
+					views: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'view')`,
+					installs: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'install')`,
 				})
 				.from(analyticsEvents)
 				.where(gte(analyticsEvents.createdAt, thirtyDaysAgo))
@@ -144,14 +164,16 @@ export const analyticsRouter = router({
 
 	// Admin: Get detailed analytics for specific item
 	getItemAnalytics: adminProcedure
-		.input(z.object({
-			itemId: z.string().uuid(),
-			itemType: z.enum(["component", "tool"]),
-			period: z.enum(["day", "week", "month"]).default("month"),
-		}))
+		.input(
+			z.object({
+				itemId: z.string().uuid(),
+				itemType: z.enum(["component", "tool"]),
+				period: z.enum(["day", "week", "month"]).default("month"),
+			}),
+		)
 		.query(async ({ input }) => {
 			const { itemId, itemType, period } = input;
-			
+
 			const daysAgo = period === "day" ? 1 : period === "week" ? 7 : 30;
 			const threshold = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
 
@@ -166,8 +188,8 @@ export const analyticsRouter = router({
 					and(
 						eq(analyticsEvents.itemId, itemId),
 						eq(analyticsEvents.itemType, itemType),
-						gte(analyticsEvents.createdAt, threshold)
-					)
+						gte(analyticsEvents.createdAt, threshold),
+					),
 				)
 				.groupBy(analyticsEvents.eventType);
 
@@ -183,15 +205,334 @@ export const analyticsRouter = router({
 					and(
 						eq(analyticsEvents.itemId, itemId),
 						eq(analyticsEvents.itemType, itemType),
-						gte(analyticsEvents.createdAt, threshold)
-					)
+						gte(analyticsEvents.createdAt, threshold),
+					),
 				)
-				.groupBy(sql`DATE(${analyticsEvents.createdAt})`, analyticsEvents.eventType)
+				.groupBy(
+					sql`DATE(${analyticsEvents.createdAt})`,
+					analyticsEvents.eventType,
+				)
 				.orderBy(sql`DATE(${analyticsEvents.createdAt})`);
 
 			return {
 				eventsByType,
 				dailyBreakdown,
+			};
+		}),
+
+	// Admin: Get detailed component analytics with KPIs and trends
+	getComponentAnalytics: adminProcedure
+		.input(
+			z.object({
+				componentId: z.string().uuid(),
+				period: z.enum(["day", "week", "month"]).default("month"),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { componentId, period } = input;
+
+			const daysAgo = period === "day" ? 1 : period === "week" ? 7 : 30;
+			const currentPeriodStart = new Date(
+				Date.now() - daysAgo * 24 * 60 * 60 * 1000,
+			);
+			const previousPeriodStart = new Date(
+				Date.now() - daysAgo * 2 * 24 * 60 * 60 * 1000,
+			);
+
+			// Get current period totals
+			const currentPeriodEvents = await db
+				.select({
+					eventType: analyticsEvents.eventType,
+					count: sql<number>`count(*)`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, componentId),
+						eq(analyticsEvents.itemType, "component"),
+						gte(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(analyticsEvents.eventType);
+
+			// Get previous period totals for comparison
+			const previousPeriodEvents = await db
+				.select({
+					eventType: analyticsEvents.eventType,
+					count: sql<number>`count(*)`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, componentId),
+						eq(analyticsEvents.itemType, "component"),
+						gte(analyticsEvents.createdAt, previousPeriodStart),
+						lt(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(analyticsEvents.eventType);
+
+			// Calculate KPIs with trends
+			const currentViews =
+				currentPeriodEvents.find((e) => e.eventType === "view")?.count || 0;
+			const currentInstalls =
+				currentPeriodEvents.find((e) => e.eventType === "install")?.count || 0;
+			const previousViews =
+				previousPeriodEvents.find((e) => e.eventType === "view")?.count || 0;
+			const previousInstalls =
+				previousPeriodEvents.find((e) => e.eventType === "install")?.count || 0;
+
+			// Get total stars and comments from engagement tables
+			const [starsCount] = await db
+				.select({ count: count() })
+				.from(stars)
+				.where(
+					and(eq(stars.itemType, "component"), eq(stars.itemId, componentId)),
+				);
+
+			const [commentsCount] = await db
+				.select({ count: count() })
+				.from(comments)
+				.where(
+					and(
+						eq(comments.itemType, "component"),
+						eq(comments.itemId, componentId),
+					),
+				);
+
+			// Calculate percentage changes
+			const viewsChange =
+				previousViews > 0
+					? ((currentViews - previousViews) / previousViews) * 100
+					: 0;
+			const installsChange =
+				previousInstalls > 0
+					? ((currentInstalls - previousInstalls) / previousInstalls) * 100
+					: 0;
+
+			// Get daily time series data
+			const timeSeriesData = await db
+				.select({
+					date: sql<string>`DATE(${analyticsEvents.createdAt})`,
+					views: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'view')`,
+					installs: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'install')`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, componentId),
+						eq(analyticsEvents.itemType, "component"),
+						gte(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(sql`DATE(${analyticsEvents.createdAt})`)
+				.orderBy(sql`DATE(${analyticsEvents.createdAt})`);
+
+			// Get top engaged users (users with most stars/comments for this component)
+			const topStarUsers = await db
+				.select({
+					user: {
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+					starredAt: stars.starredAt,
+				})
+				.from(stars)
+				.innerJoin(user, eq(stars.userId, user.id))
+				.where(
+					and(eq(stars.itemType, "component"), eq(stars.itemId, componentId)),
+				)
+				.orderBy(desc(stars.starredAt))
+				.limit(10);
+
+			const topCommentUsers = await db
+				.select({
+					user: {
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+					commentCount: sql<number>`count(*)`,
+					lastComment: sql<Date>`max(${comments.createdAt})`,
+				})
+				.from(comments)
+				.innerJoin(user, eq(comments.userId, user.id))
+				.where(
+					and(
+						eq(comments.itemType, "component"),
+						eq(comments.itemId, componentId),
+					),
+				)
+				.groupBy(user.id, user.name, user.username, user.image)
+				.orderBy(desc(sql`count(*)`))
+				.limit(10);
+
+			return {
+				kpis: {
+					totalViews: currentViews,
+					totalInstalls: currentInstalls,
+					totalStars: starsCount.count,
+					totalComments: commentsCount.count,
+					viewsChange: Math.round(viewsChange * 100) / 100,
+					installsChange: Math.round(installsChange * 100) / 100,
+					starsChange: 0, // Stars are cumulative, so trend is always positive
+					commentsChange: 0, // Comments are cumulative, so trend is always positive
+				},
+				timeSeriesData,
+				topStarUsers,
+				topCommentUsers,
+			};
+		}),
+
+	// Admin: Get detailed tool analytics with KPIs and trends
+	getToolAnalytics: adminProcedure
+		.input(
+			z.object({
+				toolId: z.string().uuid(),
+				period: z.enum(["day", "week", "month"]).default("month"),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { toolId, period } = input;
+
+			const daysAgo = period === "day" ? 1 : period === "week" ? 7 : 30;
+			const currentPeriodStart = new Date(
+				Date.now() - daysAgo * 24 * 60 * 60 * 1000,
+			);
+			const previousPeriodStart = new Date(
+				Date.now() - daysAgo * 2 * 24 * 60 * 60 * 1000,
+			);
+
+			// Get current period totals
+			const currentPeriodEvents = await db
+				.select({
+					eventType: analyticsEvents.eventType,
+					count: sql<number>`count(*)`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, toolId),
+						eq(analyticsEvents.itemType, "tool"),
+						gte(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(analyticsEvents.eventType);
+
+			// Get previous period totals for comparison
+			const previousPeriodEvents = await db
+				.select({
+					eventType: analyticsEvents.eventType,
+					count: sql<number>`count(*)`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, toolId),
+						eq(analyticsEvents.itemType, "tool"),
+						gte(analyticsEvents.createdAt, previousPeriodStart),
+						lt(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(analyticsEvents.eventType);
+
+			// Calculate KPIs with trends
+			const currentViews =
+				currentPeriodEvents.find((e) => e.eventType === "view")?.count || 0;
+			const currentInstalls =
+				currentPeriodEvents.find((e) => e.eventType === "install")?.count || 0;
+			const previousViews =
+				previousPeriodEvents.find((e) => e.eventType === "view")?.count || 0;
+			const previousInstalls =
+				previousPeriodEvents.find((e) => e.eventType === "install")?.count || 0;
+
+			// Get total stars and comments from engagement tables
+			const [starsCount] = await db
+				.select({ count: count() })
+				.from(stars)
+				.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, toolId)));
+
+			const [commentsCount] = await db
+				.select({ count: count() })
+				.from(comments)
+				.where(and(eq(comments.itemType, "tool"), eq(comments.itemId, toolId)));
+
+			// Calculate percentage changes
+			const viewsChange =
+				previousViews > 0
+					? ((currentViews - previousViews) / previousViews) * 100
+					: 0;
+			const installsChange =
+				previousInstalls > 0
+					? ((currentInstalls - previousInstalls) / previousInstalls) * 100
+					: 0;
+
+			// Get daily time series data
+			const timeSeriesData = await db
+				.select({
+					date: sql<string>`DATE(${analyticsEvents.createdAt})`,
+					views: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'view')`,
+					installs: sql<number>`count(*) FILTER (WHERE ${analyticsEvents.eventType} = 'install')`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, toolId),
+						eq(analyticsEvents.itemType, "tool"),
+						gte(analyticsEvents.createdAt, currentPeriodStart),
+					),
+				)
+				.groupBy(sql`DATE(${analyticsEvents.createdAt})`)
+				.orderBy(sql`DATE(${analyticsEvents.createdAt})`);
+
+			// Get top engaged users (users with most stars/comments for this tool)
+			const topStarUsers = await db
+				.select({
+					user: {
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+					starredAt: stars.starredAt,
+				})
+				.from(stars)
+				.innerJoin(user, eq(stars.userId, user.id))
+				.where(and(eq(stars.itemType, "tool"), eq(stars.itemId, toolId)))
+				.orderBy(desc(stars.starredAt))
+				.limit(10);
+
+			const topCommentUsers = await db
+				.select({
+					user: {
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+					commentCount: sql<number>`count(*)`,
+					lastComment: sql<Date>`max(${comments.createdAt})`,
+				})
+				.from(comments)
+				.innerJoin(user, eq(comments.userId, user.id))
+				.where(and(eq(comments.itemType, "tool"), eq(comments.itemId, toolId)))
+				.groupBy(user.id, user.name, user.username, user.image)
+				.orderBy(desc(sql`count(*)`))
+				.limit(10);
+
+			return {
+				kpis: {
+					totalViews: currentViews,
+					totalInstalls: currentInstalls,
+					totalStars: starsCount.count,
+					totalComments: commentsCount.count,
+					viewsChange: Math.round(viewsChange * 100) / 100,
+					installsChange: Math.round(installsChange * 100) / 100,
+					starsChange: 0, // Stars are cumulative, so trend is always positive
+					commentsChange: 0, // Comments are cumulative, so trend is always positive
+				},
+				timeSeriesData,
+				topStarUsers,
+				topCommentUsers,
 			};
 		}),
 });

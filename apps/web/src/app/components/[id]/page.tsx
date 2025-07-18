@@ -1,285 +1,323 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ExternalLink, Github } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
+import { CommentForm } from "@/components/features/comment-form";
+import { CommentList } from "@/components/features/comment-list";
+import { CopyInstallCommand } from "@/components/features/copy-install-command";
+import { ReadmeViewer } from "@/components/features/readme-viewer";
+import { RepoStats } from "@/components/features/repo-stats";
+import { Showcase } from "@/components/features/showcase";
+import { StarButton } from "@/components/features/star-button";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
-import { StarButton } from "@/components/features/star-button";
-import { CopyInstallCommand } from "@/components/features/copy-install-command";
-import { RepoStats } from "@/components/features/repo-stats";
-import { ReadmeViewer } from "@/components/features/readme-viewer";
-import { Showcase } from "@/components/features/showcase";
-import { CommentList } from "@/components/features/comment-list";
-import { CommentForm } from "@/components/features/comment-form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Github, ExternalLink, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
-// Mock data
-const componentData = {
-  id: "1",
-  name: "Advanced Data Table",
-  description:
-    "A powerful data table with sorting, filtering, and pagination built with shadcn/ui components",
-  category: "Tables",
-  stars: 245,
-  downloads: 1200,
-  githubUrl: "https://github.com/example/data-table",
-  websiteUrl: "https://example.com/data-table",
-  installCommand: "npx shadcn@latest add data-table",
-  repoStats: {
-    stars: 245,
-    forks: 42,
-    issues: 8,
-    watchers: 156,
-  },
-  readme: `
-    <h1>Advanced Data Table</h1>
-    <p>A comprehensive data table component built with shadcn/ui that provides:</p>
-    <ul>
-      <li>Sorting by columns</li>
-      <li>Advanced filtering</li>
-      <li>Pagination</li>
-      <li>Row selection</li>
-      <li>Responsive design</li>
-    </ul>
-    <h2>Installation</h2>
-    <pre><code>npx shadcn@latest add data-table</code></pre>
-    <h2>Usage</h2>
-    <pre><code>import { DataTable } from "@/components/ui/data-table"</code></pre>
-  `,
-};
-
-const mockComments = [
-  {
-    id: "1",
-    author: { name: "John Doe", avatar: "/placeholder-user.jpg" },
-    content:
-      "This is an amazing component! Really well designed and easy to use.",
-    timestamp: "2 hours ago",
-    likes: 5,
-    replies: [
-      {
-        id: "2",
-        author: { name: "Jane Smith", avatar: "/placeholder-user.jpg" },
-        content: "I agree! The API is very intuitive.",
-        timestamp: "1 hour ago",
-        likes: 2,
-      },
-    ],
-  },
-  {
-    id: "3",
-    author: { name: "Bob Wilson", avatar: "/placeholder-user.jpg" },
-    content: "Would love to see more examples with different data types.",
-    timestamp: "4 hours ago",
-    likes: 3,
-  },
-];
-
-const ExampleComponent = () => (
-  <div className="p-4 border rounded-lg">
-    <h3 className="text-lg font-semibold mb-2">Sample Data Table</h3>
-    <div className="space-y-2">
-      <div className="grid grid-cols-3 gap-4 p-2 bg-muted rounded">
-        <div className="font-medium">Name</div>
-        <div className="font-medium">Email</div>
-        <div className="font-medium">Role</div>
-      </div>
-      <div className="grid grid-cols-3 gap-4 p-2">
-        <div>John Doe</div>
-        <div>john@example.com</div>
-        <div>Admin</div>
-      </div>
-      <div className="grid grid-cols-3 gap-4 p-2">
-        <div>Jane Smith</div>
-        <div>jane@example.com</div>
-        <div>User</div>
-      </div>
-    </div>
-  </div>
-);
-
-const exampleCode = `import { DataTable } from "@/components/ui/data-table"
-
-const columns = [
-  { key: "name", label: "Name" },
-  { key: "email", label: "Email" },
-  { key: "role", label: "Role" },
-]
-
-const data = [
-  { name: "John Doe", email: "john@example.com", role: "Admin" },
-  { name: "Jane Smith", email: "jane@example.com", role: "User" },
-]
-
-export function Example() {
-  return (
-    <DataTable 
-      columns={columns} 
-      data={data} 
-      sortable 
-      filterable 
-      paginated 
-    />
-  )
-}`;
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { trpc, trpcClient } from "@/utils/trpc";
 
 export default function ComponentDetailPage({
-  params,
+	params,
 }: {
-  params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
-  const [isStarred, setIsStarred] = useState(false);
-  const [comments, setComments] = useState(mockComments);
+	const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(
+		null,
+	);
+	const queryClient = useQueryClient();
 
-  const handleAddComment = (content: string, parentId?: string) => {
-    const newComment = {
-      id: Date.now().toString(),
-      author: { name: "Current User", avatar: "/placeholder-user.jpg" },
-      content,
-      timestamp: "Just now",
-      likes: 0,
-    };
+	// Resolve params
+	useState(() => {
+		params.then(setResolvedParams);
+	});
 
-    if (parentId) {
-      // Add as reply
-      setComments((prev) =>
-        prev.map((comment) =>
-          comment.id === parentId
-            ? { ...comment, replies: [...(comment.replies || []), newComment] }
-            : comment
-        )
-      );
-    } else {
-      // Add as new comment
-      setComments((prev) => [newComment, ...prev]);
-    }
-  };
+	const id = resolvedParams?.id;
 
-  const handleLikeComment = (commentId: string) => {
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === commentId
-          ? { ...comment, likes: comment.likes + 1 }
-          : {
-              ...comment,
-              replies: comment.replies?.map((reply) =>
-                reply.id === commentId
-                  ? { ...reply, likes: reply.likes + 1 }
-                  : reply
-              ),
-            }
-      )
-    );
-  };
+	// Fetch component data
+	const {
+		data: component,
+		isLoading,
+		error,
+	} = useQuery({
+		...trpc.components.getById.queryOptions({ id: id! }),
+		enabled: !!id,
+	});
 
-  return (
-    <Container>
-      <div className="py-8">
-        <div className="mb-6">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Home</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/components">Components</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{componentData.name}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
+	// Fetch comments
+	const { data: comments = [] } = useQuery({
+		...trpc.components.getComments.queryOptions({ id: id! }),
+		enabled: !!id,
+	});
 
-        <div className="mb-8">
-          <PageTitle
-            title={componentData.name}
-            subtitle={componentData.description}
-          >
-            <div className="flex items-center gap-2">
-              <StarButton
-                isStarred={isStarred}
-                onToggle={() => setIsStarred(!isStarred)}
-                size="default"
-              />
-              <Button variant="outline" asChild>
-                <Link href="/components">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Components
-                </Link>
-              </Button>
-            </div>
-          </PageTitle>
+	// Star mutation
+	const starMutation = useMutation({
+		mutationFn: async () => {
+			const result = await trpcClient.components.toggleStar.mutate({
+				itemId: id!,
+			});
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["components", "getById", { id }],
+			});
+			toast.success("Star toggled successfully");
+		},
+		onError: () => {
+			toast.error("Failed to toggle star");
+		},
+	});
 
-          <div className="flex items-center gap-4 mb-6">
-            <Badge variant="secondary">{componentData.category}</Badge>
-            <div className="flex items-center gap-2">
-              {componentData.githubUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={componentData.githubUrl} target="_blank">
-                    <Github className="h-4 w-4 mr-2" />
-                    GitHub
-                  </Link>
-                </Button>
-              )}
-              {componentData.websiteUrl && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={componentData.websiteUrl} target="_blank">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Website
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
+	// Add comment mutation
+	const addCommentMutation = useMutation({
+		mutationFn: async (data: { content: string; parentId?: string }) => {
+			const result = await trpcClient.components.addComment.mutate({
+				itemId: id!,
+				content: data.content,
+				parentId: data.parentId,
+			});
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["components", "getComments", { id }],
+			});
+			toast.success("Comment added successfully");
+		},
+		onError: () => {
+			toast.error("Failed to add comment");
+		},
+	});
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <CopyInstallCommand command={componentData.installCommand} />
-              <RepoStats {...componentData.repoStats} />
+	const handleAddComment = (content: string, parentId?: string) => {
+		addCommentMutation.mutate({ content, parentId });
+	};
 
-              <Tabs defaultValue="readme" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="readme">README</TabsTrigger>
-                  <TabsTrigger value="showcase">Showcase</TabsTrigger>
-                </TabsList>
-                <TabsContent value="readme" className="mt-6">
-                  <ReadmeViewer content={componentData.readme} />
-                </TabsContent>
-                <TabsContent value="showcase" className="mt-6">
-                  <Showcase
-                    component={<ExampleComponent />}
-                    code={exampleCode}
-                    title="Interactive Preview"
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
+	const handleToggleStar = () => {
+		starMutation.mutate();
+	};
 
-            <div className="space-y-6">
-              <CommentForm onSubmit={handleAddComment} />
-              <CommentList
-                comments={comments}
-                onAddComment={handleAddComment}
-                onLikeComment={handleLikeComment}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Container>
-  );
+	if (!id || isLoading) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="mb-6">
+						<Skeleton className="mb-2 h-4 w-64" />
+					</div>
+					<div className="mb-6">
+						<Skeleton className="mb-2 h-8 w-96" />
+						<Skeleton className="h-4 w-full max-w-2xl" />
+					</div>
+					<div className="space-y-4">
+						<Skeleton className="h-32 w-full" />
+						<Skeleton className="h-64 w-full" />
+					</div>
+				</div>
+			</Container>
+		);
+	}
+
+	if (error || !component) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="text-center">
+						<h1 className="mb-2 font-bold text-2xl">Component Not Found</h1>
+						<p className="mb-4 text-muted-foreground">
+							The component you're looking for doesn't exist.
+						</p>
+						<Button asChild>
+							<Link href="/components">
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back to Components
+							</Link>
+						</Button>
+					</div>
+				</div>
+			</Container>
+		);
+	}
+
+	return (
+		<Container>
+			<div className="py-8">
+				<div className="mb-6">
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbLink href="/components">Components</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator />
+							<BreadcrumbItem>
+								<BreadcrumbPage>{component.name}</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
+				</div>
+
+				<div className="mb-8">
+					<PageTitle title={component.name} subtitle={component.description}>
+						<div className="flex items-center gap-4">
+							<div className="flex gap-2">
+								{component.categories
+									?.filter(
+										(category): category is NonNullable<typeof category> =>
+											Boolean(category),
+									)
+									.map((category) => (
+										<Badge key={category.id} variant="secondary">
+											{category.name}
+										</Badge>
+									))}
+							</div>
+							<div className="flex items-center gap-2">
+								<StarButton
+									isStarred={component.isStarred || false}
+									count={component.starsCount || 0}
+									onToggle={handleToggleStar}
+									isLoading={starMutation.isPending}
+								/>
+								{component.githubUrl && (
+									<Button variant="outline" size="sm" asChild>
+										<a
+											href={component.githubUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<Github className="mr-2 h-4 w-4" />
+											GitHub
+										</a>
+									</Button>
+								)}
+								{component.websiteUrl && (
+									<Button variant="outline" size="sm" asChild>
+										<a
+											href={component.websiteUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<ExternalLink className="mr-2 h-4 w-4" />
+											Demo
+										</a>
+									</Button>
+								)}
+							</div>
+						</div>
+					</PageTitle>
+				</div>
+
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+					<div className="lg:col-span-2">
+						<Tabs defaultValue="readme" className="w-full">
+							<TabsList className="grid w-full grid-cols-3">
+								<TabsTrigger value="readme">Documentation</TabsTrigger>
+								<TabsTrigger value="showcase">Examples</TabsTrigger>
+								<TabsTrigger value="comments">Comments</TabsTrigger>
+							</TabsList>
+
+							<TabsContent value="readme" className="space-y-4">
+								<ReadmeViewer
+									content={component.readme || "No documentation available."}
+								/>
+							</TabsContent>
+
+							<TabsContent value="showcase" className="space-y-4">
+								<Showcase
+									code={component.exampleCode || "// No example code available"}
+									preview={component.previewUrl}
+								/>
+							</TabsContent>
+
+							<TabsContent value="comments" className="space-y-4">
+								<CommentForm
+									onSubmit={(content) => handleAddComment(content)}
+									isLoading={addCommentMutation.isPending}
+								/>
+								<CommentList
+									comments={comments}
+									onReply={(parentId, content) =>
+										handleAddComment(content, parentId)
+									}
+								/>
+							</TabsContent>
+						</Tabs>
+					</div>
+
+					<div className="space-y-6">
+						<CopyInstallCommand
+							command={
+								component.installCommand ||
+								`npx shadcn@latest add ${component.name.toLowerCase().replace(/\s+/g, "-")}`
+							}
+						/>
+
+						{component.githubUrl && (
+							<RepoStats
+								stars={component.starsCount || 0}
+								forks={component.forksCount || 0}
+								issues={component.issuesCount || 0}
+								watchers={component.watchersCount || 0}
+							/>
+						)}
+
+						<div className="space-y-4">
+							<h3 className="font-semibold">Created by</h3>
+							<div className="flex items-center gap-3">
+								<img
+									src={component.creator?.image || "/placeholder-user.jpg"}
+									alt={component.creator?.name || "Unknown"}
+									className="h-10 w-10 rounded-full"
+								/>
+								<div>
+									<p className="font-medium">
+										{component.creator?.name || "Unknown"}
+									</p>
+									<p className="text-muted-foreground text-sm">
+										{component.creator?.username
+											? `@${component.creator.username}`
+											: ""}
+									</p>
+								</div>
+							</div>
+						</div>
+
+						{component.averageRating && (
+							<div className="space-y-4">
+								<h3 className="font-semibold">Rating</h3>
+								<div className="flex items-center gap-2">
+									<div className="flex">
+										{Array.from({ length: 5 }).map((_, i) => (
+											<svg
+												key={i}
+												className={`h-4 w-4 ${i < Math.floor(component.averageRating || 0) ? "text-yellow-400" : "text-gray-300"}`}
+												fill="currentColor"
+												viewBox="0 0 20 20"
+											>
+												<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+											</svg>
+										))}
+									</div>
+									<span className="text-muted-foreground text-sm">
+										{component.averageRating.toFixed(1)} out of 5
+									</span>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+		</Container>
+	);
 }

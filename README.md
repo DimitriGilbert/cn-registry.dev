@@ -1,69 +1,37 @@
 # cn-registry
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Next, TRPC, and more.
+**Discover, share, and build with shadcn/ui components and tools.**
 
-## Features
+cn-registry is a central hub for the developer community to find and share UI components built with shadcn/ui, as well as tools that enhance the development workflow. Whether you're looking for a specific component for your project or want to share your own creations, cn-registry provides a streamlined and engaging experience.
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **Next.js** - Full-stack React framework
-- **tRPC** - End-to-end type-safe APIs
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Email & password authentication with Better Auth
-- **Biome** - Linting and formatting
-- **Turborepo** - Optimized monorepo build system
+## Key Features
+
+### For Everyone
+
+*   **Discover:** Browse a curated collection of components and tools. Find what you need quickly with powerful search and filtering options.
+*   **Explore:** View detailed information for each item, including live previews, installation commands, and documentation.
+*   **Community-driven:** See what's popular with star ratings and engage in discussions through threaded comments.
+*   **Personalize:** Customize your viewing experience with selectable themes.
+
+### For Users
+
+*   **Dashboard:** Keep track of your starred items, comments, and other activities in your personal dashboard.
+*   **Favorites:** Star your favorite components and tools to easily find them later.
+
+### For Creators
+
+*   **Showcase your work:** Share your components and tools with the community.
+*   **Manage your content:** Edit the metadata and documentation for your creations.
+*   **Track your impact:** View analytics to see how the community is engaging with your work.
+
+### For Admins
+
+*   **Curate content:** Manage all components, tools, and themes in the registry.
+*   **Monitor activity:** Inspect analytics for the entire platform.
+*   **Stay informed:** Receive notifications about important events.
 
 ## Getting Started
 
-First, install the dependencies:
+To get started, simply browse the [components](./apps/web/src/app/components) and [tools](./apps/web/src/app/tools) pages. If you want to engage with the community or save your favorites, you can create an account and log in.
 
-```bash
-bun install
-```
-## Database Setup
-
-This project uses PostgreSQL with Drizzle ORM.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/server/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-```bash
-bun db:push
-```
-
-
-Then, run the development server:
-
-```bash
-bun dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-
-
-## Project Structure
-
-```
-cn-registry/
-├── apps/
-│   ├── web/         # Frontend application (Next.js)
-│   └── server/      # Backend API (Next, TRPC)
-```
-
-## Available Scripts
-
-- `bun dev`: Start all applications in development mode
-- `bun build`: Build all applications
-- `bun dev:web`: Start only the web application
-- `bun dev:server`: Start only the server
-- `bun check-types`: Check TypeScript types across all apps
-- `bun db:push`: Push schema changes to database
-- `bun db:studio`: Open database studio UI
-- `bun check`: Run Biome formatting and linting
+We hope you enjoy using cn-registry!

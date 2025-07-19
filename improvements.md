@@ -1,181 +1,301 @@
-# improvement plan
+# Component Registry Feature Roadmap
 
-## 1. Component Installation Cart
+## 1. Component Cart & Saved Projects System
 
 **Priority:** High  
-**Estimated Effort:** Medium
+**Estimated Effort:** Medium-Large
 
-**Why:** To streamline the process of installing multiple components, users should be able to add components to a "cart" and then generate a single `registry.json` file for all of them at once. This avoids repetitive manual configuration and makes setting up a new project with multiple components much faster.
+**Why:** Users need to collect components for projects and save these collections for future use. The cart provides immediate utility for multi-component installation, while saved projects enable long-term organization and collaboration.
 
-**How:**
+**Architecture Overview:**
+
+- **Cart**: Client-side temporary collection with localStorage persistence
+- **Projects**: Server-side saved collections with collaboration features
+- **Workflow**: Cart → Save as Project → Share/Manage
+
+### Phase 1A: Component Installation Cart
 
 1. **State Management (Client-side):**
 
-   - Create a `CartProvider` using React Context (`apps/web/src/components/providers/cart-provider.tsx`) to manage the cart state globally.
-   - The context will expose `cart` (an array of component objects), `addToCart`, `removeFromCart`, `clearCart`, `isInCart`, and `getCartTotal` functions.
-   - Wrap the root layout in `apps/web/src/app/layout.tsx` with this `CartProvider`.
-   - Persist cart state in localStorage to maintain cart across browser sessions.
+   - Create `CartProvider` using React Context (`apps/web/src/components/providers/cart-provider.tsx`)
+   - Context exposes: `cart`, `addToCart`, `removeFromCart`, `clearCart`, `isInCart`, `getCartTotal`
+   - Wrap root layout with `CartProvider`
+   - Persist cart state in localStorage across browser sessions
 
 2. **UI Components:**
 
-   - **Add/Remove Button:** On the `ComponentCard` and the component detail page (`/components/[id]`), add a button that dynamically shows "Add to Cart" or "Remove from Cart" based on the `isInCart` status.
-   - **Cart Popover:** Create a new `Cart` component (`apps/web/src/components/features/cart.tsx`) and add it to the main `Header`.
-     - Display a `ShoppingCart` icon with a badge indicating the number of items.
-     - Clicking the icon opens a `Popover` that lists components with preview thumbnails.
-     - Include "Clear Cart", "Generate Install File", and "Generate CLI Command" buttons.
-     - Add estimated total installation size indicator.
+   - **Add/Remove Buttons:** On `ComponentCard` and `/components/[id]` pages
+   - **Cart Popover:** Header cart icon with badge (`apps/web/src/components/features/cart.tsx`)
+     - Component list with thumbnails
+     - "Clear Cart", "Save as Project", "Generate Install File" buttons
+     - Estimated total installation size
 
-3. **Backend API Endpoint:**
+3. **Backend API:**
+   - Add `getByIds` procedure to `componentsRouter`
+   - Accept component IDs array, return optimized component data
+   - Include dependency resolution and conflict detection
 
-   - Create a new tRPC procedure in `apps/server/src/routers/components.ts` named `getByIds`.
-   - Accept an array of component IDs (`string[]`) and return optimized component data.
-   - Include dependency resolution to prevent conflicts between selected components.
+### Phase 1B: Project Persistence & Management
 
-4. **File Generation & CLI Integration:**
-   - Generate multiple output formats: `registry.json`, `package.json` dependencies, and CLI installation script.
-   - Support for different package managers (npm, yarn, pnpm, bun).
-   - One-click installation command generation: `npx shadcn@latest add component1 component2 component3`.
-   - Dependency conflict detection and resolution suggestions.
+4. **Database Schema:**
+
+   ```sql
+   -- Simple project entity (no complex config)
+   projects (
+     id: uuid PRIMARY KEY,
+     name: text NOT NULL,
+     description: text,
+     slug: text UNIQUE NOT NULL,
+     userId: text REFERENCES user(id),
+     visibility: text DEFAULT 'private', -- 'private', 'public'
+     createdAt: timestamp,
+     updatedAt: timestamp
+   )
+
+   -- Simple project-component relationship
+   project_components (
+     projectId: uuid REFERENCES projects(id) ON DELETE CASCADE,
+     componentId: uuid REFERENCES components(id) ON DELETE CASCADE,
+     addedAt: timestamp,
+     PRIMARY KEY (projectId, componentId)
+   )
+
+   -- Basic collaboration (reuse from existing plan)
+   project_collaborators (
+     projectId: uuid REFERENCES projects(id) ON DELETE CASCADE,
+     userId: text REFERENCES user(id) ON DELETE CASCADE,
+     role: text DEFAULT 'viewer', -- 'owner', 'editor', 'viewer'
+     addedAt: timestamp,
+     PRIMARY KEY (projectId, userId)
+   )
+   ```
+
+5. **API Layer - New `projectsRouter`:**
+
+   ```typescript
+   projectsRouter = router({
+     // CRUD operations
+     create: protectedProcedure.input(createProjectSchema),
+     getAll: protectedProcedure, // user's projects
+     getById: protectedProcedure.input(idSchema),
+     update: protectedProcedure.input(updateProjectSchema),
+     delete: protectedProcedure.input(idSchema),
+
+     // Component management
+     addComponents: protectedProcedure.input(addComponentsToProjectSchema), // bulk add from cart
+     removeComponent: protectedProcedure.input(removeComponentSchema),
+     getComponents: protectedProcedure.input(projectIdSchema),
+
+     // Installation
+     generateInstallConfig: protectedProcedure.input(projectIdSchema),
+     generateCliCommand: protectedProcedure.input(projectIdSchema),
+
+     // Sharing
+     addCollaborator: protectedProcedure.input(addCollaboratorSchema),
+     removeCollaborator: protectedProcedure.input(removeCollaboratorSchema),
+     getPublicProject: publicProcedure.input(projectSlugSchema),
+   });
+   ```
+
+6. **Frontend Integration:**
+
+   - **Cart to Project Flow:** "Save as Project" button in cart popover
+   - **Projects Dashboard:** `/projects` page with project grid
+   - **Project Detail:** `/projects/[slug]` with component management
+   - **Enhanced Dashboard:** Add project stats to existing dashboard
+
+7. **Installation & Export:**
+   - Generate `registry.json` for project components
+   - CLI command generation: `npx shadcn@latest add comp1 comp2 comp3`
+   - Support multiple package managers (npm, yarn, pnpm, bun)
+   - Dependency conflict detection and resolution
 
 ---
 
-## 2. Full GitHub Integration
+## 2. GitHub Integration & Component Enrichment
 
 **Priority:** Medium  
 **Estimated Effort:** Medium
 
-**Why:** The platform currently only stores a `repoUrl`. Automatically fetching READMEs, release notes, and key stats (issues, forks, license) from GitHub would enrich the content, keep it up-to-date, and save creators manual effort while providing users with comprehensive component information.
+**Why:** Enhanced GitHub integration will automatically enrich component data, reduce creator workload, and provide users with up-to-date information about component quality and maintenance status.
 
-**How:**
+**Implementation:**
 
 1. **GitHub API Integration:**
 
-   - Create a new tRPC router (`apps/server/src/routers/github.ts`) using Octokit for GitHub API interactions.
-   - Implement procedures for fetching: repository stats, README content, releases, issues, and license information.
-   - Add GitHub App authentication for higher rate limits and better reliability.
+   - New `githubRouter` with Octokit integration (`apps/server/src/routers/github.ts`)
+   - Procedures: `getRepoStats`, `getReadme`, `getReleases`, `getIssues`
+   - GitHub App authentication for higher rate limits
 
-2. **Data Caching & Sync:**
+2. **Smart Caching System:**
 
-   - Create new database tables: `github_cache` and `github_sync_jobs`.
-   - Implement Redis-based caching for frequently accessed data (15-minute TTL).
-   - Add a background job system (using `node-cron` or similar) to refresh data every 6 hours.
-   - Store cached data with timestamps and implement stale-while-revalidate pattern.
+   ```sql
+   github_cache (
+     repoUrl: text PRIMARY KEY,
+     data: jsonb NOT NULL,
+     lastFetched: timestamp,
+     expiresAt: timestamp
+   )
+   ```
 
-3. **Enhanced UI Components:**
+   - 6-hour background refresh with `node-cron`
+   - Stale-while-revalidate pattern for better UX
 
-   - Create `GitHubStats` component showing stars, forks, issues, last updated.
-   - Add `MarkdownRenderer` component for README display with syntax highlighting.
-   - Include `ReleaseNotes` component showing latest version and changelog.
-   - Display repository health indicators (maintenance status, activity level).
+3. **Enhanced Component Display:**
 
-4. **Advanced Features:**
-   - Automatic component version detection from GitHub releases.
-   - Integration with GitHub Actions for automated component updates.
-   - Repository quality scoring based on documentation, tests, and activity.
-   - Webhook support for real-time updates when repositories change.
+   - `GitHubStats` component: stars, forks, issues, last updated
+   - `MarkdownRenderer` with syntax highlighting for READEs
+   - Repository health indicators and quality scoring
+   - Automatic version detection from GitHub releases
+
+4. **Creator Benefits:**
+   - Automatic README synchronization
+   - Release notes integration
+   - Reduced manual maintenance of component descriptions
 
 ---
 
-## 3. Enhanced Creator Profiles
+## 3. Creator Profiles & Community Features
 
 **Priority:** Medium  
 **Estimated Effort:** Medium
 
-**Why:** Creators are the lifeblood of the registry. Giving them public profiles to showcase all their submitted components and tools would recognize their contributions and allow users to discover more great work from creators they like.
+**Why:** Enhanced creator profiles will build community, recognize contributions, and help users discover quality components from trusted creators.
 
-**How:**
+**Implementation:**
 
-1. **Profile Pages:**
+1. **Enhanced User Schema:**
 
-   - Create public creator pages at `/creators/[username]` with custom URLs.
-   - Display creator stats: total components/tools, stars received, downloads.
-   - Show activity timeline and contribution history.
-   - Include social proof: badges, achievements, and community recognition.
+   ```sql
+   -- Extend existing user table
+   ALTER TABLE user ADD COLUMN bio text;
+   ALTER TABLE user ADD COLUMN website text;
+   ALTER TABLE user ADD COLUMN location text;
+   ALTER TABLE user ADD COLUMN company text;
+   ALTER TABLE user ADD COLUMN socialLinks jsonb DEFAULT '{}';
+   ALTER TABLE user ADD COLUMN verified boolean DEFAULT false;
+   ALTER TABLE user ADD COLUMN specialties text[];
+   ```
 
-2. **Enhanced User Schema:**
+2. **Public Creator Pages (`/creators/[username]`):**
 
-   - Add fields: `bio`, `website`, `location`, `company`, `socialLinks`.
-   - Include `verified` status for well-known creators.
-   - Add `specialties` and `skills` tags for better discoverability.
+   - Portfolio showcase with featured components/tools
+   - Creator stats dashboard (components, stars received, downloads)
+   - Activity timeline and contribution history
+   - Social links and sponsorship integration
 
-3. **Creator Features:**
+3. **Creator Dashboard Enhancements:**
 
-   - Portfolio customization with featured components.
-   - Creator analytics dashboard showing usage metrics.
-   - Sponsorship and donation integration (GitHub Sponsors, Buy Me a Coffee).
-   - Creator newsletter and update subscriptions.
+   - Analytics: component views, stars, downloads
+   - Portfolio management: featured components
+   - Profile customization settings
+   - Community achievements and badges
 
-4. **Discovery & Recognition:**
-   - "Creator of the Month" spotlight feature.
-   - Creator leaderboards and community rankings.
-   - Follow system for creator updates.
-   - Creator recommendation engine.
+4. **Discovery Features:**
+   - Creator search and filtering by specialties
+   - "Trending Creators" section on homepage
+   - Creator recommendation engine based on user interests
 
 ---
 
-## 4. API & Developer Tools
+## 4. Developer Tools & Integrations
 
 **Priority:** Medium  
 **Estimated Effort:** Medium
 
-**Why:** Developers should be able to integrate the registry into their workflows and tools. A comprehensive API enables third-party integrations and automation.
+**Why:** Developer tools and integrations will increase adoption by fitting into existing workflows and enabling automation.
 
-**How:**
+**Implementation:**
 
-1. **Public REST API:**
+1. **Public API Layer:**
 
-   - RESTful API endpoints for all public data.
-   - GraphQL interface for flexible data fetching.
-   - Rate limiting and authentication for API consumers.
-   - Comprehensive API documentation with interactive examples.
+   - REST API endpoints for public data (components, tools, projects)
+   - API key authentication for third-party integrations
+   - Rate limiting and comprehensive documentation
+   - Built on existing tRPC infrastructure for consistency
 
-2. **CLI Tools:**
+2. **Developer Integrations:**
 
-   - Enhanced CLI for searching, installing, and managing components.
-   - Integration with popular development tools (VS Code, IntelliJ).
-   - Automated component discovery and installation.
-   - Project scaffolding with selected components.
-
-3. **Webhooks & Integrations:**
-
-   - Webhook system for real-time notifications.
-   - Slack/Discord bot for team notifications.
-   - GitHub Actions for automated component publishing.
-   - npm package manager integration.
-
-4. **Developer Experience:**
-   - SDK for popular programming languages.
-   - VS Code extension for in-editor component browsing.
-   - Figma plugin for design-to-code workflows.
-   - Storybook integration for component documentation.
+   - VS Code extension for component browsing and installation
+   - GitHub Actions for automated component publishing
+   - Webhook system for notifications (component updates, new releases)
+   - npm package integration for seamless installation
 
 ---
 
-## 5. Collaboration & Team Features
+## 5. Team Collaboration & Organizations
 
-**Priority:** Medium  
-**Estimated Effort:** Medium
+**Priority:** Medium-Low  
+**Estimated Effort:** Large
 
-**Why:** Teams need ways to share, organize, and collaborate on components within their organization while maintaining consistency and standards.
+**Why:** Teams need shared component libraries, collaboration workflows, and organizational control for enterprise adoption.
 
-**How:**
+**Implementation:**
 
-1. **Organization Management:**
+1. **Organization System:**
 
-   - Team/organization accounts with member management.
-   - Private component registries for internal use.
-   - Role-based access control (admin, maintainer, contributor).
-   - Team analytics and usage tracking.
+   ```sql
+   organizations (
+     id: uuid PRIMARY KEY,
+     name: text NOT NULL,
+     slug: text UNIQUE NOT NULL,
+     description: text,
+     settings: jsonb DEFAULT '{}',
+     createdAt: timestamp
+   )
 
-2. **Collaboration Tools:**
+   organization_members (
+     orgId: uuid REFERENCES organizations(id),
+     userId: text REFERENCES user(id),
+     role: text NOT NULL, -- 'owner', 'admin', 'member'
+     joinedAt: timestamp,
+     PRIMARY KEY (orgId, userId)
+   )
+   ```
 
-   - Component review and approval workflows.
-   - Team discussions and comments on components.
-   - Shared component libraries and collections.
-   - Version control and branch management for components.
+2. **Shared Resources:**
 
-3. **Enterprise Features:**
-   - SSO integration (SAML, OAuth, LDAP).
-   - Audit logs and compliance reporting.
-   - Custom branding and white-labeling options.
-   - On-premise deployment options.
+   - Organization-owned components and tools
+   - Shared project collections within teams
+   - Team-specific component libraries
+   - Centralized approval workflows for component publishing
+
+3. **Enterprise Features (Future):**
+   - SSO integration (SAML, OAuth)
+   - Private component registries
+   - Advanced analytics and usage tracking
+   - Custom branding and white-labeling
+   - Audit logs for compliance
+
+---
+
+## Implementation Roadmap
+
+### **Immediate Priority (Phase 1):**
+
+1. **Component Cart System** - Essential for user workflow improvement
+2. **Project Persistence** - Save cart contents as named projects
+
+### **Short Term (Phase 2):**
+
+3. **GitHub Integration** - Enrich component data automatically
+4. **Creator Profiles** - Build community and discovery
+
+### **Medium Term (Phase 3):**
+
+5. **Developer Tools** - API, VS Code extension
+6. **Team Collaboration** - Organizations and shared projects
+
+### **Technical Integration Strategy:**
+
+- **Cart → Projects**: Natural progression from temporary to persistent collections
+- **Existing Features**: Maintain stars, comments, ratings as global features
+- **Backward Compatibility**: All new features are additive, don't break existing workflows
+- **Database Design**: Simple, focused schemas that avoid over-engineering
+
+### **Key Success Metrics:**
+
+- **User Engagement**: Increased time on site, return visits
+- **Component Discovery**: Improved component installation rates
+- **Creator Satisfaction**: More component submissions and updates
+- **Developer Adoption**: API usage, CLI downloads, VS Code extension installs

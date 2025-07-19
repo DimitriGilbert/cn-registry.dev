@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, Github } from "lucide-react";
+import { ArrowLeft, ExternalLink, Github, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useCart } from "@/components/providers/cart-provider";
 import { CommentForm } from "@/components/features/comment-form";
 import { CommentList } from "@/components/features/comment-list";
 import { CopyInstallCommand } from "@/components/features/copy-install-command";
@@ -37,6 +38,7 @@ export default function ComponentDetailPage({
 		null,
 	);
 	const queryClient = useQueryClient();
+	const { addToCart, removeFromCart, isInCart } = useCart();
 
 	// Resolve params
 	useState(() => {
@@ -107,6 +109,18 @@ export default function ComponentDetailPage({
 
 	const handleToggleStar = () => {
 		starMutation.mutate();
+	};
+
+	const handleCartToggle = () => {
+		if (!component) return;
+
+		if (isInCart(component.id)) {
+			removeFromCart(component.id);
+			toast.success(`Removed ${component.name} from cart`);
+		} else {
+			addToCart(component);
+			toast.success(`Added ${component.name} to cart`);
+		}
 	};
 
 	if (!id || isLoading) {
@@ -191,6 +205,14 @@ export default function ComponentDetailPage({
 									onToggle={handleToggleStar}
 									isLoading={starMutation.isPending}
 								/>
+								<Button
+									variant={isInCart(component.id) ? "default" : "outline"}
+									size="sm"
+									onClick={handleCartToggle}
+								>
+									<ShoppingCart className="mr-2 h-4 w-4" />
+									{isInCart(component.id) ? "In Cart" : "Add to Cart"}
+								</Button>
 								{component.githubUrl && (
 									<Button variant="outline" size="sm" asChild>
 										<a

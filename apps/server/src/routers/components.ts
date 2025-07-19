@@ -29,6 +29,7 @@ import {
 import {
 	createCommentSchema,
 	createComponentSchema,
+	getByIdsSchema,
 	idSchema,
 	rateItemSchema,
 	searchSchema,
@@ -529,4 +530,82 @@ export const componentsRouter = router({
 
 			return componentsWithDetails;
 		}),
+
+	// Public: Get components by IDs (for cart functionality)
+	getByIds: publicProcedure.input(getByIdsSchema).query(async ({ input }) => {
+		const { ids } = input;
+
+		if (ids.length === 0) {
+			return [];
+		}
+
+		const results = await db
+			.select({
+				id: components.id,
+				name: components.name,
+				description: components.description,
+				repoUrl: components.repoUrl,
+				websiteUrl: components.websiteUrl,
+				installUrl: components.installUrl,
+				installCommand: components.installCommand,
+				tags: components.tags,
+				status: components.status,
+				createdAt: components.createdAt,
+				updatedAt: components.updatedAt,
+				creator: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(components)
+			.leftJoin(user, eq(components.creatorId, user.id))
+			.where(inArray(components.id, ids))
+			.orderBy(desc(components.createdAt));
+
+		// Get categories and stats for each component
+		const componentsWithDetails = await Promise.all(
+			results.map(async (component) => {
+				// Get categories
+				const componentCategoriesData = await db
+					.select({ category: categories })
+					.from(componentCategories)
+					.leftJoin(
+						categories,
+						eq(componentCategories.categoryId, categories.id),
+					)
+					.where(eq(componentCategories.componentId, component.id));
+
+				// Get stats
+				const [starsCount] = await db
+					.select({ count: count() })
+					.from(stars)
+					.where(
+						and(
+							eq(stars.itemType, "component"),
+							eq(stars.itemId, component.id),
+						),
+					);
+
+				return {
+					...component,
+					categories: componentCategoriesData
+						.map((cc) => cc.category)
+						.filter(Boolean),
+					starsCount: starsCount.count,
+					githubUrl: component.repoUrl,
+					isStarred: false,
+					forksCount: 0,
+					issuesCount: 0,
+					watchersCount: 0,
+					readme: null,
+					exampleCode: null,
+					previewUrl: null,
+				};
+			}),
+		);
+
+		return componentsWithDetails;
+	}),
 });

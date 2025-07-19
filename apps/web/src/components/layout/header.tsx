@@ -2,6 +2,7 @@
 
 import { Search, User } from "lucide-react";
 import Link from "next/link";
+import { CartButton } from "@/components/features/cart";
 import { Container } from "@/components/layout/container";
 import { ThemeSelector } from "@/components/theme-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -133,6 +134,7 @@ export function Header() {
 								className="w-[300px] pl-8"
 							/>
 						</div>
+						<CartButton />
 						<ThemeSelector />
 						<ThemeToggle />
 						<DropdownMenu>

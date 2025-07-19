@@ -12,6 +12,12 @@ export const updateUserSchema = z.object({
 	username: z.string().min(3).max(50).optional(),
 	email: z.string().email().optional(),
 	avatarUrl: z.string().url().optional(),
+	bio: z.string().max(500).optional(),
+	website: z.string().url().optional(),
+	location: z.string().max(100).optional(),
+	company: z.string().max(100).optional(),
+	socialLinks: z.record(z.string(), z.string().url()).optional(),
+	specialties: z.array(z.string()).optional(),
 });
 
 export const updateUserSettingsSchema = z.object({
@@ -107,4 +113,67 @@ export const searchSchema = z.object({
 
 export const idSchema = z.object({
 	id: z.string().uuid(),
+});
+
+// Project schemas
+export const createProjectSchema = z.object({
+	name: z.string().min(1).max(100),
+	description: z.string().max(500).optional(),
+	slug: z.string().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+	visibility: z.enum(["private", "public"]).default("private"),
+});
+
+export const updateProjectSchema = createProjectSchema.partial();
+
+export const addComponentsToProjectSchema = z.object({
+	projectId: z.string().uuid(),
+	componentIds: z.array(z.string().uuid()),
+});
+
+export const removeComponentFromProjectSchema = z.object({
+	projectId: z.string().uuid(),
+	componentId: z.string().uuid(),
+});
+
+export const projectIdSchema = z.object({
+	projectId: z.string().uuid(),
+});
+
+export const projectSlugSchema = z.object({
+	slug: z.string(),
+});
+
+export const addCollaboratorSchema = z.object({
+	projectId: z.string().uuid(),
+	userId: z.string(),
+	role: z.enum(["owner", "editor", "viewer"]).default("viewer"),
+});
+
+export const removeCollaboratorSchema = z.object({
+	projectId: z.string().uuid(),
+	userId: z.string(),
+});
+
+export const updateCollaboratorRoleSchema = z.object({
+	projectId: z.string().uuid(),
+	userId: z.string(),
+	role: z.enum(["owner", "editor", "viewer"]),
+});
+
+export const generateInstallConfigSchema = z.object({
+	projectId: z.string().uuid(),
+	format: z.enum(["registry", "cli", "package-json"]).default("registry"),
+});
+
+export const getByIdsSchema = z.object({
+	ids: z.array(z.string().uuid()),
+});
+
+// GitHub schemas
+export const githubRepoSchema = z.object({
+	repoUrl: z.string().url(),
+});
+
+export const usernameSchema = z.object({
+	username: z.string(),
 });

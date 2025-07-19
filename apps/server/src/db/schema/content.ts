@@ -88,3 +88,72 @@ export const toolCategories = pgTable(
 		};
 	},
 );
+
+export const projects = pgTable("projects", {
+	id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+	name: text("name").notNull(),
+	description: text("description"),
+	slug: text("slug").notNull().unique(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	visibility: text("visibility").notNull().default("private"), // 'private', 'public'
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.default(sql`now()`),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.default(sql`now()`),
+});
+
+export const projectComponents = pgTable(
+	"project_components",
+	{
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => projects.id, { onDelete: "cascade" }),
+		componentId: uuid("component_id")
+			.notNull()
+			.references(() => components.id, { onDelete: "cascade" }),
+		addedAt: timestamp("added_at", { withTimezone: true })
+			.notNull()
+			.default(sql`now()`),
+	},
+	(table) => {
+		return {
+			pk: primaryKey({ columns: [table.projectId, table.componentId] }),
+		};
+	},
+);
+
+export const projectCollaborators = pgTable(
+	"project_collaborators",
+	{
+		projectId: uuid("project_id")
+			.notNull()
+			.references(() => projects.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		role: text("role").notNull().default("viewer"), // 'owner', 'editor', 'viewer'
+		addedAt: timestamp("added_at", { withTimezone: true })
+			.notNull()
+			.default(sql`now()`),
+	},
+	(table) => {
+		return {
+			pk: primaryKey({ columns: [table.projectId, table.userId] }),
+		};
+	},
+);
+
+export const githubCache = pgTable("github_cache", {
+	repoUrl: text("repo_url").primaryKey(),
+	data: text("data").notNull(), // JSON string
+	lastFetched: timestamp("last_fetched", { withTimezone: true })
+		.notNull()
+		.default(sql`now()`),
+	expiresAt: timestamp("expires_at", { withTimezone: true })
+		.notNull()
+		.default(sql`now() + interval '6 hours'`),
+});

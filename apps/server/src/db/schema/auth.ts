@@ -16,6 +16,13 @@ export const user = pgTable("user", {
 	image: text("image"),
 	username: text("username").unique(), // Added for registry functionality
 	role: text("role").notNull().default("user"), // Added for access control: 'user', 'creator', 'admin'
+	bio: text("bio"),
+	website: text("website"),
+	location: text("location"),
+	company: text("company"),
+	socialLinks: jsonb("social_links").default({}),
+	verified: boolean("verified").notNull().default(false),
+	specialties: text("specialties").array(),
 	createdAt: timestamp("created_at").notNull(),
 	updatedAt: timestamp("updated_at").notNull(),
 });

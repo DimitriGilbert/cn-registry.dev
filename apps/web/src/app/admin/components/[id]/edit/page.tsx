@@ -2,6 +2,7 @@
 import { ArrowLeft, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Badge } from "@/components/ui/badge";
@@ -15,16 +16,20 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { useFormedible } from "@/hooks/use-formedible";
+
+const componentSchema = z.object({
+	name: z.string().min(1, "Name is required"),
+	description: z.string().min(1, "Description is required"),
+	category: z.string().min(1, "Category is required"),
+	githubUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+	websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+	installCommand: z.string().min(1, "Install command is required"),
+	tags: z.array(z.string()),
+	status: z.enum(["draft", "published", "archived"]),
+});
+
+type ComponentFormValues = z.infer<typeof componentSchema>;
 
 // Mock data
 const componentData = {
@@ -37,7 +42,7 @@ const componentData = {
 	websiteUrl: "https://example.com/data-table",
 	installCommand: "npx shadcn@latest add data-table",
 	tags: ["table", "sorting", "filtering", "pagination"],
-	status: "published",
+	status: "published" as const,
 };
 
 const categories = [
@@ -64,38 +69,28 @@ export default async function EditComponentPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
-	const [formData, setFormData] = useState(componentData);
-	const [newTag, setNewTag] = useState("");
-	const [isSaving, setIsSaving] = useState(false);
-
-	const handleInputChange = (field: string, value: string) => {
-		setFormData((prev) => ({ ...prev, [field]: value }));
-	};
-
-	const addTag = () => {
-		if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
-			setFormData((prev) => ({
-				...prev,
-				tags: [...prev.tags, newTag.trim()],
-			}));
-			setNewTag("");
-		}
-	};
-
-	const removeTag = (tagToRemove: string) => {
-		setFormData((prev) => ({
-			...prev,
-			tags: prev.tags.filter((tag) => tag !== tagToRemove),
-		}));
-	};
-
-	const handleSave = async () => {
-		setIsSaving(true);
-		// Simulate API call
-		await new Promise((resolve) => setTimeout(resolve, 1000));
-		setIsSaving(false);
-		// In real app, would redirect or show success message
-	};
+	const { Form } = useFormedible<ComponentFormValues>({
+		schema: componentSchema,
+		fields: [
+			{ name: "name", type: "text", label: "Name" },
+			{ name: "description", type: "textarea", label: "Description", textareaConfig: { rows: 3 } },
+			{ name: "category", type: "select", label: "Category", options: categories },
+			{ name: "installCommand", type: "text", label: "Install Command", placeholder: "npx shadcn@latest add component-name" },
+			{ name: "githubUrl", type: "url", label: "GitHub URL", placeholder: "https://github.com/username/repo" },
+			{ name: "websiteUrl", type: "url", label: "Website URL", placeholder: "https://example.com" },
+			{ name: "status", type: "select", label: "Status", options: statuses },
+		],
+		formOptions: {
+			defaultValues: componentData,
+			onSubmit: async ({ value }) => {
+				// Simulate API call
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+				console.log("Component saved:", value);
+				// In real app, would redirect or show success message
+			},
+		},
+		submitLabel: "Save Changes",
+	});
 
 	return (
 		<Container>
@@ -114,7 +109,7 @@ export default async function EditComponentPage({
 							</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
-								<BreadcrumbPage>Edit {formData.name}</BreadcrumbPage>
+								<BreadcrumbPage>Edit {componentData.name}</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
@@ -124,210 +119,15 @@ export default async function EditComponentPage({
 					title="Edit Component"
 					subtitle="Update component information and settings"
 				>
-					<div className="flex items-center gap-2">
-						<Button variant="outline" asChild>
-							<Link href="/admin/components">
-								<ArrowLeft className="mr-2 h-4 w-4" />
-								Back to Components
-							</Link>
-						</Button>
-						<Button onClick={handleSave} disabled={isSaving}>
-							<Save className="mr-2 h-4 w-4" />
-							{isSaving ? "Saving..." : "Save Changes"}
-						</Button>
-					</div>
+					<Button variant="outline" asChild>
+						<Link href="/admin/components">
+							<ArrowLeft className="mr-2 h-4 w-4" />
+							Back to Components
+						</Link>
+					</Button>
 				</PageTitle>
 
-				<div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-					<div className="space-y-6 lg:col-span-2">
-						<Card>
-							<CardHeader>
-								<CardTitle>Basic Information</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="name">Name</Label>
-									<Input
-										id="name"
-										value={formData.name}
-										onChange={(e) => handleInputChange("name", e.target.value)}
-									/>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="description">Description</Label>
-									<Textarea
-										id="description"
-										value={formData.description}
-										onChange={(e) =>
-											handleInputChange("description", e.target.value)
-										}
-										rows={3}
-									/>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="category">Category</Label>
-									<Select
-										value={formData.category}
-										onValueChange={(value) =>
-											handleInputChange("category", value)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{categories.map((category) => (
-												<SelectItem key={category} value={category}>
-													{category}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="install-command">Install Command</Label>
-									<Input
-										id="install-command"
-										value={formData.installCommand}
-										onChange={(e) =>
-											handleInputChange("installCommand", e.target.value)
-										}
-										placeholder="npx shadcn@latest add component-name"
-									/>
-								</div>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Links</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="github-url">GitHub URL</Label>
-									<Input
-										id="github-url"
-										type="url"
-										value={formData.githubUrl}
-										onChange={(e) =>
-											handleInputChange("githubUrl", e.target.value)
-										}
-										placeholder="https://github.com/username/repo"
-									/>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="website-url">Website URL</Label>
-									<Input
-										id="website-url"
-										type="url"
-										value={formData.websiteUrl}
-										onChange={(e) =>
-											handleInputChange("websiteUrl", e.target.value)
-										}
-										placeholder="https://example.com"
-									/>
-								</div>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Tags</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="flex flex-wrap gap-2">
-									{formData.tags.map((tag) => (
-										<Badge
-											key={tag}
-											variant="secondary"
-											className="cursor-pointer"
-										>
-											{tag}
-											<X
-												className="ml-1 h-3 w-3"
-												onClick={() => removeTag(tag)}
-											/>
-										</Badge>
-									))}
-								</div>
-								<div className="flex gap-2">
-									<Input
-										placeholder="Add a tag..."
-										value={newTag}
-										onChange={(e) => setNewTag(e.target.value)}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") {
-												e.preventDefault();
-												addTag();
-											}
-										}}
-									/>
-									<Button onClick={addTag} variant="outline">
-										Add
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-					</div>
-
-					<div className="space-y-6">
-						<Card>
-							<CardHeader>
-								<CardTitle>Status</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<Select
-									value={formData.status}
-									onValueChange={(value) => handleInputChange("status", value)}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										{statuses.map((status) => (
-											<SelectItem key={status.value} value={status.value}>
-												{status.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Actions</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-2">
-								<Button
-									variant="outline"
-									className="w-full bg-transparent"
-									asChild
-								>
-									<Link href={`/components/${formData.id}`}>
-										View Component
-									</Link>
-								</Button>
-								<Button
-									variant="outline"
-									className="w-full bg-transparent"
-									asChild
-								>
-									<Link href={`/admin/components/${formData.id}/analytics`}>
-										View Analytics
-									</Link>
-								</Button>
-								<Button variant="destructive" className="w-full">
-									Delete Component
-								</Button>
-							</CardContent>
-						</Card>
-					</div>
-				</div>
+				<Form />
 			</div>
 		</Container>
 	);

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { ThemePreview } from "@/components/theme/theme-preview";
@@ -30,18 +31,48 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormedible } from "@/hooks/use-formedible";
 import { trpc, trpcClient } from "@/utils/trpc";
+
+const themeSchema = z.object({
+	name: z.string().min(1, "Theme name is required"),
+	tokens: z.string().min(1, "Tokens are required"),
+});
+
+type ThemeFormValues = z.infer<typeof themeSchema>;
 
 export default function ManageThemesPage() {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-	const [newTheme, setNewTheme] = useState({
-		name: "",
-		tokens: {},
-	});
 	const queryClient = useQueryClient();
+
+	// Create theme form
+	const { Form: CreateThemeForm, form } = useFormedible<ThemeFormValues>({
+		schema: themeSchema,
+		formOptions: {
+			defaultValues: { name: "", tokens: "" },
+			onSubmit: async ({ value }) => {
+				try {
+					// Parse tokens string to object
+					let tokens;
+					try {
+						tokens = JSON.parse(value.tokens);
+					} catch {
+						toast.error("Invalid JSON in tokens field");
+						return;
+					}
+					
+					await trpcClient.themes.create.mutate({ name: value.name, tokens });
+					queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
+					toast.success("Theme created successfully");
+					setIsCreateDialogOpen(false);
+					form.reset();
+				} catch (error) {
+					toast.error("Failed to create theme");
+				}
+			},
+		},
+	});
 
 	// Fetch themes
 	const {
@@ -49,23 +80,6 @@ export default function ManageThemesPage() {
 		isLoading,
 		error,
 	} = useQuery(trpc.themes.getAll.queryOptions());
-
-	// Create theme mutation
-	const createThemeMutation = useMutation({
-		mutationFn: async (data: { name: string; tokens: Record<string, any> }) => {
-			const result = await trpcClient.themes.create.mutate(data);
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
-			toast.success("Theme created successfully");
-			setIsCreateDialogOpen(false);
-			setNewTheme({ name: "", tokens: {} });
-		},
-		onError: () => {
-			toast.error("Failed to create theme");
-		},
-	});
 
 	// Delete theme mutation
 	const deleteThemeMutation = useMutation({
@@ -81,14 +95,6 @@ export default function ManageThemesPage() {
 			toast.error("Failed to delete theme");
 		},
 	});
-
-	const handleCreateTheme = () => {
-		if (!newTheme.name.trim()) {
-			toast.error("Theme name is required");
-			return;
-		}
-		createThemeMutation.mutate(newTheme);
-	};
 
 	const handleDeleteTheme = (id: string, name: string) => {
 		if (confirm(`Are you sure you want to delete "${name}"?`)) {
@@ -133,52 +139,42 @@ export default function ManageThemesPage() {
 									Create a new theme configuration for the registry.
 								</DialogDescription>
 							</DialogHeader>
-							<div className="space-y-4">
-								<div>
-									<Label htmlFor="theme-name">Theme Name</Label>
-									<Input
-										id="theme-name"
-										value={newTheme.name}
-										onChange={(e) =>
-											setNewTheme({ ...newTheme, name: e.target.value })
-										}
-										placeholder="e.g., Dark Purple"
-									/>
-								</div>
-								<div>
-									<Label htmlFor="theme-tokens">Theme Tokens (JSON)</Label>
-									<textarea
-										id="theme-tokens"
-										className="min-h-[200px] w-full rounded-md border p-3"
-										value={JSON.stringify(newTheme.tokens, null, 2)}
-										onChange={(e) => {
-											try {
-												const tokens = JSON.parse(e.target.value);
-												setNewTheme({ ...newTheme, tokens });
-											} catch {
-												// Invalid JSON, keep current state
-											}
-										}}
-										placeholder='{"primary": "#000000", "secondary": "#ffffff"}'
-									/>
-								</div>
-							</div>
-							<DialogFooter>
-								<Button
-									variant="outline"
-									onClick={() => setIsCreateDialogOpen(false)}
-								>
-									Cancel
-								</Button>
-								<Button
-									onClick={handleCreateTheme}
-									disabled={createThemeMutation.isPending}
-								>
-									{createThemeMutation.isPending
-										? "Creating..."
-										: "Create Theme"}
-								</Button>
-							</DialogFooter>
+							<CreateThemeForm className="space-y-4">
+								<form.Field name="name">
+									{(field) => (
+										<div className="space-y-2">
+											<label className="text-sm font-medium">Theme Name</label>
+											<input
+												className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder="e.g., Dark Purple"
+											/>
+											{field.state.meta.errors.length > 0 && (
+												<div className="text-sm text-destructive">{field.state.meta.errors[0]}</div>
+											)}
+										</div>
+									)}
+								</form.Field>
+								<form.Field name="tokens">
+									{(field) => (
+										<div className="space-y-2">
+											<label className="text-sm font-medium">Theme Tokens (JSON)</label>
+											<textarea
+												className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+												value={field.state.value}
+												onChange={(e) => field.handleChange(e.target.value)}
+												onBlur={field.handleBlur}
+												placeholder='{"primary": "#000000", "secondary": "#ffffff"}'
+											/>
+											{field.state.meta.errors.length > 0 && (
+												<div className="text-sm text-destructive">{field.state.meta.errors[0]}</div>
+											)}
+										</div>
+									)}
+								</form.Field>
+							</CreateThemeForm>
 						</DialogContent>
 					</Dialog>
 				</PageTitle>

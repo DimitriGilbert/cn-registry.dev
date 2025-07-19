@@ -1,298 +1,247 @@
 ################################################################################
-#
-# Library: Formedible
-# Purpose: Knowledge base for LLM to understand and generate code for the
-#          Formedible React hook.
-# Version: 0.1.0 (Updated with recent bug fixes and improvements)
-# Date: 2025-07-06
-#
+# Library: Formedible - LLM Knowledge Base
+# Version: 2.1 (Source-audited with examples)
+# Date: 2025-07-19
 ################################################################################
 
-### META
+### 🚨 CRITICAL REMINDERS FOR LLM AGENTS
 ---
-- **Library Name**: Formedible
-- **Description**: A powerful React hook that acts as a declarative wrapper around TanStack Form and shadcn/ui. It simplifies the creation of schema-driven forms.
-- **Core Technologies**: React, TanStack Form, Zod, shadcn/ui, TypeScript.
-- **Primary Goal**: To enable rapid development of complex, validated, and beautiful forms with minimal boilerplate by using a declarative configuration object.
+1.  **STATE ACCESS**: Form state (`isSubmitting`, `isValid`, `values`, etc.) is **NOT** a direct return value. Access it via the `form` object: `form.state.isSubmitting`, `form.state.isValid`.
+2.  **AUTO-RENDERING**: The `<Form />` component handles rendering, layout, and submission automatically. You do not need to manually create `<button type="submit">`.
+3.  **SCHEMA IS KING**: The Zod `schema` in `useFormedible` options drives validation. The `name` in `FieldConfig` MUST match a key in the Zod schema.
+4.  **MANUAL MODE**: To render fields manually, omit the `fields` array from options and use the returned `form` instance with your own components (e.g., `<form.Field>...`).
 
-### CORE CONCEPTS
+### 🚀 PRIMARY API: `useFormedible<TFormValues>(options)`
 ---
-1.  **Schema-Driven**: Forms are driven by a `Zod` schema, which provides validation and type inference automatically.
-2.  **Declarative API**: Define the entire form structure, including fields, pages, and validation, within a single configuration object passed to the `useFormedible` hook.
-3.  **Auto-Generation vs. Manual Rendering**:
-    - **Auto-Generation**: The library can render the entire form, including fields, buttons, and multi-page navigation, by simply rendering the returned `<Form />` component. This is the primary, high-level usage pattern.
-    - **Manual Rendering**: The library also provides the raw `form` instance from TanStack Form, allowing for full, granular control over rendering each field and component, just like using TanStack Form directly. This provides an escape hatch for maximum flexibility.
-4.  **Component-Based**: Built on top of shadcn/ui components, ensuring accessible and stylistically consistent UI elements out of the box.
-5.  **Extensibility**: Every part of the form is customizable. Default field components can be replaced, and custom wrappers can be added for styling or animation.
-6.  **Multi-Page Logic**: Built-in state management for multi-page forms (wizards), including page state, navigation, and progress indicators.
-7.  **Conditional Logic**: Fields can be dynamically shown or hidden based on the current state of the form's values.
+- **Description**: A declarative hook wrapping TanStack Form and shadcn/ui for rapid, schema-driven form development.
+- **Returns**: `{ form, Form, ...pagination }`
+    - **`form`**: The raw TanStack Form instance. Use for manual rendering or accessing the full TanStack Form API (`form.state`, `form.setFieldValue`, etc.).
+    - **`Form`**: A React component that auto-renders the entire form UI.
+    - **Pagination**:
+        - `currentPage: number`
+        - `totalPages: number`
+        - `goToNextPage(): void`
+        - `goToPreviousPage(): void`
+        - `setCurrentPageWithValidation(page: number): void`
+        - `isFirstPage: boolean`
+        - `isLastPage: boolean`
+        - `progressValue: number` (0-100)
 
-### INSTALLATION
+### ⚙️ CONFIGURATION: `UseFormedibleOptions<TFormValues>`
 ---
-- **Method**: via shadcn/ui CLI. This is not a standard npm package installation; it adds the source files directly to the user's project.
-- **Command**:
-  ```bash
-  npx shadcn@latest add https://formedible.dev/r/use-formedible.json
-  ```
-- **Result**: Adds the following files to the project:
-  - `hooks/use-formedible.tsx`
-  - `components/fields/*.tsx` (all standard field components)
+**Core:**
+- `fields?: FieldConfig[]` - Array of field definitions for auto-rendering. Omit for manual mode.
+- `schema?: z.ZodSchema<TFormValues>` - Zod schema for validation and type inference.
+- `formOptions?: Partial<TanStackFormOptions>` - Pass-through options for TanStack Form.
+  - `defaultValues: TFormValues` - **Required**.
+  - `onSubmit: (props: { value: TFormValues; formApi: FormedibleFormApi<TFormValues> }) => void | Promise<void>` - **Required**.
+- `disabled?: boolean` - Disables the entire form.
+- `loading?: boolean` - Puts the form in a loading state.
 
-### PRIMARY API: `useFormedible<TFormValues>(options)`
+**UI & Layout:**
+- `submitLabel?: string` - Text for the final submit button.
+- `nextLabel?`, `previousLabel?`: string - Labels for multi-page navigation.
+- `formClassName?: string`, `fieldClassName?: string` - Custom CSS classes.
+- `showSubmitButton?: boolean` - (Default: `true`) Toggle visibility of submit/next buttons.
+- `layout?: { type: "grid" | "flex" | ...; columns?: number; gap?: string; }` - Configure form-level layout.
+- `tabs?: Array<{ id: string; label: string; description?: string; }>` - Enables a tab-based layout.
+
+**Multi-Page:**
+- `pages?: PageConfig[]` - `Array<{ page: number; title?: string; description?: string; }>`
+- `progress?: ProgressConfig` - ` { showSteps?: boolean; showPercentage?: boolean; }`
+- `onPageChange?: (page: number, direction: "next" | "previous") => void`
+
+**Advanced Features:**
+- `conditionalSections?: Array<{ condition: (values: TFormValues) => boolean; fields: string[]; }>`
+- `crossFieldValidation?: Array<{ fields: string[]; validator: (values: Partial<TFormValues>) => string | null; message: string; }>`
+- `asyncValidation?: { [fieldName: string]: { validator: (value: any) => Promise<string | null>; debounceMs?: number; } }`
+- `persistence?: { key: string; storage: "localStorage" | "sessionStorage"; restoreOnMount?: boolean; }`
+- `analytics?: { onFieldFocus?: ..., onFormAbandon?: ..., ... }`
+
+**Extensibility:**
+- `defaultComponents?: { [fieldType: string]: React.ComponentType<FieldComponentProps> }`
+- `globalWrapper?: React.ComponentType<{ children: React.ReactNode; field: FieldConfig }>`
+
+### 🧩 INTERFACE: `FieldConfig`
 ---
-This is the main hook and entry point for the library.
+**Core:**
+- `name: string` - **Required**. Key in `TFormValues`, must match schema.
+- `type: string` - **Required**. See "Supported Field Types".
+- `label?: string`, `placeholder?: string`, `description?: string`
+- `conditional?: (values: TFormValues) => boolean`
 
-- **Generic Parameter**: `<TFormValues>`: The TypeScript type representing the form's data structure. It is typically inferred from the Zod schema using `z.infer<typeof mySchema>`.
+**Layout & Structure:**
+- `page?: number` - Page number for multi-page forms.
+- `tab?: string` - Associates field with a tab `id`.
+- `group?: string` - Groups fields visually under a sub-heading.
+- `section?: { title?: string; description?: string; collapsible?: boolean; defaultExpanded?: boolean; }`
 
-- **Returns**: An object containing:
-  - `form`: The raw TanStack Form instance. Use this for manual rendering and accessing the full TanStack Form API.
-  - `Form`: A React component that, when rendered (`<Form />`), automatically builds the entire form based on the provided options.
-  - `currentPage`: `number`. The current page number in a multi-page form.
-  - `totalPages`: `number`. The total number of pages.
-  - `goToNextPage()`: `() => void`. Function to navigate to the next page.
-  - `goToPreviousPage()`: `() => void`. Function to navigate to the previous page.
-  - `setCurrentPage(page: number)`: `(page: number) => void`. Function to jump to a specific page.
-  - `isFirstPage`: `boolean`. True if on the first page.
-  - `isLastPage`: `boolean`. True if on the last page.
-  - `progressValue`: `number`. The completion percentage (0-100) for multi-page forms.
-  - `isSubmitting`: `boolean`. True if the form is currently submitting.
-  - `isValid`: `boolean`. True if the form is currently valid.
-  - `isDirty`: `boolean`. True if the form has been modified.
-  - `values`: `TFormValues`. The current form values.
-
-### CONFIGURATION: `UseFormedibleOptions<TFormValues>`
----
-This is the main configuration object passed to the hook.
-
-**Core Options:**
-- **`fields?: FieldConfig[]`**: An array defining each field for auto-generation. If omitted, manual rendering is assumed.
-- **`schema?: z.ZodSchema<TFormValues>`**: The Zod schema for the form. Enables automatic validation.
-- **`formOptions?: { defaultValues: TFormValues; onSubmit: (props: { value: TFormValues; formApi: any }) => any | Promise<any>; onSubmitInvalid?: (props: { value: TFormValues; formApi: any }) => void; onChange?: (props: { value: TFormValues; formApi: any }) => void; onBlur?: (props: { value: TFormValues; formApi: any }) => void; onFocus?: (props: { value: TFormValues; formApi: any }) => void; onReset?: (props: { value: TFormValues; formApi: any }) => void; asyncDebounceMs?: number; canSubmitWhenInvalid?: boolean; validators?: { onChange?: z.ZodSchema<any>; onChangeAsync?: z.ZodSchema<any>; onChangeAsyncDebounceMs?: number; onBlur?: z.ZodSchema<any>; onBlurAsync?: z.ZodSchema<any>; onBlurAsyncDebounceMs?: number; onSubmit?: z.ZodSchema<any>; onSubmitAsync?: z.ZodSchema<any>; }; }`**: TanStack Form options with required `defaultValues` and `onSubmit`.
-
-**UI Customization:**
-- **`submitLabel?: string`**: Text for the submit button. Default: `"Submit"`.
-- **`nextLabel?: string`**: Text for the "Next" button in multi-page forms. Default: `"Next"`.
-- **`previousLabel?: string`**: Text for the "Previous" button in multi-page forms. Default: `"Previous"`.
-- **`formClassName?: string`**: CSS classes for the root `<form>` element.
-- **`fieldClassName?: string`**: CSS classes applied to the wrapper of each auto-generated field.
-
-**Multi-page Support:**
-- **`pages?: PageConfig[]`**: Defines titles and descriptions for each page in a multi-page form.
-- **`progress?: ProgressConfig`**: Configures the progress indicator for multi-page forms.
-- **`onPageChange?: (page: number, direction: 'next' | 'previous') => void`**: Callback function executed when the page changes.
-
-**Component Overrides:**
-- **`defaultComponents?: { [fieldType: string]: React.ComponentType<any> }`**: Override the default component for a given field `type` globally.
-- **`globalWrapper?: React.ComponentType<{ children: React.ReactNode; field: FieldConfig }>`**: A React component to wrap around *every* field in the form.
-
-**Form Behavior:**
-- **`autoSubmitOnChange?: boolean`**: Auto-submit form on value change.
-- **`autoSubmitDebounceMs?: number`**: Debounce time for auto-submit.
-- **`disabled?: boolean`**: Disable entire form.
-- **`loading?: boolean`**: Show loading state.
-- **`resetOnSubmitSuccess?: boolean`**: Reset form after successful submit.
-- **`showSubmitButton?: boolean`**: Show/hide submit button.
-
-**Form-level Event Handlers:**
-- **`onFormReset?: (e: React.FormEvent, formApi: any) => void`**: Form reset handler.
-- **`onFormInput?: (e: React.FormEvent, formApi: any) => void`**: Form input handler.
-- **`onFormInvalid?: (e: React.FormEvent, formApi: any) => void`**: Form invalid handler.
-- **`onFormKeyDown?: (e: React.KeyboardEvent, formApi: any) => void`**: Form keydown handler.
-- **`onFormKeyUp?: (e: React.KeyboardEvent, formApi: any) => void`**: Form keyup handler.
-- **`onFormFocus?: (e: React.FocusEvent, formApi: any) => void`**: Form focus handler.
-- **`onFormBlur?: (e: React.FocusEvent, formApi: any) => void`**: Form blur handler.
-
-### INTERFACE: `FieldConfig`
----
-Defines a single field within the `fields` array.
-
-**Core Properties:**
-- **`name: string`**: (Required) The key in the form values object. Must match the Zod schema.
-- **`type: string`**: (Required) The type of field to render. See "Supported Field Types".
-- **`label?: string`**: The text for the `<Label>` component.
-- **`placeholder?: string`**: The placeholder text for the input.
-- **`description?: string`**: Help text displayed below the label.
-
-**Basic Options:**
-- **`options?: string[] | Array<{value: string; label: string}>`**: For `select`, `radio`, `multiSelect` types.
-- **`min?: number`**: For `number`, `date`, `slider` types.
-- **`max?: number`**: For `number`, `date`, `slider` types.
-- **`step?: number`**: For `number`, `slider` types.
-- **`accept?: string`**: For `file` type (e.g., "image/*", ".pdf").
-- **`multiple?: boolean`**: For `file`, `select` types.
-
-**Advanced Options:**
-- **`component?: React.ComponentType<any>`**: A custom React component to render this specific field, overriding the default for its `type`.
-- **`wrapper?: React.ComponentType<{ children: React.ReactNode; field: FieldConfig }>`**: A custom wrapper component for this specific field.
-- **`page?: number`**: The page number this field should appear on in a multi-page form.
-- **`validation?: z.ZodSchema<any>`**: Field-specific validation schema.
-- **`conditional?: (values: TFormValues) => boolean`**: A function that receives the current form values and returns `true` if the field should be rendered.
-- **`dependencies?: string[]`**: Array of field names this field depends on.
-
-**Array Field Configuration:**
-- **`arrayConfig?: { itemType: string; itemLabel?: string; itemPlaceholder?: string; itemValidation?: z.ZodSchema<any>; minItems?: number; maxItems?: number; addButtonLabel?: string; removeButtonLabel?: string; itemComponent?: React.ComponentType<any>; sortable?: boolean; defaultValue?: any; itemProps?: Record<string, unknown>; }`**: Configuration for array fields. The `sortable` option enables drag-and-drop reordering of items.
-
-**Help and Tooltip Configuration:**
-- **`help?: { text?: string; tooltip?: string; position?: 'top' | 'bottom' | 'left' | 'right'; link?: { url: string; text: string }; }`**: Help text and tooltip configuration.
-
-**Inline Validation Configuration:**
-- **`inlineValidation?: { enabled?: boolean; debounceMs?: number; showSuccess?: boolean; asyncValidator?: (value: any) => Promise<string | null>; }`**: Inline validation settings.
-
-**Field Grouping and Sections:**
-- **`group?: string`**: Group name for organizing fields.
-- **`section?: { title: string; description?: string; collapsible?: boolean; defaultExpanded?: boolean; }`**: Section configuration for organizing fields.
+**Options & Data:**
+- `options?: Array<{value: string; label: string}> | string[] | (values: TFormValues) => Array<{...}>` - For `select`, `radio`, `multiSelect`, `autocomplete`.
 
 **Field-Specific Configurations:**
-- **`ratingConfig?: { max?: number; allowHalf?: boolean; icon?: 'star' | 'heart' | 'thumbs'; size?: 'sm' | 'md' | 'lg'; showValue?: boolean; }`**: Rating field configuration.
-- **`phoneConfig?: { defaultCountry?: string; format?: 'national' | 'international'; allowedCountries?: string[]; placeholder?: string; }`**: Phone field configuration.
-- **`colorConfig?: { format?: 'hex' | 'rgb' | 'hsl'; showPreview?: boolean; presetColors?: string[]; allowCustom?: boolean; }`**: Color picker configuration.
-- **`multiSelectConfig?: { maxSelections?: number; searchable?: boolean; creatable?: boolean; placeholder?: string; noOptionsText?: string; loadingText?: string; }`**: Multi-select configuration.
+- `arrayConfig?: { itemType: string; ...; sortable?: boolean; objectConfig?: { fields: FieldConfig[]; ... } }`
+- `objectConfig?: { fields: FieldConfig[]; ... }`
+- `autocompleteConfig?: { asyncOptions?: (query: string) => Promise<...>; ... }`
+- `dateConfig?: { minDate?: Date; showTime?: boolean; ... }`
+- `fileConfig?: { multiple?: boolean; maxSize?: number; ... }`
+- `maskedInputConfig?: { mask: string | ((value: string) => string); ... }`
+- `multiSelectConfig?: { searchable?: boolean; creatable?: boolean; ... }`
+- `passwordConfig?: { showToggle?: boolean; strengthMeter?: boolean; ... }`
+- `phoneConfig?: { defaultCountry?: string; ... }`
+- `sliderConfig?: { min?: number; max?: number; step?: number; ... }`
+- `textareaConfig?: { rows?: number; maxLength?: number; showWordCount?: boolean; ... }`
 
-### INTERFACE: `BaseFieldProps`
+### 📋 SUPPORTED FIELD TYPES
 ---
-The props interface that all field components (default and custom) must adhere to.
+`text`, `email`, `password`, `url`, `textarea`, `select`, `multiSelect`, `checkbox`, `switch`, `radio`, `number`, `date`, `slider`, `rating`, `phone`, `colorPicker`, `file`, `array`, `object`, `autocomplete`, `duration`, `location`, `masked`.
 
-- **`fieldApi: AnyFieldApi`**: The field API object from TanStack Form. Contains `name`, `state`, `handleChange`, `handleBlur`, etc.
-- **`label?: string`**: Field label.
-- **`description?: string`**: Field help text.
-- **`placeholder?: string`**: Field placeholder.
-- **`inputClassName?: string`**: CSS classes for the core input element.
-- **`labelClassName?: string`**: CSS classes for the label element.
-- **`wrapperClassName?: string`**: CSS classes for the field's outermost wrapper div.
-
-### SUPPORTED FIELD TYPES
 ---
-| Type          | Default Component      | Description                                    |
-|---------------|------------------------|------------------------------------------------|
-| `text`        | `TextField`            | Standard text input.                           |
-| `email`       | `TextField`            | Text input with `type="email"`.               |
-| `password`    | `TextField`            | Text input with `type="password"`.            |
-| `url`         | `TextField`            | Text input with `type="url"`.                 |
-| `textarea`    | `TextareaField`        | Multi-line text area.                         |
-| `select`      | `SelectField`          | Dropdown menu.                                |
-| `multiSelect` | `MultiSelectField`     | Multiple selection dropdown with search.      |
-| `checkbox`    | `CheckboxField`        | A single checkbox for boolean values.         |
-| `switch`      | `SwitchField`          | A toggle switch for boolean values.           |
-| `radio`       | `RadioField`           | Radio button group for single selection.      |
-| `number`      | `NumberField`          | Input with `type="number"`.                   |
-| `date`        | `DateField`            | Date picker with a popover calendar.          |
-| `slider`      | `SliderField`          | A range slider.                               |
-| `rating`      | `RatingField`          | Star rating component.                        |
-| `phone`       | `PhoneField`           | International phone number input.             |
-| `colorPicker` | `ColorPickerField`     | Color picker with preview.                   |
-| `file`        | `FileUploadField`      | File input with drag & drop.                 |
-| `array`       | `ArrayField`           | Dynamic array of fields with add/remove/sort.|
-| `autocomplete`| `AutocompleteField`    | Text input with autocomplete suggestions.    |
-| `durationPicker`| `DurationPickerField`| Time duration picker (hours/minutes/seconds).|
-| `locationPicker`| `LocationPickerField`| Location picker with map integration.        |
-| `maskedInput` | `MaskedInputField`     | Text input with formatting masks.            |
-
-### USAGE PATTERNS
+### 📚 USAGE PATTERNS & EXAMPLES
 ---
 
-#### Pattern 1: Simple Auto-Generated Form
-This is the most common and straightforward use case.
+#### Pattern 1: Basic Auto-Generated Form
+The most common use case. Define a schema and fields, then render `<Form />`.
 
 ```tsx
-// 1. Define schema and types
-const formSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-});
-type FormValues = z.infer<typeof formSchema>;
+import { useFormedible } from "@/hooks/use-formedible";
+import { z } from "zod";
 
-// 2. Use the hook
-const { Form } = useFormedible<FormValues>({
-  schema: formSchema,
-  fields: [
-    { name: "name", type: "text", label: "Name" },
-    { name: "email", type: "email", label: "Email" },
-  ],
-  formOptions: {
-    defaultValues: { name: "", email: "" },
-    onSubmit: async ({ value }) => {
-      console.log("Submitted:", value);
+const contactSchema = z.object({
+  name: z.string().min(2, "Name is too short"),
+  email: z.string().email("Invalid email"),
+});
+
+export function ContactForm() {
+  const { Form } = useFormedible({
+    schema: contactSchema,
+    fields: [
+      { name: "name", type: "text", label: "Full Name", placeholder: "John Doe" },
+      { name: "email", type: "email", label: "Email", placeholder: "john@example.com" },
+    ],
+    formOptions: {
+      defaultValues: { name: "", email: "" },
+      onSubmit: async ({ value }) => {
+        console.log("Form submitted:", value);
+      },
     },
-  },
-});
+  });
 
-// 3. Render the component
-return <Form />;
+  return <Form />;
+}
 ```
 
-#### Pattern 2: Manual Field Rendering
-Use this for maximum layout control or integration with existing complex components.
-
-```tsx
-// 1. Define schema and types (same as above)
-
-// 2. Use the hook, omitting the `fields` array
-const { form, Form } = useFormedible<FormValues>({
-  schema: formSchema,
-  formOptions: {
-    defaultValues: { name: "", email: "" },
-    onSubmit: async ({ value }) => {
-      console.log("Submitted:", value);
-    },
-  },
-});
-
-// 3. Render manually, using the `form` instance
-return (
-  <Form> {/* The <Form> component still acts as a useful <form> wrapper with onSubmit handling */}
-    <form.Field name="name">
-      {(field) => (
-        <TextField fieldApi={field} label="Name" placeholder="Your Name" />
-      )}
-    </form.Field>
-    <form.Field name="email">
-      {(field) => (
-        <TextField fieldApi={field} type="email" label="Email" placeholder="your@email.com" />
-      )}
-    </form.Field>
-    <Button type="submit">Submit</Button>
-  </Form>
-);
-```
-
-#### Pattern 3: Multi-Page Form
-Configure `pages` and add the `page` property to fields.
+#### Pattern 2: Multi-Page Wizard
+Use the `page` property in `FieldConfig` and define `pages` in the main options.
 
 ```tsx
 const { Form } = useFormedible({
   schema: registrationSchema,
   fields: [
+    // Page 1
     { name: "firstName", type: "text", label: "First Name", page: 1 },
     { name: "lastName", type: "text", label: "Last Name", page: 1 },
-    { name: "email", type: "email", label: "Email", page: 2 },
+    // Page 2
+    { name: "email", type: "email", label: "Email Address", page: 2 },
+    { name: "phone", type: "phone", label: "Phone Number", page: 2 },
   ],
   pages: [
-    { page: 1, title: "Personal Info" },
-    { page: 2, title: "Contact Details" },
+    { page: 1, title: "Personal Information", description: "Tell us about yourself" },
+    { page: 2, title: "Contact Details", description: "How can we reach you?" },
   ],
-  progress: { showSteps: true },
-  formOptions: { /* ... */ },
+  progress: { showSteps: true, showPercentage: true },
+  persistence: { key: "reg-form", storage: "localStorage", restoreOnMount: true },
+  formOptions: {
+    defaultValues: { firstName: "", lastName: "", email: "", phone: "" },
+    onSubmit: async ({ value }) => console.log(value),
+  },
 });
 
 return <Form />;
 ```
 
-#### Pattern 4: Custom Field Component
-Override a specific field's component.
+#### Pattern 3: Conditional Fields
+Use the `conditional` property on a field to show/hide it based on other form values.
 
 ```tsx
-// Assume CustomTextField is a valid component implementing BaseFieldProps
 const { Form } = useFormedible({
+  schema: dynamicSchema,
   fields: [
+    { name: "userType", type: "select", label: "User Type", options: ["individual", "business"] },
+    // Show only for business users
     {
-      name: "email",
-      type: "email",
-      label: "Email",
-      component: CustomTextField, // Override for this instance
+      name: "companyName",
+      type: "text",
+      label: "Company Name",
+      conditional: (values) => values.userType === "business",
+    },
+  ],
+  formOptions: {
+    defaultValues: { userType: "individual", companyName: "" },
+    onSubmit: async ({ value }) => console.log(value),
+  },
+});
+
+return <Form />;
+```
+
+#### Pattern 4: Dynamic Options
+Provide a function to the `options` property to make selections dependent on other form values.
+
+```tsx
+const { Form } = useFormedible({
+  schema: locationSchema,
+  fields: [
+    { name: "country", type: "select", label: "Country", options: ["us", "ca"] },
+    {
+      name: "state",
+      type: "select",
+      label: "State/Province",
+      conditional: (values) => !!values.country,
+      options: (values) => { // This function re-runs when dependencies change
+        if (values.country === "us") return ["California", "New York"];
+        if (values.country === "ca") return ["Ontario", "Quebec"];
+        return [];
+      },
     },
   ],
   formOptions: { /* ... */ },
 });
+```
 
-return <Form />;
+#### Pattern 5: Manual Field Rendering
+For maximum layout control, omit the `fields` array and use the `form` instance directly. The `<Form>` component still provides the `<form>` element and `onSubmit` handling.
+
+```tsx
+import { TextField } from "@/components/formedible/fields/text-field"; // Import a field component
+import { Button } from "@/components/ui/button";
+
+const { form, Form } = useFormedible<FormValues>({
+  schema: formSchema,
+  formOptions: {
+    defaultValues: { name: "" },
+    onSubmit: async ({ value }) => console.log("Submitted:", value),
+  },
+});
+
+return (
+  <Form>
+    <form.Field name="name">
+      {(fieldApi) => (
+        <TextField
+          fieldApi={fieldApi}
+          label="Name"
+          placeholder="Your Name"
+        />
+      )}
+    </form.Field>
+    <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+      {([canSubmit, isSubmitting]) => (
+        <Button type="submit" disabled={!canSubmit || isSubmitting}>
+          {isSubmitting ? "..." : "Submit"}
+        </Button>
+      )}
+    </form.Subscribe>
+  </Form>
+);
 ```

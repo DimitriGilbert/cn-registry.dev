@@ -3,15 +3,33 @@
 import { useChat } from "@ai-sdk/react";
 import { Send } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useFormedible } from "@/hooks/use-formedible";
+
+const chatSchema = z.object({
+	prompt: z.string().min(1, "Message cannot be empty"),
+});
+
+type ChatFormValues = z.infer<typeof chatSchema>;
 
 export default function AIPage() {
-	const { messages, input, handleInputChange, handleSubmit } = useChat({
+	const { messages, append } = useChat({
 		api: `${process.env.NEXT_PUBLIC_SERVER_URL}/ai`,
 	});
 
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	const { Form, form } = useFormedible<ChatFormValues>({
+		schema: chatSchema,
+		formOptions: {
+			defaultValues: { prompt: "" },
+			onSubmit: async ({ value, formApi }) => {
+				await append({ role: "user", content: value.prompt });
+				formApi.reset();
+			},
+		},
+	});
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,23 +62,25 @@ export default function AIPage() {
 				<div ref={messagesEndRef} />
 			</div>
 
-			<form
-				onSubmit={handleSubmit}
-				className="flex w-full items-center space-x-2 border-t pt-2"
-			>
-				<Input
-					name="prompt"
-					value={input}
-					onChange={handleInputChange}
-					placeholder="Type your message..."
-					className="flex-1"
-					autoComplete="off"
-					autoFocus
-				/>
+			<Form className="flex w-full items-center space-x-2 border-t pt-2">
+				<form.Field name="prompt">
+					{(field) => (
+						<input
+							className="flex-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+							type="text"
+							placeholder="Type your message..."
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							onBlur={field.handleBlur}
+							autoComplete="off"
+							autoFocus
+						/>
+					)}
+				</form.Field>
 				<Button type="submit" size="icon">
 					<Send size={18} />
 				</Button>
-			</form>
+			</Form>
 		</div>
 	);
 }

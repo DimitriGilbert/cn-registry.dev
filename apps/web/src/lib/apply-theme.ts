@@ -23,7 +23,6 @@ export function applyRegistryTheme(theme: any, mode: "light" | "dark", element: 
 	const vars = theme.cssVars[mode] || theme.cssVars.light;
 	if (vars) {
 		Object.entries(vars).forEach(([key, value]) => {
-			// Keep original color format - OKLCH, HSL, etc.
 			element.style.setProperty(`--${key}`, String(value));
 		});
 	}

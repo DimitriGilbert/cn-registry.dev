@@ -25,6 +25,15 @@ export function ThemeButtons() {
 		if (stored) setCurrentTheme(stored);
 	}, []);
 
+	useEffect(() => {
+		if (currentTheme !== "default" && availableThemes.length > 0) {
+			const theme = availableThemes.find(t => t.name === currentTheme);
+			if (theme?.cssVars) {
+				applyRegistryTheme(theme, themeState.currentMode);
+			}
+		}
+	}, [themeState.currentMode, availableThemes, currentTheme]);
+
 	const loadThemes = async () => {
 		try {
 			const response = await fetch("/tweakcn-registry.json");

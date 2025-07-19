@@ -51,9 +51,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 	}, []);
 
 	useEffect(() => {
-		applyThemeToElement(themeState);
+		// Only apply default theme if no custom theme preset is active
+		const currentPreset = localStorage.getItem("theme-preset");
+		if (!currentPreset || currentPreset === "default") {
+			applyThemeToElement(themeState);
+		}
 		localStorage.setItem("theme", JSON.stringify(themeState));
-	}, [themeState]);
+	}, [themeState.currentMode, themeState.selectedPreset]);
 
 	const setTheme = (mode: ThemeMode) => {
 		setThemeState(prev => ({ ...prev, currentMode: mode }));

@@ -31,6 +31,16 @@ export function ThemeSelector() {
 		loadThemes();
 	}, []);
 
+	useEffect(() => {
+		const currentPreset = localStorage.getItem("theme-preset");
+		if (currentPreset && currentPreset !== "default" && availableThemes.length > 0) {
+			const theme = availableThemes.find(t => t.name === currentPreset);
+			if (theme?.cssVars) {
+				applyRegistryTheme(theme, themeState.currentMode);
+			}
+		}
+	}, [themeState.currentMode, availableThemes]);
+
 	const loadThemes = async () => {
 		try {
 			const response = await fetch("/tweakcn-registry.json");
@@ -57,27 +67,17 @@ export function ThemeSelector() {
 	};
 
 	const applyThemePreset = (themeName: string) => {
-		console.log("Applying theme:", themeName);
-		
 		if (themeName === "default") {
+			localStorage.removeItem("theme-preset");
 			location.reload();
 			return;
 		}
 		
 		const theme = availableThemes.find(t => t.name === themeName);
-		console.log("Found theme:", theme);
 		
 		if (theme?.cssVars) {
 			applyRegistryTheme(theme, themeState.currentMode);
 			localStorage.setItem("theme-preset", themeName);
-			console.log("Applied theme successfully");
-			
-			// Force a style recalculation
-			document.documentElement.style.display = 'none';
-			document.documentElement.offsetHeight;
-			document.documentElement.style.display = '';
-		} else {
-			console.error("No cssVars found for theme:", themeName);
 		}
 	};
 

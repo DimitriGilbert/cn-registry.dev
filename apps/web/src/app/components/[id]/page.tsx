@@ -140,8 +140,10 @@ export default function ComponentDetailPage({
 						</p>
 						<Button asChild>
 							<Link href="/components">
-								<ArrowLeft className="mr-2 h-4 w-4" />
-								Back to Components
+								<span className="flex items-center">
+									<ArrowLeft className="mr-2 h-4 w-4" />
+									Back to Components
+								</span>
 							</Link>
 						</Button>
 					</div>

@@ -152,8 +152,10 @@ export default function ManageToolsPage() {
 				>
 					<Button asChild>
 						<Link href="/admin/tools/new">
-							<Plus className="mr-2 h-4 w-4" />
-							Add Tool
+							<span className="flex items-center">
+								<Plus className="mr-2 h-4 w-4" />
+								Add Tool
+							</span>
 						</Link>
 					</Button>
 				</PageTitle>

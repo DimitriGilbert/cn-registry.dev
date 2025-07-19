@@ -136,8 +136,10 @@ export default function ToolDetailPage({
 						</p>
 						<Button asChild>
 							<Link href="/tools">
-								<ArrowLeft className="mr-2 h-4 w-4" />
-								Back to Tools
+								<span className="flex items-center">
+									<ArrowLeft className="mr-2 h-4 w-4" />
+									Back to Tools
+								</span>
 							</Link>
 						</Button>
 					</div>

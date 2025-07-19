@@ -1,15 +1,16 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import type React from 'react';
-import './globals.css';
-import { AppShell } from '@/components/layout/app-shell';
-import Providers from '@/components/providers';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import type React from "react";
+import "./globals.css";
+import { AppShell } from "@/components/layout/app-shell";
+import Providers from "@/components/providers";
+import { ThemeScript } from "@/components/theme-script";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-	title: 'cn-registry - shadcn/ui Component Registry',
-	description: 'Discover and share shadcn/ui components and developer tools',
+	title: "cn-registry - shadcn/ui Component Registry",
+	description: "Discover and share shadcn/ui components and developer tools",
 };
 
 export default function RootLayout({
@@ -18,7 +19,10 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
+			<head>
+				<ThemeScript />
+			</head>
 			<body className={inter.className}>
 				<Providers>
 					<AppShell>{children}</AppShell>

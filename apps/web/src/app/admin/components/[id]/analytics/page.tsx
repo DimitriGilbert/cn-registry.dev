@@ -135,8 +135,10 @@ export default async function ComponentAnalyticsPage({
 						<Badge variant="secondary">{componentData.category}</Badge>
 						<Button variant="outline" asChild>
 							<Link href="/admin/components">
-								<ArrowLeft className="mr-2 h-4 w-4" />
-								Back to Components
+								<span className="flex items-center">
+									<ArrowLeft className="mr-2 h-4 w-4" />
+									Back to Components
+								</span>
 							</Link>
 						</Button>
 					</div>

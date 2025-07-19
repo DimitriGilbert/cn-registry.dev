@@ -9,6 +9,7 @@ import { SearchBar } from "@/components/features/search-bar";
 import { ToolCard } from "@/components/features/tool-card";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
+import { ThemeButtons } from "@/components/theme-buttons";
 import { Button } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +66,12 @@ export default function HomePage() {
 					</div>
 				</div>
 
+				{/* Theme Buttons */}
+				<div className="mb-16 text-center">
+					<h3 className="mb-6 font-bold text-2xl">Elevate Your Design Instantly</h3>
+					<ThemeButtons />
+				</div>
+
 				{/* Latest Components */}
 				<section className="mb-16">
 					<div className="mb-6 flex items-center justify-between">
@@ -73,9 +80,11 @@ export default function HomePage() {
 							<h2 className="font-bold text-2xl">Latest Components</h2>
 						</div>
 						<Button variant="outline" asChild>
-							<Link href="/components" className="flex items-center gap-2">
-								View All
-								<ArrowRight className="h-4 w-4" />
+							<Link href="/components">
+								<span className="flex items-center gap-2">
+									View All
+									<ArrowRight className="h-4 w-4" />
+								</span>
 							</Link>
 						</Button>
 					</div>
@@ -119,12 +128,11 @@ export default function HomePage() {
 							<h2 className="font-bold text-2xl">Popular Components</h2>
 						</div>
 						<Button variant="outline" asChild>
-							<Link
-								href="/components?sort=stars"
-								className="flex items-center gap-2"
-							>
-								View All
-								<ArrowRight className="h-4 w-4" />
+							<Link href="/components?sort=stars">
+								<span className="flex items-center gap-2">
+									View All
+									<ArrowRight className="h-4 w-4" />
+								</span>
 							</Link>
 						</Button>
 					</div>
@@ -165,9 +173,11 @@ export default function HomePage() {
 							<h2 className="font-bold text-2xl">Featured Tools</h2>
 						</div>
 						<Button variant="outline" asChild>
-							<Link href="/tools" className="flex items-center gap-2">
-								View All
-								<ArrowRight className="h-4 w-4" />
+							<Link href="/tools">
+								<span className="flex items-center gap-2">
+									View All
+									<ArrowRight className="h-4 w-4" />
+								</span>
 							</Link>
 						</Button>
 					</div>

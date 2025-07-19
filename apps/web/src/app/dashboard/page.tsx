@@ -107,8 +107,10 @@ export default function Dashboard() {
 				>
 					<Button asChild>
 						<Link href="/components">
-							<Plus className="mr-2 h-4 w-4" />
-							Browse Components
+							<span className="flex items-center">
+								<Plus className="mr-2 h-4 w-4" />
+								Browse Components
+							</span>
 						</Link>
 					</Button>
 				</PageTitle>

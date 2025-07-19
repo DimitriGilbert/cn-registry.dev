@@ -61,7 +61,7 @@ export default function ManageThemesPage() {
 						toast.error("Invalid JSON in tokens field");
 						return;
 					}
-					
+
 					await trpcClient.themes.create.mutate({ name: value.name, tokens });
 					queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
 					toast.success("Theme created successfully");
@@ -143,16 +143,18 @@ export default function ManageThemesPage() {
 								<form.Field name="name">
 									{(field) => (
 										<div className="space-y-2">
-											<label className="text-sm font-medium">Theme Name</label>
+											<label className="font-medium text-sm">Theme Name</label>
 											<input
-												className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+												className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
 												onBlur={field.handleBlur}
 												placeholder="e.g., Dark Purple"
 											/>
 											{field.state.meta.errors.length > 0 && (
-												<div className="text-sm text-destructive">{field.state.meta.errors[0]}</div>
+												<div className="text-destructive text-sm">
+													{field.state.meta.errors[0]}
+												</div>
 											)}
 										</div>
 									)}
@@ -160,7 +162,9 @@ export default function ManageThemesPage() {
 								<form.Field name="tokens">
 									{(field) => (
 										<div className="space-y-2">
-											<label className="text-sm font-medium">Theme Tokens (JSON)</label>
+											<label className="font-medium text-sm">
+												Theme Tokens (JSON)
+											</label>
 											<textarea
 												className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												value={field.state.value}
@@ -169,7 +173,9 @@ export default function ManageThemesPage() {
 												placeholder='{"primary": "#000000", "secondary": "#ffffff"}'
 											/>
 											{field.state.meta.errors.length > 0 && (
-												<div className="text-sm text-destructive">{field.state.meta.errors[0]}</div>
+												<div className="text-destructive text-sm">
+													{field.state.meta.errors[0]}
+												</div>
 											)}
 										</div>
 									)}

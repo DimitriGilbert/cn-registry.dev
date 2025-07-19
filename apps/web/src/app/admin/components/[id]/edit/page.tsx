@@ -23,7 +23,11 @@ const componentSchema = z.object({
 	description: z.string().min(1, "Description is required"),
 	category: z.string().min(1, "Category is required"),
 	githubUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-	websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+	websiteUrl: z
+		.string()
+		.url("Must be a valid URL")
+		.optional()
+		.or(z.literal("")),
 	installCommand: z.string().min(1, "Install command is required"),
 	tags: z.array(z.string()),
 	status: z.enum(["draft", "published", "archived"]),
@@ -73,11 +77,36 @@ export default async function EditComponentPage({
 		schema: componentSchema,
 		fields: [
 			{ name: "name", type: "text", label: "Name" },
-			{ name: "description", type: "textarea", label: "Description", textareaConfig: { rows: 3 } },
-			{ name: "category", type: "select", label: "Category", options: categories },
-			{ name: "installCommand", type: "text", label: "Install Command", placeholder: "npx shadcn@latest add component-name" },
-			{ name: "githubUrl", type: "url", label: "GitHub URL", placeholder: "https://github.com/username/repo" },
-			{ name: "websiteUrl", type: "url", label: "Website URL", placeholder: "https://example.com" },
+			{
+				name: "description",
+				type: "textarea",
+				label: "Description",
+				textareaConfig: { rows: 3 },
+			},
+			{
+				name: "category",
+				type: "select",
+				label: "Category",
+				options: categories,
+			},
+			{
+				name: "installCommand",
+				type: "text",
+				label: "Install Command",
+				placeholder: "npx shadcn@latest add component-name",
+			},
+			{
+				name: "githubUrl",
+				type: "url",
+				label: "GitHub URL",
+				placeholder: "https://github.com/username/repo",
+			},
+			{
+				name: "websiteUrl",
+				type: "url",
+				label: "Website URL",
+				placeholder: "https://example.com",
+			},
 			{ name: "status", type: "select", label: "Status", options: statuses },
 		],
 		formOptions: {
@@ -121,8 +150,10 @@ export default async function EditComponentPage({
 				>
 					<Button variant="outline" asChild>
 						<Link href="/admin/components">
-							<ArrowLeft className="mr-2 h-4 w-4" />
-							Back to Components
+							<span className="flex items-center">
+								<ArrowLeft className="mr-2 h-4 w-4" />
+								Back to Components
+							</span>
 						</Link>
 					</Button>
 				</PageTitle>

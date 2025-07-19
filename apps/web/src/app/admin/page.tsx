@@ -122,8 +122,10 @@ export default function AdminDashboard() {
 				>
 					<Button asChild>
 						<Link href="/admin/components/new">
-							<Plus className="mr-2 h-4 w-4" />
-							Add Component
+							<span className="flex items-center">
+								<Plus className="mr-2 h-4 w-4" />
+								Add Component
+							</span>
 						</Link>
 					</Button>
 				</PageTitle>

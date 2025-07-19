@@ -31,8 +31,10 @@ export default function NotFound() {
 							<div className="flex flex-col gap-2 sm:flex-row">
 								<Button asChild className="flex-1">
 									<Link href="/">
-										<Home className="mr-2 h-4 w-4" />
-										Go Home
+										<span className="flex items-center">
+											<Home className="mr-2 h-4 w-4" />
+											Go Home
+										</span>
 									</Link>
 								</Button>
 								<Button
@@ -41,15 +43,19 @@ export default function NotFound() {
 									className="flex-1 bg-transparent"
 								>
 									<Link href="/search">
-										<Search className="mr-2 h-4 w-4" />
-										Search
+										<span className="flex items-center">
+											<Search className="mr-2 h-4 w-4" />
+											Search
+										</span>
 									</Link>
 								</Button>
 							</div>
 							<Button variant="ghost" asChild className="w-full">
 								<Link href="javascript:history.back()">
-									<ArrowLeft className="mr-2 h-4 w-4" />
-									Go Back
+									<span className="flex items-center">
+										<ArrowLeft className="mr-2 h-4 w-4" />
+										Go Back
+									</span>
 								</Link>
 							</Button>
 						</CardContent>

@@ -1,7 +1,10 @@
+"use client";
+
 import { Search, User } from "lucide-react";
 import Link from "next/link";
 import { Container } from "@/components/layout/container";
-import { ThemeSelector } from "@/components/theme/theme-selector";
+import { ThemeSelector } from "@/components/theme-selector";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -21,7 +24,7 @@ import {
 
 export function Header() {
 	return (
-		<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+		<header className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/95">
 			<Container>
 				<div className="flex h-16 items-center justify-between">
 					<div className="flex items-center space-x-6">
@@ -37,25 +40,34 @@ export function Header() {
 						<NavigationMenu>
 							<NavigationMenuList>
 								<NavigationMenuItem>
-									<Link href="/" legacyBehavior passHref>
-										<NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+									<NavigationMenuLink asChild>
+										<Link
+											href="/"
+											className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+										>
 											Home
-										</NavigationMenuLink>
-									</Link>
+										</Link>
+									</NavigationMenuLink>
 								</NavigationMenuItem>
 								<NavigationMenuItem>
-									<Link href="/components" legacyBehavior passHref>
-										<NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+									<NavigationMenuLink asChild>
+										<Link
+											href="/components"
+											className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+										>
 											Components
-										</NavigationMenuLink>
-									</Link>
+										</Link>
+									</NavigationMenuLink>
 								</NavigationMenuItem>
 								<NavigationMenuItem>
-									<Link href="/tools" legacyBehavior passHref>
-										<NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+									<NavigationMenuLink asChild>
+										<Link
+											href="/tools"
+											className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+										>
 											Tools
-										</NavigationMenuLink>
-									</Link>
+										</Link>
+									</NavigationMenuLink>
 								</NavigationMenuItem>
 								<NavigationMenuItem>
 									<NavigationMenuTrigger>Admin</NavigationMenuTrigger>
@@ -122,6 +134,7 @@ export function Header() {
 							/>
 						</div>
 						<ThemeSelector />
+						<ThemeToggle />
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button variant="ghost" size="icon">

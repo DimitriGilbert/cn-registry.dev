@@ -1,18 +1,13 @@
 "use client";
 
-import { Search, User } from "lucide-react";
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { CartButton } from "@/components/features/cart";
 import { Container } from "@/components/layout/container";
 import { ThemeSelector } from "@/components/theme-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import UserMenu from "@/components/user-menu";
+import { authClient } from "@/lib/auth-client";
 import { Input } from "@/components/ui/input";
 import {
 	NavigationMenu,
@@ -24,6 +19,9 @@ import {
 } from "@/components/ui/navigation-menu";
 
 export function Header() {
+	const { data: session } = authClient.useSession();
+	const isAdmin = session?.user?.role === "admin";
+
 	return (
 		<header className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/95">
 			<Container>
@@ -70,57 +68,59 @@ export function Header() {
 										</Link>
 									</NavigationMenuLink>
 								</NavigationMenuItem>
-								<NavigationMenuItem>
-									<NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-									<NavigationMenuContent>
-										<div className="grid w-[400px] gap-3 p-6">
-											<Link
-												href="/admin"
-												className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-											>
-												<div className="font-medium text-sm leading-none">
-													Dashboard
-												</div>
-												<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
-													View analytics and manage content
-												</p>
-											</Link>
-											<Link
-												href="/admin/components"
-												className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-											>
-												<div className="font-medium text-sm leading-none">
-													Components
-												</div>
-												<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
-													Manage component registry
-												</p>
-											</Link>
-											<Link
-												href="/admin/tools"
-												className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-											>
-												<div className="font-medium text-sm leading-none">
-													Tools
-												</div>
-												<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
-													Manage developer tools
-												</p>
-											</Link>
-											<Link
-												href="/admin/themes"
-												className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-											>
-												<div className="font-medium text-sm leading-none">
-													Themes
-												</div>
-												<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
-													Manage theme configurations
-												</p>
-											</Link>
-										</div>
-									</NavigationMenuContent>
-								</NavigationMenuItem>
+								{isAdmin && (
+									<NavigationMenuItem>
+										<NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+										<NavigationMenuContent>
+											<div className="grid w-[400px] gap-3 p-6">
+												<Link
+													href="/admin"
+													className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+												>
+													<div className="font-medium text-sm leading-none">
+														Dashboard
+													</div>
+													<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
+														View analytics and manage content
+													</p>
+												</Link>
+												<Link
+													href="/admin/components"
+													className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+												>
+													<div className="font-medium text-sm leading-none">
+														Components
+													</div>
+													<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
+														Manage component registry
+													</p>
+												</Link>
+												<Link
+													href="/admin/tools"
+													className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+												>
+													<div className="font-medium text-sm leading-none">
+														Tools
+													</div>
+													<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
+														Manage developer tools
+													</p>
+												</Link>
+												<Link
+													href="/admin/themes"
+													className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+												>
+													<div className="font-medium text-sm leading-none">
+														Themes
+													</div>
+													<p className="line-clamp-2 text-muted-foreground text-sm leading-snug">
+														Manage theme configurations
+													</p>
+												</Link>
+											</div>
+										</NavigationMenuContent>
+									</NavigationMenuItem>
+								)}
 							</NavigationMenuList>
 						</NavigationMenu>
 					</div>
@@ -137,18 +137,7 @@ export function Header() {
 						<CartButton />
 						<ThemeSelector />
 						<ThemeToggle />
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon">
-									<User className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem>Profile</DropdownMenuItem>
-								<DropdownMenuItem>Settings</DropdownMenuItem>
-								<DropdownMenuItem>Sign out</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+						<UserMenu />
 					</div>
 				</div>
 			</Container>

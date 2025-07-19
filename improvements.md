@@ -1,6 +1,6 @@
 # Component Registry Feature Roadmap
 
-## 1. Component Cart & Saved Projects System
+## 1. Component Cart & Saved Projects System [x]
 
 **Priority:** High  
 **Estimated Effort:** Medium-Large
@@ -112,7 +112,7 @@
 
 ---
 
-## 2. GitHub Integration & Component Enrichment
+## 2. GitHub Integration & Component Enrichment [x]
 
 **Priority:** Medium  
 **Estimated Effort:** Medium

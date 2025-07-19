@@ -9,31 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { trpc } from "@/utils/trpc";
+import { trpc, trpcClient } from "@/utils/trpc";
 
-function ProjectCard({
-	id,
-	name,
-	description,
-	slug,
-	visibility,
-	componentCount,
-	collaboratorCount,
-	role,
-	createdAt,
-	updatedAt,
-}: {
-	id: string;
-	name: string;
-	description?: string;
-	slug: string;
-	visibility: string;
-	componentCount: number;
-	collaboratorCount: number;
-	role: string;
-	createdAt: string;
-	updatedAt: string;
-}) {
+type ProjectCardProps = Awaited<ReturnType<typeof trpcClient.projects.getAll.query>>[number];
+
+function ProjectCard(project: ProjectCardProps) {
+	const { id, name, description, slug, visibility, componentCount, collaboratorCount, role, createdAt, updatedAt } = project;
 	const formattedDate = new Date(updatedAt).toLocaleDateString();
 
 	return (
@@ -92,7 +73,7 @@ function ProjectCard({
 	);
 }
 
-function ProjectGrid({ projects }: { projects: any[] }) {
+function ProjectGrid({ projects }: { projects: ProjectCardProps[] }) {
 	if (projects.length === 0) {
 		return (
 			<div className="text-center py-12">

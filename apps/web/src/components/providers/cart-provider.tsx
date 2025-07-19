@@ -1,39 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { trpcClient } from "@/utils/trpc";
 
-interface Component {
-	id: string;
-	name: string;
-	description: string;
-	repoUrl?: string | null;
-	websiteUrl?: string | null;
-	installUrl?: string | null;
-	installCommand?: string | null;
-	tags?: string[] | null;
-	status: string;
-	createdAt: string;
-	updatedAt: string;
-	creator?: {
-		id: string;
-		name: string;
-		username?: string | null;
-		image?: string | null;
-	} | null;
-	categories?: Array<{
-		id: string;
-		name: string;
-	} | null>;
-	starsCount: number;
-	githubUrl?: string | null;
-	isStarred: boolean;
-	forksCount: number;
-	issuesCount: number;
-	watchersCount: number;
-	readme?: string | null;
-	exampleCode?: string | null;
-	previewUrl?: string | null;
-}
+type Component = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number];
 
 interface CartContextType {
 	cart: Component[];

@@ -76,19 +76,17 @@ export default function ManageToolsPage() {
 	);
 
 	// Delete tool mutation
-	const deleteToolMutation = useMutation({
-		mutationFn: async (id: string) => {
-			const result = await trpcClient.tools.delete.mutate({ id });
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["tools", "getAll"] });
-			toast.success("Tool deleted successfully");
-		},
-		onError: () => {
-			toast.error("Failed to delete tool");
-		},
-	});
+	const deleteToolMutation = useMutation(
+		trpc.tools.delete.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["tools", "getAll"] });
+				toast.success("Tool deleted successfully");
+			},
+			onError: () => {
+				toast.error("Failed to delete tool");
+			},
+		})
+	);
 
 	// Reset page when search or filter changes
 	useEffect(() => {
@@ -131,7 +129,7 @@ export default function ManageToolsPage() {
 
 	const handleDelete = (id: string, name: string) => {
 		if (confirm(`Are you sure you want to delete "${name}"?`)) {
-			deleteToolMutation.mutate(id);
+			deleteToolMutation.mutate({ id });
 		}
 	};
 

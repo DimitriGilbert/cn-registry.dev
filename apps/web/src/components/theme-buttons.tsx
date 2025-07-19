@@ -39,13 +39,20 @@ export function ThemeButtons() {
 			const response = await fetch("/tweakcn-registry.json");
 			const registry = await response.json();
 			
-			const themes = registry.items
-				.filter((item: any) => item.type === "registry:style" && item.cssVars)
+			type RegistryItem = {
+				name: string;
+				title?: string;
+				type: string;
+				cssVars?: Record<string, Record<string, string>>;
+			};
+
+			const themes = (registry.items as RegistryItem[])
+				.filter((item) => item.type === "registry:style" && item.cssVars)
 				.slice(0, 6) // Show first 6 themes
-				.map((item: any) => ({
+				.map((item) => ({
 					name: item.name,
 					title: item.title || item.name,
-					cssVars: item.cssVars
+					cssVars: item.cssVars!
 				}));
 
 			setAvailableThemes(themes);

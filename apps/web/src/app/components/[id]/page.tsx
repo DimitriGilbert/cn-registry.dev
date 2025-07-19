@@ -64,51 +64,45 @@ export default function ComponentDetailPage({
 	});
 
 	// Star mutation
-	const starMutation = useMutation({
-		mutationFn: async () => {
-			const result = await trpcClient.components.toggleStar.mutate({
-				itemId: id!,
-			});
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["components", "getById", { id }],
-			});
-			toast.success("Star toggled successfully");
-		},
-		onError: () => {
-			toast.error("Failed to toggle star");
-		},
-	});
+	const starMutation = useMutation(
+		trpc.components.toggleStar.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: ["components", "getById", { id }],
+				});
+				toast.success("Star toggled successfully");
+			},
+			onError: () => {
+				toast.error("Failed to toggle star");
+			},
+		})
+	);
 
 	// Add comment mutation
-	const addCommentMutation = useMutation({
-		mutationFn: async (data: { content: string; parentId?: string }) => {
-			const result = await trpcClient.components.addComment.mutate({
-				itemId: id!,
-				content: data.content,
-				parentId: data.parentId,
-			});
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["components", "getComments", { id }],
-			});
-			toast.success("Comment added successfully");
-		},
-		onError: () => {
-			toast.error("Failed to add comment");
-		},
-	});
+	const addCommentMutation = useMutation(
+		trpc.components.addComment.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: ["components", "getComments", { id }],
+				});
+				toast.success("Comment added successfully");
+			},
+			onError: () => {
+				toast.error("Failed to add comment");
+			},
+		})
+	);
 
 	const handleAddComment = (content: string, parentId?: string) => {
-		addCommentMutation.mutate({ content, parentId });
+		addCommentMutation.mutate({
+			itemId: id!,
+			content,
+			parentId,
+		});
 	};
 
 	const handleToggleStar = () => {
-		starMutation.mutate();
+		starMutation.mutate({ itemId: id! });
 	};
 
 	const handleCartToggle = () => {

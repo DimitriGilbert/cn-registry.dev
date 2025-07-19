@@ -37,24 +37,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc, trpcClient } from "@/utils/trpc";
 
-interface ComponentCardProps {
-	id: string;
-	name: string;
-	description: string;
-	categories?: Array<{ id: string; name: string }>;
-	starsCount: number;
-	githubUrl?: string;
-	websiteUrl?: string;
-	creator?: {
-		id: string;
-		name: string;
-		username?: string;
-		image?: string;
-	};
+type ComponentCardProps = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number] & {
 	addedAt: string;
 	onRemove: () => void;
 	canEdit: boolean;
-}
+};
 
 function ProjectComponentCard({
 	id,
@@ -95,7 +82,7 @@ function ProjectComponentCard({
 					)}
 				</div>
 				<div className="flex items-center gap-2">
-					{categories?.map((category) => (
+					{categories?.filter((category): category is NonNullable<typeof category> => category !== null).map((category) => (
 						<Badge key={category.id} variant="secondary">
 							{category.name}
 						</Badge>
@@ -459,13 +446,9 @@ export default function ProjectDetailPage({
 										key={component.id}
 										{...component}
 										categories={component.categories.filter((cat): cat is NonNullable<typeof cat> => cat !== null)}
-										githubUrl={component.githubUrl || undefined}
-										websiteUrl={component.websiteUrl || undefined}
-										creator={component.creator ? {
-											...component.creator,
-											username: component.creator.username || undefined,
-											image: component.creator.image || undefined,
-										} : undefined}
+										githubUrl={component.githubUrl}
+										websiteUrl={component.websiteUrl}
+										creator={component.creator}
 										onRemove={() => removeComponent.mutate({ projectId: project.id, componentId: component.id })}
 										canEdit={canEdit}
 									/>

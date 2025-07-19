@@ -62,47 +62,43 @@ export default function ToolDetailPage({
 	});
 
 	// Star mutation
-	const starMutation = useMutation({
-		mutationFn: async () => {
-			const result = await trpcClient.tools.toggleStar.mutate({ itemId: id! });
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["tools", "getById", { id }] });
-			toast.success("Star toggled successfully");
-		},
-		onError: () => {
-			toast.error("Failed to toggle star");
-		},
-	});
+	const starMutation = useMutation(
+		trpc.tools.toggleStar.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["tools", "getById", { id }] });
+				toast.success("Star toggled successfully");
+			},
+			onError: () => {
+				toast.error("Failed to toggle star");
+			},
+		})
+	);
 
 	// Add comment mutation
-	const addCommentMutation = useMutation({
-		mutationFn: async (data: { content: string; parentId?: string }) => {
-			const result = await trpcClient.tools.addComment.mutate({
-				itemId: id!,
-				content: data.content,
-				parentId: data.parentId,
-			});
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: ["tools", "getComments", { id }],
-			});
-			toast.success("Comment added successfully");
-		},
-		onError: () => {
-			toast.error("Failed to add comment");
-		},
-	});
+	const addCommentMutation = useMutation(
+		trpc.tools.addComment.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: ["tools", "getComments", { id }],
+				});
+				toast.success("Comment added successfully");
+			},
+			onError: () => {
+				toast.error("Failed to add comment");
+			},
+		})
+	);
 
 	const handleAddComment = (content: string, parentId?: string) => {
-		addCommentMutation.mutate({ content, parentId });
+		addCommentMutation.mutate({
+			itemId: id!,
+			content,
+			parentId,
+		});
 	};
 
 	const handleToggleStar = () => {
-		starMutation.mutate();
+		starMutation.mutate({ itemId: id! });
 	};
 
 	if (!id || isLoading) {

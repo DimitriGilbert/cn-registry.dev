@@ -46,30 +46,37 @@ export default function ManageThemesPage() {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const queryClient = useQueryClient();
 
+	// Create theme mutation
+	const createThemeMutation = useMutation(
+		trpc.themes.create.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
+				toast.success("Theme created successfully");
+				setIsCreateDialogOpen(false);
+				form.reset();
+			},
+			onError: () => {
+				toast.error("Failed to create theme");
+			},
+		})
+	);
+
 	// Create theme form
 	const { Form: CreateThemeForm, form } = useFormedible<ThemeFormValues>({
 		schema: themeSchema,
 		formOptions: {
 			defaultValues: { name: "", tokens: "" },
 			onSubmit: async ({ value }) => {
+				// Parse tokens string to object
+				let tokens;
 				try {
-					// Parse tokens string to object
-					let tokens;
-					try {
-						tokens = JSON.parse(value.tokens);
-					} catch {
-						toast.error("Invalid JSON in tokens field");
-						return;
-					}
-
-					await trpcClient.themes.create.mutate({ name: value.name, tokens });
-					queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
-					toast.success("Theme created successfully");
-					setIsCreateDialogOpen(false);
-					form.reset();
-				} catch (error) {
-					toast.error("Failed to create theme");
+					tokens = JSON.parse(value.tokens);
+				} catch {
+					toast.error("Invalid JSON in tokens field");
+					return;
 				}
+
+				createThemeMutation.mutate({ name: value.name, tokens });
 			},
 		},
 	});
@@ -82,27 +89,25 @@ export default function ManageThemesPage() {
 	} = useQuery(trpc.themes.getAll.queryOptions());
 
 	// Delete theme mutation
-	const deleteThemeMutation = useMutation({
-		mutationFn: async (id: string) => {
-			const result = await trpcClient.themes.delete.mutate({ id });
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
-			toast.success("Theme deleted successfully");
-		},
-		onError: () => {
-			toast.error("Failed to delete theme");
-		},
-	});
+	const deleteThemeMutation = useMutation(
+		trpc.themes.delete.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["themes", "getAll"] });
+				toast.success("Theme deleted successfully");
+			},
+			onError: () => {
+				toast.error("Failed to delete theme");
+			},
+		})
+	);
 
 	const handleDeleteTheme = (id: string, name: string) => {
 		if (confirm(`Are you sure you want to delete "${name}"?`)) {
-			deleteThemeMutation.mutate(id);
+			deleteThemeMutation.mutate({ id });
 		}
 	};
 
-	const handleCopyTheme = (theme: any) => {
+	const handleCopyTheme = (theme: Awaited<ReturnType<typeof trpcClient.themes.getAll.query>>[number]) => {
 		navigator.clipboard.writeText(JSON.stringify(theme.tokens, null, 2));
 		toast.success("Theme tokens copied to clipboard");
 	};

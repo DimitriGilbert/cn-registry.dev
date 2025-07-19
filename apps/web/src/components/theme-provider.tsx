@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { ThemeState, ThemeMode } from "@/types/theme";
+import type { ThemeState, ThemeMode, ThemePreset } from "@/types/theme";
 import { defaultThemeState } from "@/config/theme";
 import { applyThemeToElement } from "@/lib/apply-theme";
 
@@ -9,7 +9,7 @@ interface ThemeContextType {
 	themeState: ThemeState;
 	setTheme: (mode: ThemeMode) => void;
 	toggleTheme: () => void;
-	setThemePreset: (preset: any) => void;
+	setThemePreset: (preset: ThemePreset) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -67,7 +67,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 		setTheme(themeState.currentMode === "light" ? "dark" : "light");
 	};
 
-	const setThemePreset = (preset: any) => {
+	const setThemePreset = (preset: ThemePreset) => {
 		if (preset?.styles) {
 			setThemeState(prev => ({
 				...prev,

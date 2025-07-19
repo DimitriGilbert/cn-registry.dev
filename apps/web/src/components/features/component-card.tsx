@@ -14,32 +14,12 @@ import {
 import { useCart } from "@/components/providers/cart-provider";
 import { StarButton } from "./star-button";
 import { toast } from "sonner";
+import { trpcClient } from "@/utils/trpc";
 
-interface ComponentCardProps {
-	id: string;
-	name: string;
-	description: string;
-	categories?: ({ id: string; name: string } | null)[];
-	starsCount?: number;
-	downloads?: number;
-	githubUrl?: string | null;
-	repoUrl?: string | null;
-	websiteUrl?: string | null;
-	installUrl?: string | null;
-	installCommand?: string | null;
-	tags?: string[] | null;
-	status?: string;
-	createdAt?: string;
-	updatedAt?: string;
-	creator?: {
-		id: string;
-		name: string;
-		username?: string | null;
-		image?: string | null;
-	} | null;
+type ComponentCardProps = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number] & {
 	isStarred?: boolean;
 	onToggleStar?: () => void;
-}
+};
 
 export function ComponentCard({
 	id,
@@ -47,7 +27,6 @@ export function ComponentCard({
 	description,
 	categories,
 	starsCount = 0,
-	downloads = 0,
 	githubUrl,
 	repoUrl,
 	websiteUrl,
@@ -130,10 +109,6 @@ export function ComponentCard({
 						<div className="flex items-center gap-1">
 							<Star className="h-3 w-3" />
 							{starsCount}
-						</div>
-						<div className="flex items-center gap-1">
-							<Download className="h-3 w-3" />
-							{downloads}
 						</div>
 					</div>
 				</div>

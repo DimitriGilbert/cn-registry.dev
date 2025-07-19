@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { trpcClient } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 
 export default function NewProjectPage() {
 	const [name, setName] = useState("");
@@ -23,27 +23,18 @@ export default function NewProjectPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
-	const createProject = useMutation({
-		mutationFn: async (data: {
-			name: string;
-			description?: string;
-			visibility: "private" | "public";
-		}) => {
-			const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-			return trpcClient.projects.create.mutate({
-				...data,
-				slug,
-			});
-		},
-		onSuccess: (project) => {
-			toast.success("Project created successfully!");
-			queryClient.invalidateQueries({ queryKey: ["projects", "getAll"] });
-			router.push(`/projects/${project.slug}`);
-		},
-		onError: (error: any) => {
-			toast.error(`Failed to create project: ${error.message}`);
-		},
-	});
+	const createProject = useMutation(
+		trpc.projects.create.mutationOptions({
+			onSuccess: (project) => {
+				toast.success("Project created successfully!");
+				queryClient.invalidateQueries({ queryKey: ["projects", "getAll"] });
+				router.push(`/projects/${project.slug}`);
+			},
+			onError: (error) => {
+				toast.error(`Failed to create project: ${error.message}`);
+			},
+		})
+	);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -53,10 +44,12 @@ export default function NewProjectPage() {
 			return;
 		}
 
+		const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 		createProject.mutate({
 			name: name.trim(),
 			description: description.trim() || undefined,
 			visibility,
+			slug,
 		});
 	};
 

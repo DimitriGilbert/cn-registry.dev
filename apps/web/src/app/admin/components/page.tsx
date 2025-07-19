@@ -77,19 +77,17 @@ export default function ManageComponentsPage() {
 	);
 
 	// Delete component mutation
-	const deleteComponentMutation = useMutation({
-		mutationFn: async (id: string) => {
-			const result = await trpcClient.components.delete.mutate({ id });
-			return result;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["components", "getAll"] });
-			toast.success("Component deleted successfully");
-		},
-		onError: () => {
-			toast.error("Failed to delete component");
-		},
-	});
+	const deleteComponentMutation = useMutation(
+		trpc.components.delete.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ["components", "getAll"] });
+				toast.success("Component deleted successfully");
+			},
+			onError: () => {
+				toast.error("Failed to delete component");
+			},
+		})
+	);
 
 	// Reset page when search or filter changes
 	useEffect(() => {
@@ -132,7 +130,7 @@ export default function ManageComponentsPage() {
 
 	const handleDelete = (id: string, name: string) => {
 		if (confirm(`Are you sure you want to delete "${name}"?`)) {
-			deleteComponentMutation.mutate(id);
+			deleteComponentMutation.mutate({ id });
 		}
 	};
 

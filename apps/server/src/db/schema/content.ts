@@ -22,7 +22,7 @@ export const components = pgTable("components", {
 	installUrl: text("install_url"),
 	installCommand: text("install_command"),
 	tags: text("tags").array(),
-	status: text("status").notNull().default("published"), // 'published', 'draft', 'archived'
+	status: text("status").notNull().default("published"), // 'published', 'draft', 'archived', 'suggested'
 	creatorId: text("creator_id").references(() => user.id, {
 		onDelete: "cascade",
 	}),
@@ -43,7 +43,7 @@ export const tools = pgTable("tools", {
 	installUrl: text("install_url"),
 	installCommand: text("install_command"),
 	tags: text("tags").array(),
-	status: text("status").notNull().default("published"), // 'published', 'draft', 'archived'
+	status: text("status").notNull().default("published"), // 'published', 'draft', 'archived', 'suggested'
 	creatorId: text("creator_id").references(() => user.id, {
 		onDelete: "cascade",
 	}),

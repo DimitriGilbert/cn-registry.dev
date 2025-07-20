@@ -35,7 +35,7 @@ export const createComponentSchema = z.object({
 	installUrl: z.string().optional(),
 	installCommand: z.string().optional(),
 	tags: z.array(z.string()).optional(),
-	status: z.enum(["published", "draft", "archived"]).optional(),
+	status: z.enum(["published", "draft", "archived", "suggested"]).optional(),
 	categoryIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -50,7 +50,7 @@ export const createToolSchema = z.object({
 	installUrl: z.string().optional(),
 	installCommand: z.string().optional(),
 	tags: z.array(z.string()).optional(),
-	status: z.enum(["published", "draft", "archived"]).optional(),
+	status: z.enum(["published", "draft", "archived", "suggested"]).optional(),
 	categoryIds: z.array(z.string().uuid()).optional(),
 });
 
@@ -96,7 +96,9 @@ export const createThemeSchema = z.object({
 
 // Admin schemas
 export const createAdminNotificationSchema = z.object({
-	message: z.string().min(1).max(500),
+	title: z.string().min(1).max(200),
+	message: z.string().min(1).max(1000),
+	type: z.enum(["info", "warning", "error", "success"]).default("info"),
 });
 
 // Common schemas

@@ -25,7 +25,9 @@ export const editsLog = pgTable("edits_log", {
 
 export const adminNotifications = pgTable("admin_notifications", {
 	id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+	title: text("title").notNull(),
 	message: text("message").notNull(),
+	type: text("type").notNull().default("info"), // 'info', 'warning', 'error', 'success'
 	isRead: boolean("is_read").notNull().default(false),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()

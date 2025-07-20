@@ -65,8 +65,8 @@ bun run build                     # Build all applications
 ### Frontend (Web App)
 
 - **tRPC Client**: `apps/web/src/utils/trpc.ts`
-- **Components**: shadcn/ui with Radix UI primitives
-- **Styling**: TailwindCSS v4 with custom configuration
+- **Components**: shadcn/ui with Shadcn UI primitives
+- **Styling**: TailwindCSS v4
 - **State**: React Query for server state, React forms with TanStack Form
 - **Theme**: next-themes for dark/light mode support
 
@@ -92,20 +92,9 @@ Key environment variables:
 ## Development Workflow
 
 1. **Database First**: Set up PostgreSQL and run `bun db:push` before starting development
-2. **Concurrent Development**: Use `bun dev` to run both apps simultaneously
-3. **API Development**: Server changes auto-restart, tRPC provides end-to-end type safety
-4. **Schema Changes**: Use `bun db:generate` → `bun db:migrate` → `bun db:push` workflow
-5. **Code Quality**: Run `bun check` before committing to ensure consistent formatting
-
-## Key Files
-
-- `turbo.json` - Monorepo task configuration
-- `biome.json` - Linting and formatting rules
-- `apps/server/src/routers/index.ts` - Main tRPC router
-- `apps/web/src/utils/trpc.ts` - Frontend tRPC client setup
-- `apps/server/src/db/schema/` - Database schema definitions
-
-## Work Directives
+2. **API Development**: Server changes auto-restart, tRPC provides end-to-end type safety
+3. **Schema Changes**: Use `bun db:generate` → `bun db:migrate` → `bun db:push` workflow
+4. **Code Quality**: Run `bun check` before committing to ensure consistent formatting
 
 - follow existing patterns
 - if you encounter errors, look in docs/ you might find the answer there.
@@ -113,4 +102,11 @@ Key environment variables:
 - if you encounter errors multiple times due to mis usage of a library, function, component, etc. your knowledge might be out of date. You will have to fetch the latest docs and update your knowledge.
   - once the error is fixed, update the docs/llm/common-errors/index.md with the new information. with reference to the source url if any and the concerned file.
 - project must build when you are done
-- use use-formedible for all the forms
+- use use-formedible for all the forms docs/llm/formedible.llm.txt
+- we use trpc 11 and you knowledege is outdated, check existing example to not create bad code ! docs/llm/trpc.md
+
+## Key Files
+
+- `apps/server/src/routers/index.ts` - Main tRPC router
+- `apps/web/src/utils/trpc.ts` - Frontend tRPC client setup
+- `apps/server/src/db/schema/` - Database schema definitions

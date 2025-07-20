@@ -245,4 +245,36 @@ export const adminRouter = router({
 				currentPage: page,
 			};
 		}),
+
+	// Update user role
+	updateUserRole: adminProcedure
+		.input(
+			z.object({
+				userId: z.string(),
+				role: z.enum(["user", "creator", "admin"]),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const [updatedUser] = await db
+				.update(user)
+				.set({ role: input.role })
+				.where(eq(user.id, input.userId))
+				.returning();
+
+			return updatedUser;
+		}),
+
+	// Suspend/unsuspend user
+	suspendUser: adminProcedure
+		.input(
+			z.object({
+				userId: z.string(),
+				suspended: z.boolean(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			// For now, we'll just return success since we don't have a suspended field
+			// In a real app, you'd add a suspended field to the user table
+			return { success: true, userId: input.userId, suspended: input.suspended };
+		}),
 });

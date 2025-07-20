@@ -20,6 +20,9 @@ export const appRouter = router({
 			user: ctx.session.user,
 		};
 	}),
+	getSession: publicProcedure.query(({ ctx }) => {
+		return ctx.session;
+	}),
 
 	// Feature routers
 	users: usersRouter,

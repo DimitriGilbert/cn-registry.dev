@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFormedible } from "@/hooks/use-formedible";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpc, type trpcClient } from "@/utils/trpc";
 
 const themeSchema = z.object({
 	name: z.string().min(1, "Theme name is required"),
@@ -58,7 +58,7 @@ export default function ManageThemesPage() {
 			onError: () => {
 				toast.error("Failed to create theme");
 			},
-		})
+		}),
 	);
 
 	// Create theme form
@@ -98,7 +98,7 @@ export default function ManageThemesPage() {
 			onError: () => {
 				toast.error("Failed to delete theme");
 			},
-		})
+		}),
 	);
 
 	const handleDeleteTheme = (id: string, name: string) => {
@@ -107,7 +107,9 @@ export default function ManageThemesPage() {
 		}
 	};
 
-	const handleCopyTheme = (theme: Awaited<ReturnType<typeof trpcClient.themes.getAll.query>>[number]) => {
+	const handleCopyTheme = (
+		theme: Awaited<ReturnType<typeof trpcClient.themes.getAll.query>>[number],
+	) => {
 		navigator.clipboard.writeText(JSON.stringify(theme.tokens, null, 2));
 		toast.success("Theme tokens copied to clipboard");
 	};

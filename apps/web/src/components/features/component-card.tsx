@@ -1,7 +1,15 @@
 "use client";
 
-import { Download, ExternalLink, Github, ShoppingCart, Star } from "lucide-react";
+import {
+	Download,
+	ExternalLink,
+	Github,
+	ShoppingCart,
+	Star,
+} from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useCart } from "@/components/providers/cart-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +19,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { useCart } from "@/components/providers/cart-provider";
+import type { trpcClient } from "@/utils/trpc";
 import { StarButton } from "./star-button";
-import { toast } from "sonner";
-import { trpcClient } from "@/utils/trpc";
 
-type ComponentCardProps = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number] & {
+type ComponentCardProps = Awaited<
+	ReturnType<typeof trpcClient.components.getAll.query>
+>["components"][number] & {
 	isStarred?: boolean;
 	onToggleStar?: () => void;
 };

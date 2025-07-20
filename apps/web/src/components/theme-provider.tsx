@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import type { ThemeState, ThemeMode, ThemePreset } from "@/types/theme";
 import { defaultThemeState } from "@/config/theme";
 import { applyThemeToElement } from "@/lib/apply-theme";
+import type { ThemeMode, ThemePreset, ThemeState } from "@/types/theme";
 
 interface ThemeContextType {
 	themeState: ThemeState;
@@ -38,14 +38,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 			} catch {
 				const mode = storedTheme as ThemeMode;
 				if (mode === "light" || mode === "dark") {
-					setThemeState(prev => ({ ...prev, currentMode: mode }));
+					setThemeState((prev) => ({ ...prev, currentMode: mode }));
 				}
 			}
 		} else {
-			const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-			setThemeState(prev => ({ 
-				...prev, 
-				currentMode: prefersDark ? "dark" : "light" 
+			const prefersDark = window.matchMedia(
+				"(prefers-color-scheme: dark)",
+			).matches;
+			setThemeState((prev) => ({
+				...prev,
+				currentMode: prefersDark ? "dark" : "light",
 			}));
 		}
 	}, []);
@@ -60,7 +62,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 	}, [themeState.currentMode, themeState.selectedPreset]);
 
 	const setTheme = (mode: ThemeMode) => {
-		setThemeState(prev => ({ ...prev, currentMode: mode }));
+		setThemeState((prev) => ({ ...prev, currentMode: mode }));
 	};
 
 	const toggleTheme = () => {
@@ -69,10 +71,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
 	const setThemePreset = (preset: ThemePreset) => {
 		if (preset?.styles) {
-			setThemeState(prev => ({
+			setThemeState((prev) => ({
 				...prev,
 				styles: preset.styles,
-				selectedPreset: preset.name
+				selectedPreset: preset.name,
 			}));
 		}
 	};

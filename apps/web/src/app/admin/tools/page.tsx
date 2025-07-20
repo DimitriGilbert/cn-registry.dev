@@ -85,7 +85,7 @@ export default function ManageToolsPage() {
 			onError: () => {
 				toast.error("Failed to delete tool");
 			},
-		})
+		}),
 	);
 
 	// Reset page when search or filter changes

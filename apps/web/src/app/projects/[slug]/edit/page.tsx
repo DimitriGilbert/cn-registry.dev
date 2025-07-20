@@ -4,28 +4,43 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useFormedible } from "@/hooks/use-formedible";
 import { trpc, trpcClient } from "@/utils/trpc";
+
+const projectSchema = z.object({
+	name: z.string().min(1, "Project name is required"),
+	description: z.string().optional(),
+	visibility: z.enum(["private", "public"]),
+});
+
+type ProjectFormValues = z.infer<typeof projectSchema>;
 
 export default function EditProjectPage({
 	params,
 }: {
 	params: Promise<{ slug: string }>;
 }) {
-	const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
-	const [visibility, setVisibility] = useState<"private" | "public">("private");
+	const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+		null,
+	);
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
@@ -46,21 +61,12 @@ export default function EditProjectPage({
 		enabled: !!slug,
 	});
 
-	// Set form values when project loads
-	useEffect(() => {
-		if (project) {
-			setName(project.name);
-			setDescription(project.description || "");
-			setVisibility(project.visibility as "private" | "public");
-		}
-	}, [project]);
-
 	const updateProject = useMutation(
 		trpc.projects.update.mutationOptions({
 			onSuccess: (updatedProject) => {
 				toast.success("Project updated successfully!");
 				queryClient.invalidateQueries({ queryKey: ["projects"] });
-				
+
 				// If the name changed, the slug might have changed too
 				if (updatedProject.slug !== slug) {
 					router.push(`/projects/${updatedProject.slug}`);
@@ -71,35 +77,83 @@ export default function EditProjectPage({
 			onError: (error) => {
 				toast.error(`Failed to update project: ${error.message}`);
 			},
-		})
+		}),
 	);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		
-		if (!name.trim()) {
-			toast.error("Project name is required");
-			return;
-		}
+	const { Form: ProjectForm, form } = useFormedible<ProjectFormValues>({
+		schema: projectSchema,
+		fields: [
+			{
+				name: "name",
+				type: "text",
+				label: "Project Name *",
+				placeholder: "My Component Library",
+				description: "This will be used to generate your project URL",
+			},
+			{
+				name: "description",
+				type: "textarea",
+				label: "Description",
+				placeholder: "A collection of components for my project...",
+				description: "Optional description of what this project contains",
+				textareaConfig: { rows: 3 },
+			},
+			{
+				name: "visibility",
+				type: "radio",
+				label: "Visibility",
+				options: [
+					{
+						value: "private",
+						label: "Private - Only you and collaborators can see this project",
+					},
+					{
+						value: "public",
+						label: "Public - Anyone can see this project and its components",
+					},
+				],
+			},
+		],
+		formOptions: {
+			defaultValues: {
+				name: project?.name || "",
+				description: project?.description || "",
+				visibility: (project?.visibility as "private" | "public") || "private",
+			},
+			onSubmit: async ({ value }) => {
+				updateProject.mutate({
+					id: project!.id,
+					name: value.name.trim(),
+					description: value.description?.trim() || undefined,
+					visibility: value.visibility,
+				});
+			},
+		},
+		submitLabel: updateProject.isPending ? "Updating..." : "Update Project",
+		disabled: updateProject.isPending,
+	});
 
-		updateProject.mutate({
-			id: project!.id,
-			name: name.trim(),
-			description: description.trim() || undefined,
-			visibility,
-		});
-	};
+	// Reset form when project loads
+	useEffect(() => {
+		if (project) {
+			form.reset({
+				name: project.name,
+				description: project.description || "",
+				visibility: project.visibility as "private" | "public",
+			});
+		}
+	}, [project, form]);
 
 	if (!slug || isLoading) {
 		return (
 			<Container>
 				<div className="py-8">
-					<Skeleton className="h-8 w-64 mb-4" />
-					<Skeleton className="h-4 w-96 mb-8" />
+					<Skeleton className="mb-4 h-8 w-64" />
+					<Skeleton className="mb-8 h-4 w-96" />
 					<div className="max-w-2xl">
 						<Card>
 							<CardHeader>
-								<Skeleton className="h-6 w-32 mb-2" />
+								<Skeleton className="mb-2 h-6 w-32" />
 								<Skeleton className="h-4 w-64" />
 							</CardHeader>
 							<CardContent className="space-y-6">
@@ -121,7 +175,8 @@ export default function EditProjectPage({
 					<div className="text-center">
 						<h1 className="mb-2 font-bold text-2xl">Project Not Found</h1>
 						<p className="mb-4 text-muted-foreground">
-							The project you're trying to edit doesn't exist or you don't have access to it.
+							The project you're trying to edit doesn't exist or you don't have
+							access to it.
 						</p>
 						<Button asChild>
 							<Link href="/projects">
@@ -164,7 +219,7 @@ export default function EditProjectPage({
 				<div className="mb-6">
 					<Button variant="ghost" asChild className="mb-4">
 						<Link href={`/projects/${slug}`}>
-							<ArrowLeft className="h-4 w-4 mr-2" />
+							<ArrowLeft className="mr-2 h-4 w-4" />
 							Back to Project
 						</Link>
 					</Button>
@@ -184,85 +239,18 @@ export default function EditProjectPage({
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<form onSubmit={handleSubmit} className="space-y-6">
-								<div className="space-y-2">
-									<Label htmlFor="name">Project Name *</Label>
-									<Input
-										id="name"
-										value={name}
-										onChange={(e) => setName(e.target.value)}
-										placeholder="My Component Library"
-										required
-										disabled={updateProject.isPending}
-									/>
-									<p className="text-muted-foreground text-sm">
-										Changing the name may update your project URL
-									</p>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="description">Description</Label>
-									<Textarea
-										id="description"
-										value={description}
-										onChange={(e) => setDescription(e.target.value)}
-										placeholder="A collection of components for my project..."
-										rows={3}
-										disabled={updateProject.isPending}
-									/>
-									<p className="text-muted-foreground text-sm">
-										Optional description of what this project contains
-									</p>
-								</div>
-
-								<div className="space-y-3">
-									<Label>Visibility</Label>
-									<RadioGroup 
-										value={visibility} 
-										onValueChange={(value: "private" | "public") => setVisibility(value)}
-										disabled={updateProject.isPending}
-									>
-										<div className="flex items-center space-x-2">
-											<RadioGroupItem value="private" id="private" />
-											<Label htmlFor="private" className="flex-1 cursor-pointer">
-												<div>
-													<div className="font-medium">Private</div>
-													<div className="text-muted-foreground text-sm">
-														Only you and collaborators can see this project
-													</div>
-												</div>
-											</Label>
-										</div>
-										<div className="flex items-center space-x-2">
-											<RadioGroupItem value="public" id="public" />
-											<Label htmlFor="public" className="flex-1 cursor-pointer">
-												<div>
-													<div className="font-medium">Public</div>
-													<div className="text-muted-foreground text-sm">
-														Anyone can see this project and its components
-													</div>
-												</div>
-											</Label>
-										</div>
-									</RadioGroup>
-								</div>
-
+							<div className="space-y-6">
+								<ProjectForm />
 								<div className="flex justify-end space-x-2">
-									<Button 
-										variant="outline" 
+									<Button
+										variant="outline"
 										asChild
 										disabled={updateProject.isPending}
 									>
 										<Link href={`/projects/${slug}`}>Cancel</Link>
 									</Button>
-									<Button 
-										type="submit"
-										disabled={updateProject.isPending || !name.trim()}
-									>
-										{updateProject.isPending ? "Saving..." : "Save Changes"}
-									</Button>
 								</div>
-							</form>
+							</div>
 						</CardContent>
 					</Card>
 				</div>

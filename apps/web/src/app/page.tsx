@@ -68,7 +68,9 @@ export default function HomePage() {
 
 				{/* Theme Buttons */}
 				<div className="mb-16 text-center">
-					<h3 className="mb-6 font-bold text-2xl">Elevate Your Design Instantly</h3>
+					<h3 className="mb-6 font-bold text-2xl">
+						Elevate Your Design Instantly
+					</h3>
 					<ThemeButtons />
 				</div>
 

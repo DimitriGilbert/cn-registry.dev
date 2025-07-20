@@ -1,12 +1,4 @@
-import {
-	and,
-	avg,
-	count,
-	desc,
-	eq,
-	inArray,
-	sql,
-} from "drizzle-orm";
+import { and, avg, count, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db";
 import {
 	categories,
@@ -19,11 +11,7 @@ import {
 	stars,
 	user,
 } from "../db/schema";
-import {
-	protectedProcedure,
-	publicProcedure,
-	router,
-} from "../lib/trpc";
+import { protectedProcedure, publicProcedure, router } from "../lib/trpc";
 import {
 	addCollaboratorSchema,
 	addComponentsToProjectSchema,
@@ -41,8 +29,8 @@ import {
 function generateSlug(name: string): string {
 	return name
 		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '');
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
 }
 
 export const projectsRouter = router({
@@ -51,7 +39,7 @@ export const projectsRouter = router({
 		.input(createProjectSchema)
 		.mutation(async ({ ctx, input }) => {
 			const slug = input.slug || generateSlug(input.name);
-			
+
 			// Check if slug already exists for this user
 			const existingProject = await db
 				.select()
@@ -98,7 +86,10 @@ export const projectsRouter = router({
 				role: projectCollaborators.role,
 			})
 			.from(projects)
-			.innerJoin(projectCollaborators, eq(projects.id, projectCollaborators.projectId))
+			.innerJoin(
+				projectCollaborators,
+				eq(projects.id, projectCollaborators.projectId),
+			)
 			.where(eq(projectCollaborators.userId, ctx.user.id))
 			.orderBy(desc(projects.updatedAt));
 
@@ -120,61 +111,62 @@ export const projectsRouter = router({
 					componentCount: componentCount.count,
 					collaboratorCount: collaboratorCount.count,
 				};
-			})
+			}),
 		);
 
 		return projectsWithStats;
 	}),
 
 	// Get project by ID with full details
-	getById: protectedProcedure
-		.input(idSchema)
-		.query(async ({ ctx, input }) => {
-			// Check if user has access to this project
-			const projectAccess = await db
-				.select({
-					project: projects,
-					role: projectCollaborators.role,
-				})
-				.from(projects)
-				.innerJoin(projectCollaborators, eq(projects.id, projectCollaborators.projectId))
-				.where(
-					and(
-						eq(projects.id, input.id),
-						eq(projectCollaborators.userId, ctx.user.id)
-					)
-				)
-				.limit(1);
+	getById: protectedProcedure.input(idSchema).query(async ({ ctx, input }) => {
+		// Check if user has access to this project
+		const projectAccess = await db
+			.select({
+				project: projects,
+				role: projectCollaborators.role,
+			})
+			.from(projects)
+			.innerJoin(
+				projectCollaborators,
+				eq(projects.id, projectCollaborators.projectId),
+			)
+			.where(
+				and(
+					eq(projects.id, input.id),
+					eq(projectCollaborators.userId, ctx.user.id),
+				),
+			)
+			.limit(1);
 
-			if (!projectAccess[0]) {
-				throw new Error("Project not found or access denied");
-			}
+		if (!projectAccess[0]) {
+			throw new Error("Project not found or access denied");
+		}
 
-			const { project, role } = projectAccess[0];
+		const { project, role } = projectAccess[0];
 
-			// Get collaborators
-			const collaborators = await db
-				.select({
-					userId: projectCollaborators.userId,
-					role: projectCollaborators.role,
-					addedAt: projectCollaborators.addedAt,
-					user: {
-						id: user.id,
-						name: user.name,
-						username: user.username,
-						image: user.image,
-					},
-				})
-				.from(projectCollaborators)
-				.innerJoin(user, eq(projectCollaborators.userId, user.id))
-				.where(eq(projectCollaborators.projectId, input.id));
+		// Get collaborators
+		const collaborators = await db
+			.select({
+				userId: projectCollaborators.userId,
+				role: projectCollaborators.role,
+				addedAt: projectCollaborators.addedAt,
+				user: {
+					id: user.id,
+					name: user.name,
+					username: user.username,
+					image: user.image,
+				},
+			})
+			.from(projectCollaborators)
+			.innerJoin(user, eq(projectCollaborators.userId, user.id))
+			.where(eq(projectCollaborators.projectId, input.id));
 
-			return {
-				...project,
-				role,
-				collaborators,
-			};
-		}),
+		return {
+			...project,
+			role,
+			collaborators,
+		};
+	}),
 
 	// Get project by slug (for public access)
 	getBySlug: publicProcedure
@@ -199,10 +191,7 @@ export const projectsRouter = router({
 				.from(projects)
 				.innerJoin(user, eq(projects.userId, user.id))
 				.where(
-					and(
-						eq(projects.slug, input.slug),
-						eq(projects.visibility, "public")
-					)
+					and(eq(projects.slug, input.slug), eq(projects.visibility, "public")),
 				)
 				.limit(1);
 
@@ -227,8 +216,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, id),
 						eq(projectCollaborators.userId, ctx.user.id),
-						inArray(projectCollaborators.role, ["owner", "editor"])
-					)
+						inArray(projectCollaborators.role, ["owner", "editor"]),
+					),
 				)
 				.limit(1);
 
@@ -236,7 +225,7 @@ export const projectsRouter = router({
 				throw new Error("Project not found or access denied");
 			}
 
-			let updatePayload = { ...updateData };
+			const updatePayload = { ...updateData };
 			if (updateData.name && !updateData.slug) {
 				updatePayload.slug = generateSlug(updateData.name);
 			}
@@ -265,8 +254,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, input.id),
 						eq(projectCollaborators.userId, ctx.user.id),
-						eq(projectCollaborators.role, "owner")
-					)
+						eq(projectCollaborators.role, "owner"),
+					),
 				)
 				.limit(1);
 
@@ -292,8 +281,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, projectId),
 						eq(projectCollaborators.userId, ctx.user.id),
-						inArray(projectCollaborators.role, ["owner", "editor"])
-					)
+						inArray(projectCollaborators.role, ["owner", "editor"]),
+					),
 				)
 				.limit(1);
 
@@ -307,15 +296,15 @@ export const projectsRouter = router({
 				.from(projectComponents)
 				.where(eq(projectComponents.projectId, projectId));
 
-			const existingIds = new Set(existingComponents.map(c => c.componentId));
-			const newComponentIds = componentIds.filter(id => !existingIds.has(id));
+			const existingIds = new Set(existingComponents.map((c) => c.componentId));
+			const newComponentIds = componentIds.filter((id) => !existingIds.has(id));
 
 			if (newComponentIds.length === 0) {
 				return { added: 0, skipped: componentIds.length };
 			}
 
 			// Insert new components
-			const insertData = newComponentIds.map(componentId => ({
+			const insertData = newComponentIds.map((componentId) => ({
 				projectId,
 				componentId,
 			}));
@@ -328,9 +317,9 @@ export const projectsRouter = router({
 				.set({ updatedAt: new Date() })
 				.where(eq(projects.id, projectId));
 
-			return { 
-				added: newComponentIds.length, 
-				skipped: componentIds.length - newComponentIds.length 
+			return {
+				added: newComponentIds.length,
+				skipped: componentIds.length - newComponentIds.length,
 			};
 		}),
 
@@ -348,8 +337,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, projectId),
 						eq(projectCollaborators.userId, ctx.user.id),
-						inArray(projectCollaborators.role, ["owner", "editor"])
-					)
+						inArray(projectCollaborators.role, ["owner", "editor"]),
+					),
 				)
 				.limit(1);
 
@@ -362,8 +351,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectComponents.projectId, projectId),
-						eq(projectComponents.componentId, componentId)
-					)
+						eq(projectComponents.componentId, componentId),
+					),
 				);
 
 			// Update project timestamp
@@ -388,8 +377,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectCollaborators.projectId, projectId),
-						eq(projectCollaborators.userId, ctx.user.id)
-					)
+						eq(projectCollaborators.userId, ctx.user.id),
+					),
 				)
 				.limit(1);
 
@@ -483,8 +472,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, projectId),
 						eq(projectCollaborators.userId, ctx.user.id),
-						eq(projectCollaborators.role, "owner")
-					)
+						eq(projectCollaborators.role, "owner"),
+					),
 				)
 				.limit(1);
 
@@ -534,8 +523,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, projectId),
 						eq(projectCollaborators.userId, ctx.user.id),
-						eq(projectCollaborators.role, "owner")
-					)
+						eq(projectCollaborators.role, "owner"),
+					),
 				)
 				.limit(1);
 
@@ -553,8 +542,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectCollaborators.projectId, projectId),
-						eq(projectCollaborators.userId, userId)
-					)
+						eq(projectCollaborators.userId, userId),
+					),
 				);
 
 			return { success: true };
@@ -574,8 +563,8 @@ export const projectsRouter = router({
 					and(
 						eq(projectCollaborators.projectId, projectId),
 						eq(projectCollaborators.userId, ctx.user.id),
-						eq(projectCollaborators.role, "owner")
-					)
+						eq(projectCollaborators.role, "owner"),
+					),
 				)
 				.limit(1);
 
@@ -594,8 +583,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectCollaborators.projectId, projectId),
-						eq(projectCollaborators.userId, userId)
-					)
+						eq(projectCollaborators.userId, userId),
+					),
 				)
 				.returning();
 
@@ -615,8 +604,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectCollaborators.projectId, projectId),
-						eq(projectCollaborators.userId, ctx.user.id)
-					)
+						eq(projectCollaborators.userId, ctx.user.id),
+					),
 				)
 				.limit(1);
 
@@ -640,7 +629,7 @@ export const projectsRouter = router({
 
 			if (format === "cli") {
 				// Generate CLI command
-				const componentNames = componentsList.map(c => c.name).join(" ");
+				const componentNames = componentsList.map((c) => c.name).join(" ");
 				return {
 					command: `npx shadcn@latest add ${componentNames}`,
 					components: componentsList,
@@ -651,7 +640,7 @@ export const projectsRouter = router({
 				// Generate registry.json format
 				const registry = {
 					name: "Custom Project Registry",
-					items: componentsList.map(component => ({
+					items: componentsList.map((component) => ({
 						name: component.name,
 						type: "components:ui",
 						files: [],
@@ -665,13 +654,13 @@ export const projectsRouter = router({
 			if (format === "package-json") {
 				// Extract dependencies from install commands
 				const dependencies: Record<string, string> = {};
-				componentsList.forEach(component => {
+				componentsList.forEach((component) => {
 					if (component.installCommand?.includes("npm install")) {
 						const packages = component.installCommand
 							.replace("npm install", "")
 							.trim()
 							.split(" ");
-						packages.forEach(pkg => {
+						packages.forEach((pkg) => {
 							if (pkg && !pkg.startsWith("-")) {
 								dependencies[pkg] = "latest";
 							}
@@ -706,10 +695,7 @@ export const projectsRouter = router({
 				.from(projects)
 				.innerJoin(user, eq(projects.userId, user.id))
 				.where(
-					and(
-						eq(projects.slug, input.slug),
-						eq(projects.visibility, "public")
-					)
+					and(eq(projects.slug, input.slug), eq(projects.visibility, "public")),
 				)
 				.limit(1);
 
@@ -779,8 +765,8 @@ export const projectsRouter = router({
 				.where(
 					and(
 						eq(projectCollaborators.projectId, project[0].id),
-						eq(projectCollaborators.userId, ctx.user.id)
-					)
+						eq(projectCollaborators.userId, ctx.user.id),
+					),
 				)
 				.limit(1);
 

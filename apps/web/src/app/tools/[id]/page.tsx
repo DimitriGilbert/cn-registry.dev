@@ -65,13 +65,15 @@ export default function ToolDetailPage({
 	const starMutation = useMutation(
 		trpc.tools.toggleStar.mutationOptions({
 			onSuccess: () => {
-				queryClient.invalidateQueries({ queryKey: ["tools", "getById", { id }] });
+				queryClient.invalidateQueries({
+					queryKey: ["tools", "getById", { id }],
+				});
 				toast.success("Star toggled successfully");
 			},
 			onError: () => {
 				toast.error("Failed to toggle star");
 			},
-		})
+		}),
 	);
 
 	// Add comment mutation
@@ -86,7 +88,7 @@ export default function ToolDetailPage({
 			onError: () => {
 				toast.error("Failed to add comment");
 			},
-		})
+		}),
 	);
 
 	const handleAddComment = (content: string, parentId?: string) => {

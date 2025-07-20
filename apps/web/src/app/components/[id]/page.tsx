@@ -5,7 +5,6 @@ import { ArrowLeft, ExternalLink, Github, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useCart } from "@/components/providers/cart-provider";
 import { CommentForm } from "@/components/features/comment-form";
 import { CommentList } from "@/components/features/comment-list";
 import { CopyInstallCommand } from "@/components/features/copy-install-command";
@@ -15,6 +14,7 @@ import { Showcase } from "@/components/features/showcase";
 import { StarButton } from "@/components/features/star-button";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
+import { useCart } from "@/components/providers/cart-provider";
 import { Badge } from "@/components/ui/badge";
 import {
 	Breadcrumb,
@@ -75,7 +75,7 @@ export default function ComponentDetailPage({
 			onError: () => {
 				toast.error("Failed to toggle star");
 			},
-		})
+		}),
 	);
 
 	// Add comment mutation
@@ -90,7 +90,7 @@ export default function ComponentDetailPage({
 			onError: () => {
 				toast.error("Failed to add comment");
 			},
-		})
+		}),
 	);
 
 	const handleAddComment = (content: string, parentId?: string) => {

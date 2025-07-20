@@ -37,6 +37,14 @@ export default function UserMenu() {
 				<DropdownMenuLabel>My Account</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem asChild>
+					<Link href="/profile">Edit Profile</Link>
+				</DropdownMenuItem>
+				<DropdownMenuItem asChild>
+					<Link href="/projects">My Projects</Link>
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
 					<Button
 						variant="destructive"

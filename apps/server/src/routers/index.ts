@@ -3,6 +3,7 @@ import { adminRouter } from "./admin";
 import { analyticsRouter } from "./analytics";
 import { categoriesRouter } from "./categories";
 import { componentsRouter } from "./components";
+import { creatorsRouter } from "./creators";
 import { githubRouter } from "./github";
 import { projectsRouter } from "./projects";
 import { themesRouter } from "./themes";
@@ -26,6 +27,7 @@ export const appRouter = router({
 	tools: toolsRouter,
 	categories: categoriesRouter,
 	projects: projectsRouter,
+	creators: creatorsRouter,
 	github: githubRouter,
 	analytics: analyticsRouter,
 	admin: adminRouter,

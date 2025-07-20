@@ -86,7 +86,7 @@ export default function ManageComponentsPage() {
 			onError: () => {
 				toast.error("Failed to delete component");
 			},
-		})
+		}),
 	);
 
 	// Reset page when search or filter changes

@@ -1,21 +1,21 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { 
-	ArrowLeft, 
-	Calendar, 
-	Component, 
-	Copy, 
-	Download, 
-	Edit3, 
-	ExternalLink, 
-	Github, 
-	MoreVertical, 
-	Plus, 
-	Settings, 
-	Trash2, 
+import {
+	ArrowLeft,
+	Calendar,
+	Component,
+	Copy,
+	Download,
+	Edit3,
+	ExternalLink,
+	Github,
+	MoreVertical,
+	Plus,
+	Settings,
+	Trash2,
 	Users,
-	X 
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,7 +25,13 @@ import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -37,7 +43,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc, trpcClient } from "@/utils/trpc";
 
-type ComponentCardProps = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number] & {
+type ComponentCardProps = Awaited<
+	ReturnType<typeof trpcClient.components.getAll.query>
+>["components"][number] & {
 	addedAt: string;
 	onRemove: () => void;
 	canEdit: boolean;
@@ -60,7 +68,7 @@ function ProjectComponentCard({
 		<Card>
 			<CardHeader>
 				<div className="flex items-start justify-between">
-					<div className="space-y-1 flex-1">
+					<div className="flex-1 space-y-1">
 						<CardTitle className="text-lg">
 							<Link href={`/components/${id}`} className="hover:underline">
 								{name}
@@ -82,20 +90,23 @@ function ProjectComponentCard({
 					)}
 				</div>
 				<div className="flex items-center gap-2">
-					{categories?.filter((category): category is NonNullable<typeof category> => category !== null).map((category) => (
-						<Badge key={category.id} variant="secondary">
-							{category.name}
-						</Badge>
-					))}
+					{categories
+						?.filter(
+							(category): category is NonNullable<typeof category> =>
+								category !== null,
+						)
+						.map((category) => (
+							<Badge key={category.id} variant="secondary">
+								{category.name}
+							</Badge>
+						))}
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-center justify-between text-muted-foreground text-sm mb-4">
+				<div className="mb-4 flex items-center justify-between text-muted-foreground text-sm">
 					<div className="flex items-center gap-4">
 						<div>{starsCount} stars</div>
-						{creator && (
-							<div>by {creator.name}</div>
-						)}
+						{creator && <div>by {creator.name}</div>}
 					</div>
 					<div>Added {new Date(addedAt).toLocaleDateString()}</div>
 				</div>
@@ -178,7 +189,10 @@ function CollaboratorCard({
 										Make Editor
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem onClick={onRemove} className="text-destructive">
+									<DropdownMenuItem
+										onClick={onRemove}
+										className="text-destructive"
+									>
 										Remove
 									</DropdownMenuItem>
 								</DropdownMenuContent>
@@ -196,7 +210,9 @@ export default function ProjectDetailPage({
 }: {
 	params: Promise<{ slug: string }>;
 }) {
-	const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(null);
+	const [resolvedParams, setResolvedParams] = useState<{ slug: string } | null>(
+		null,
+	);
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
@@ -218,10 +234,7 @@ export default function ProjectDetailPage({
 	});
 
 	// Fetch project components
-	const {
-		data: components = [],
-		isLoading: componentsLoading,
-	} = useQuery({
+	const { data: components = [], isLoading: componentsLoading } = useQuery({
 		...trpc.projects.getComponents.queryOptions({ projectId: project?.id! }),
 		enabled: !!project?.id,
 	});
@@ -230,19 +243,21 @@ export default function ProjectDetailPage({
 	const removeComponent = useMutation(
 		trpc.projects.removeComponent.mutationOptions({
 			onSuccess: () => {
-				queryClient.invalidateQueries({ 
-					queryKey: ["projects", "getComponents", { projectId: project!.id }] 
+				queryClient.invalidateQueries({
+					queryKey: ["projects", "getComponents", { projectId: project!.id }],
 				});
 				toast.success("Component removed from project");
 			},
 			onError: (error) => {
 				toast.error(`Failed to remove component: ${error.message}`);
 			},
-		})
+		}),
 	);
 
 	// Generate install config function
-	const handleGenerateConfig = async (format: "registry" | "cli" | "package-json") => {
+	const handleGenerateConfig = async (
+		format: "registry" | "cli" | "package-json",
+	) => {
 		try {
 			const data = await trpcClient.projects.generateInstallConfig.query({
 				projectId: project!.id,
@@ -280,7 +295,9 @@ export default function ProjectDetailPage({
 				toast.success("Package.json downloaded!");
 			}
 		} catch (error) {
-			toast.error(`Failed to generate config: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			toast.error(
+				`Failed to generate config: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
 		}
 	};
 
@@ -288,9 +305,9 @@ export default function ProjectDetailPage({
 		return (
 			<Container>
 				<div className="py-8">
-					<Skeleton className="h-8 w-64 mb-4" />
-					<Skeleton className="h-4 w-96 mb-8" />
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+					<Skeleton className="mb-4 h-8 w-64" />
+					<Skeleton className="mb-8 h-4 w-96" />
+					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{Array.from({ length: 6 }).map((_, i) => (
 							<Skeleton key={i} className="h-48" />
 						))}
@@ -307,7 +324,8 @@ export default function ProjectDetailPage({
 					<div className="text-center">
 						<h1 className="mb-2 font-bold text-2xl">Project Not Found</h1>
 						<p className="mb-4 text-muted-foreground">
-							The project you're looking for doesn't exist or you don't have access to it.
+							The project you're looking for doesn't exist or you don't have
+							access to it.
 						</p>
 						<Button asChild>
 							<Link href="/projects">
@@ -330,7 +348,7 @@ export default function ProjectDetailPage({
 				<div className="mb-6">
 					<Button variant="ghost" asChild className="mb-4">
 						<Link href="/projects">
-							<ArrowLeft className="h-4 w-4 mr-2" />
+							<ArrowLeft className="mr-2 h-4 w-4" />
 							Back to Projects
 						</Link>
 					</Button>
@@ -340,13 +358,17 @@ export default function ProjectDetailPage({
 						subtitle={project.description || "No description"}
 					>
 						<div className="flex items-center gap-2">
-							<Badge variant={project.visibility === "public" ? "default" : "secondary"}>
+							<Badge
+								variant={
+									project.visibility === "public" ? "default" : "secondary"
+								}
+							>
 								{project.visibility}
 							</Badge>
 							{canEdit && (
 								<Button variant="outline" asChild>
 									<Link href={`/projects/${slug}/edit`}>
-										<Edit3 className="h-4 w-4 mr-2" />
+										<Edit3 className="mr-2 h-4 w-4" />
 										Edit
 									</Link>
 								</Button>
@@ -354,30 +376,30 @@ export default function ProjectDetailPage({
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="outline">
-										<Download className="h-4 w-4 mr-2" />
+										<Download className="mr-2 h-4 w-4" />
 										Export
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
-									<DropdownMenuItem 
+									<DropdownMenuItem
 										onClick={() => handleGenerateConfig("cli")}
 										disabled={components.length === 0}
 									>
-										<Copy className="h-4 w-4 mr-2" />
+										<Copy className="mr-2 h-4 w-4" />
 										Copy CLI Command
 									</DropdownMenuItem>
-									<DropdownMenuItem 
+									<DropdownMenuItem
 										onClick={() => handleGenerateConfig("registry")}
 										disabled={components.length === 0}
 									>
-										<Download className="h-4 w-4 mr-2" />
+										<Download className="mr-2 h-4 w-4" />
 										Download Registry
 									</DropdownMenuItem>
-									<DropdownMenuItem 
+									<DropdownMenuItem
 										onClick={() => handleGenerateConfig("package-json")}
 										disabled={components.length === 0}
 									>
-										<Download className="h-4 w-4 mr-2" />
+										<Download className="mr-2 h-4 w-4" />
 										Download Dependencies
 									</DropdownMenuItem>
 								</DropdownMenuContent>
@@ -389,16 +411,16 @@ export default function ProjectDetailPage({
 				<Tabs defaultValue="components" className="w-full">
 					<TabsList>
 						<TabsTrigger value="components">
-							<Component className="h-4 w-4 mr-2" />
+							<Component className="mr-2 h-4 w-4" />
 							Components ({components.length})
 						</TabsTrigger>
 						<TabsTrigger value="collaborators">
-							<Users className="h-4 w-4 mr-2" />
+							<Users className="mr-2 h-4 w-4" />
 							Collaborators ({project.collaborators?.length || 0})
 						</TabsTrigger>
 						{isOwner && (
 							<TabsTrigger value="settings">
-								<Settings className="h-4 w-4 mr-2" />
+								<Settings className="mr-2 h-4 w-4" />
 								Settings
 							</TabsTrigger>
 						)}
@@ -410,7 +432,7 @@ export default function ProjectDetailPage({
 							{canEdit && (
 								<Button asChild>
 									<Link href="/components">
-										<Plus className="h-4 w-4 mr-2" />
+										<Plus className="mr-2 h-4 w-4" />
 										Add Components
 									</Link>
 								</Button>
@@ -418,38 +440,47 @@ export default function ProjectDetailPage({
 						</div>
 
 						{componentsLoading ? (
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 								{Array.from({ length: 6 }).map((_, i) => (
 									<Skeleton key={i} className="h-48" />
 								))}
 							</div>
 						) : components.length === 0 ? (
-							<div className="text-center py-12">
-								<Component className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-								<h3 className="font-semibold text-lg mb-2">No components yet</h3>
-								<p className="text-muted-foreground mb-4">
+							<div className="py-12 text-center">
+								<Component className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+								<h3 className="mb-2 font-semibold text-lg">
+									No components yet
+								</h3>
+								<p className="mb-4 text-muted-foreground">
 									Add components to this project to get started.
 								</p>
 								{canEdit && (
 									<Button asChild>
 										<Link href="/components">
-											<Plus className="h-4 w-4 mr-2" />
+											<Plus className="mr-2 h-4 w-4" />
 											Browse Components
 										</Link>
 									</Button>
 								)}
 							</div>
 						) : (
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+							<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 								{components.map((component) => (
 									<ProjectComponentCard
 										key={component.id}
 										{...component}
-										categories={component.categories.filter((cat): cat is NonNullable<typeof cat> => cat !== null)}
+										categories={component.categories.filter(
+											(cat): cat is NonNullable<typeof cat> => cat !== null,
+										)}
 										githubUrl={component.githubUrl}
 										websiteUrl={component.websiteUrl}
 										creator={component.creator}
-										onRemove={() => removeComponent.mutate({ projectId: project.id, componentId: component.id })}
+										onRemove={() =>
+											removeComponent.mutate({
+												projectId: project.id,
+												componentId: component.id,
+											})
+										}
 										canEdit={canEdit}
 									/>
 								))}
@@ -462,13 +493,13 @@ export default function ProjectDetailPage({
 							<h3 className="font-semibold text-lg">Collaborators</h3>
 							{isOwner && (
 								<Button>
-									<Plus className="h-4 w-4 mr-2" />
+									<Plus className="mr-2 h-4 w-4" />
 									Add Collaborator
 								</Button>
 							)}
 						</div>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 							{project.collaborators?.map((collaborator) => (
 								<CollaboratorCard
 									key={collaborator.userId}
@@ -503,12 +534,12 @@ export default function ProjectDetailPage({
 									</CardHeader>
 									<CardContent className="space-y-6">
 										<div>
-											<h4 className="font-medium mb-2">Danger Zone</h4>
-											<p className="text-muted-foreground text-sm mb-4">
+											<h4 className="mb-2 font-medium">Danger Zone</h4>
+											<p className="mb-4 text-muted-foreground text-sm">
 												These actions cannot be undone.
 											</p>
 											<Button variant="destructive">
-												<Trash2 className="h-4 w-4 mr-2" />
+												<Trash2 className="mr-2 h-4 w-4" />
 												Delete Project
 											</Button>
 										</div>

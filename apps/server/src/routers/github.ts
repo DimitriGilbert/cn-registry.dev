@@ -19,18 +19,20 @@ export interface GitHubRepoData {
 	homepage: string | null;
 }
 
-function extractRepoInfo(repoUrl: string): { owner: string; repo: string } | null {
+function extractRepoInfo(
+	repoUrl: string,
+): { owner: string; repo: string } | null {
 	try {
 		const url = new URL(repoUrl);
-		if (url.hostname !== 'github.com') {
+		if (url.hostname !== "github.com") {
 			return null;
 		}
-		
-		const pathParts = url.pathname.split('/').filter(Boolean);
+
+		const pathParts = url.pathname.split("/").filter(Boolean);
 		if (pathParts.length >= 2) {
 			return {
 				owner: pathParts[0],
-				repo: pathParts[1].replace('.git', ''),
+				repo: pathParts[1].replace(".git", ""),
 			};
 		}
 		return null;
@@ -39,15 +41,21 @@ function extractRepoInfo(repoUrl: string): { owner: string; repo: string } | nul
 	}
 }
 
-async function fetchGitHubData(owner: string, repo: string): Promise<GitHubRepoData | null> {
+async function fetchGitHubData(
+	owner: string,
+	repo: string,
+): Promise<GitHubRepoData | null> {
 	try {
 		// Fetch repository data
-		const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-			headers: {
-				'Accept': 'application/vnd.github.v3+json',
-				'User-Agent': 'CN-Registry',
+		const repoResponse = await fetch(
+			`https://api.github.com/repos/${owner}/${repo}`,
+			{
+				headers: {
+					Accept: "application/vnd.github.v3+json",
+					"User-Agent": "CN-Registry",
+				},
 			},
-		});
+		);
 
 		if (!repoResponse.ok) {
 			return null;
@@ -58,16 +66,19 @@ async function fetchGitHubData(owner: string, repo: string): Promise<GitHubRepoD
 		// Fetch README
 		let readme: string | null = null;
 		try {
-			const readmeResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/readme`, {
-				headers: {
-					'Accept': 'application/vnd.github.v3+json',
-					'User-Agent': 'CN-Registry',
+			const readmeResponse = await fetch(
+				`https://api.github.com/repos/${owner}/${repo}/readme`,
+				{
+					headers: {
+						Accept: "application/vnd.github.v3+json",
+						"User-Agent": "CN-Registry",
+					},
 				},
-			});
+			);
 
 			if (readmeResponse.ok) {
 				const readmeData = await readmeResponse.json();
-				readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+				readme = Buffer.from(readmeData.content, "base64").toString("utf-8");
 			}
 		} catch {
 			// README fetch failed, continue without it
@@ -76,12 +87,15 @@ async function fetchGitHubData(owner: string, repo: string): Promise<GitHubRepoD
 		// Fetch latest commit
 		let lastCommit = repoData.updated_at;
 		try {
-			const commitsResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`, {
-				headers: {
-					'Accept': 'application/vnd.github.v3+json',
-					'User-Agent': 'CN-Registry',
+			const commitsResponse = await fetch(
+				`https://api.github.com/repos/${owner}/${repo}/commits?per_page=1`,
+				{
+					headers: {
+						Accept: "application/vnd.github.v3+json",
+						"User-Agent": "CN-Registry",
+					},
 				},
-			});
+			);
 
 			if (commitsResponse.ok) {
 				const commitsData = await commitsResponse.json();
@@ -95,12 +109,12 @@ async function fetchGitHubData(owner: string, repo: string): Promise<GitHubRepoD
 
 		return {
 			name: repoData.name,
-			description: repoData.description || '',
+			description: repoData.description || "",
 			stars: repoData.stargazers_count,
 			forks: repoData.forks_count,
 			issues: repoData.open_issues_count,
 			watchers: repoData.watchers_count,
-			language: repoData.language || '',
+			language: repoData.language || "",
 			license: repoData.license?.name || null,
 			lastCommit,
 			readme,
@@ -108,7 +122,7 @@ async function fetchGitHubData(owner: string, repo: string): Promise<GitHubRepoD
 			homepage: repoData.homepage,
 		};
 	} catch (error) {
-		console.error('GitHub API error:', error);
+		console.error("GitHub API error:", error);
 		return null;
 	}
 }
@@ -141,13 +155,13 @@ export const githubRouter = router({
 			// Extract repository info
 			const repoInfo = extractRepoInfo(repoUrl);
 			if (!repoInfo) {
-				throw new Error('Invalid GitHub repository URL');
+				throw new Error("Invalid GitHub repository URL");
 			}
 
 			// Fetch fresh data
 			const data = await fetchGitHubData(repoInfo.owner, repoInfo.repo);
 			if (!data) {
-				throw new Error('Failed to fetch repository data');
+				throw new Error("Failed to fetch repository data");
 			}
 
 			// Cache the data
@@ -197,24 +211,29 @@ export const githubRouter = router({
 			// Extract repository info
 			const repoInfo = extractRepoInfo(repoUrl);
 			if (!repoInfo) {
-				throw new Error('Invalid GitHub repository URL');
+				throw new Error("Invalid GitHub repository URL");
 			}
 
 			// Fetch README only
 			try {
-				const readmeResponse = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/readme`, {
-					headers: {
-						'Accept': 'application/vnd.github.v3+json',
-						'User-Agent': 'CN-Registry',
+				const readmeResponse = await fetch(
+					`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/readme`,
+					{
+						headers: {
+							Accept: "application/vnd.github.v3+json",
+							"User-Agent": "CN-Registry",
+						},
 					},
-				});
+				);
 
 				if (!readmeResponse.ok) {
 					return { readme: null };
 				}
 
 				const readmeData = await readmeResponse.json();
-				const readme = Buffer.from(readmeData.content, 'base64').toString('utf-8');
+				const readme = Buffer.from(readmeData.content, "base64").toString(
+					"utf-8",
+				);
 
 				return { readme };
 			} catch {
@@ -254,20 +273,23 @@ export const githubRouter = router({
 			// Extract repository info
 			const repoInfo = extractRepoInfo(repoUrl);
 			if (!repoInfo) {
-				throw new Error('Invalid GitHub repository URL');
+				throw new Error("Invalid GitHub repository URL");
 			}
 
 			// Fetch repository stats
 			try {
-				const repoResponse = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`, {
-					headers: {
-						'Accept': 'application/vnd.github.v3+json',
-						'User-Agent': 'CN-Registry',
+				const repoResponse = await fetch(
+					`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`,
+					{
+						headers: {
+							Accept: "application/vnd.github.v3+json",
+							"User-Agent": "CN-Registry",
+						},
 					},
-				});
+				);
 
 				if (!repoResponse.ok) {
-					throw new Error('Repository not found');
+					throw new Error("Repository not found");
 				}
 
 				const repoData = await repoResponse.json();
@@ -277,11 +299,11 @@ export const githubRouter = router({
 					forks: repoData.forks_count,
 					issues: repoData.open_issues_count,
 					watchers: repoData.watchers_count,
-					language: repoData.language || '',
+					language: repoData.language || "",
 					lastCommit: repoData.updated_at,
 				};
 			} catch (error) {
-				throw new Error('Failed to fetch repository stats');
+				throw new Error("Failed to fetch repository stats");
 			}
 		}),
 });

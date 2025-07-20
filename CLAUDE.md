@@ -16,36 +16,28 @@ This is a TypeScript monorepo built with Turborepo containing a component regist
 ### Setup
 
 ```bash
-bun install                    # Install dependencies
-bun db:push                   # Push schema to database (first time setup)
-```
-
-### Development
-
-```bash
-bun dev                       # Start both web and server in development
-bun dev:web                   # Start only web app (port 3001)
-bun dev:server                # Start only server (port 3000)
+bun run install                    # Install dependencies
+bun run db:push                   # Push schema to database (first time setup)
 ```
 
 ### Database Management
 
 ```bash
-bun db:start                  # Start PostgreSQL with Docker Compose
-bun db:stop                   # Stop PostgreSQL containers
-bun db:down                   # Stop and remove PostgreSQL containers
-bun db:studio                 # Open Drizzle Studio (database UI)
-bun db:push                   # Push schema changes to database
-bun db:generate               # Generate database migrations
-bun db:migrate                # Run database migrations
+bun run db:start                  # Start PostgreSQL with Docker Compose
+bun run db:stop                   # Stop PostgreSQL containers
+bun run db:down                   # Stop and remove PostgreSQL containers
+bun run db:studio                 # Open Drizzle Studio (database UI)
+bun run db:push                   # Push schema changes to database
+bun run db:generate               # Generate database migrations
+bun run db:migrate                # Run database migrations
 ```
 
 ### Code Quality
 
 ```bash
-bun check                     # Run Biome linting and formatting
-bun check-types               # TypeScript type checking across all apps
-bun build                     # Build all applications
+bun run check                     # Run Biome linting and formatting
+bun run check-types               # TypeScript type checking across all apps
+bun run build                     # Build all applications
 ```
 
 ## Architecture
@@ -121,3 +113,4 @@ Key environment variables:
 - if you encounter errors multiple times due to mis usage of a library, function, component, etc. your knowledge might be out of date. You will have to fetch the latest docs and update your knowledge.
   - once the error is fixed, update the docs/llm/common-errors/index.md with the new information. with reference to the source url if any and the concerned file.
 - project must build when you are done
+- use use-formedible for all the forms

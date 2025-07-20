@@ -1,9 +1,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { trpcClient } from "@/utils/trpc";
+import type { trpcClient } from "@/utils/trpc";
 
-type Component = Awaited<ReturnType<typeof trpcClient.components.getAll.query>>["components"][number];
+type Component = Awaited<
+	ReturnType<typeof trpcClient.components.getAll.query>
+>["components"][number];
 
 interface CartContextType {
 	cart: Component[];

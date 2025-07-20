@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
+import { Button } from "@/components/ui/button";
 import { applyRegistryTheme } from "@/lib/apply-theme";
 
 interface ThemeItem {
@@ -27,7 +27,7 @@ export function ThemeButtons() {
 
 	useEffect(() => {
 		if (currentTheme !== "default" && availableThemes.length > 0) {
-			const theme = availableThemes.find(t => t.name === currentTheme);
+			const theme = availableThemes.find((t) => t.name === currentTheme);
 			if (theme?.cssVars) {
 				applyRegistryTheme(theme, themeState.currentMode);
 			}
@@ -38,7 +38,7 @@ export function ThemeButtons() {
 		try {
 			const response = await fetch("/tweakcn-registry.json");
 			const registry = await response.json();
-			
+
 			type RegistryItem = {
 				name: string;
 				title?: string;
@@ -52,7 +52,7 @@ export function ThemeButtons() {
 				.map((item) => ({
 					name: item.name,
 					title: item.title || item.name,
-					cssVars: item.cssVars!
+					cssVars: item.cssVars!,
 				}));
 
 			setAvailableThemes(themes);
@@ -62,7 +62,7 @@ export function ThemeButtons() {
 	};
 
 	const handleThemeClick = (themeName: string) => {
-		const theme = availableThemes.find(t => t.name === themeName);
+		const theme = availableThemes.find((t) => t.name === themeName);
 		if (theme?.cssVars) {
 			applyRegistryTheme(theme, themeState.currentMode);
 			setCurrentTheme(themeName);
@@ -71,10 +71,10 @@ export function ThemeButtons() {
 	};
 
 	return (
-		<div className="flex flex-wrap gap-3 justify-center">
+		<div className="flex flex-wrap justify-center gap-3">
 			{availableThemes.map((theme) => {
 				const isSelected = currentTheme === theme.name;
-				
+
 				return (
 					<Button
 						key={theme.name}

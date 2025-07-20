@@ -7,21 +7,40 @@ import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpc, type trpcClient } from "@/utils/trpc";
 
-type ProjectCardProps = Awaited<ReturnType<typeof trpcClient.projects.getAll.query>>[number];
+type ProjectCardProps = Awaited<
+	ReturnType<typeof trpcClient.projects.getAll.query>
+>[number];
 
 function ProjectCard(project: ProjectCardProps) {
-	const { id, name, description, slug, visibility, componentCount, collaboratorCount, role, createdAt, updatedAt } = project;
+	const {
+		id,
+		name,
+		description,
+		slug,
+		visibility,
+		componentCount,
+		collaboratorCount,
+		role,
+		createdAt,
+		updatedAt,
+	} = project;
 	const formattedDate = new Date(updatedAt).toLocaleDateString();
 
 	return (
 		<Card className="group transition-shadow hover:shadow-md">
 			<CardHeader>
 				<div className="flex items-start justify-between">
-					<div className="space-y-1 flex-1">
+					<div className="flex-1 space-y-1">
 						<CardTitle className="text-lg">
 							<Link href={`/projects/${slug}`} className="hover:underline">
 								{name}
@@ -37,14 +56,12 @@ function ProjectCard(project: ProjectCardProps) {
 						<Badge variant={visibility === "public" ? "default" : "secondary"}>
 							{visibility}
 						</Badge>
-						<Badge variant="outline">
-							{role}
-						</Badge>
+						<Badge variant="outline">{role}</Badge>
 					</div>
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-center justify-between text-muted-foreground text-sm mb-4">
+				<div className="mb-4 flex items-center justify-between text-muted-foreground text-sm">
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-1">
 							<Component className="h-3 w-3" />
@@ -52,7 +69,8 @@ function ProjectCard(project: ProjectCardProps) {
 						</div>
 						<div className="flex items-center gap-1">
 							<Users className="h-3 w-3" />
-							{collaboratorCount} {collaboratorCount === 1 ? "collaborator" : "collaborators"}
+							{collaboratorCount}{" "}
+							{collaboratorCount === 1 ? "collaborator" : "collaborators"}
 						</div>
 					</div>
 					<div className="flex items-center gap-1">
@@ -76,15 +94,16 @@ function ProjectCard(project: ProjectCardProps) {
 function ProjectGrid({ projects }: { projects: ProjectCardProps[] }) {
 	if (projects.length === 0) {
 		return (
-			<div className="text-center py-12">
-				<Component className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-				<h3 className="font-semibold text-lg mb-2">No projects yet</h3>
-				<p className="text-muted-foreground mb-4">
-					Create your first project to organize and share your component collections.
+			<div className="py-12 text-center">
+				<Component className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+				<h3 className="mb-2 font-semibold text-lg">No projects yet</h3>
+				<p className="mb-4 text-muted-foreground">
+					Create your first project to organize and share your component
+					collections.
 				</p>
 				<Button asChild>
 					<Link href="/projects/new">
-						<Plus className="h-4 w-4 mr-2" />
+						<Plus className="mr-2 h-4 w-4" />
 						Create Project
 					</Link>
 				</Button>
@@ -93,7 +112,7 @@ function ProjectGrid({ projects }: { projects: ProjectCardProps[] }) {
 	}
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{projects.map((project) => (
 				<ProjectCard key={project.id} {...project} />
 			))}
@@ -103,11 +122,11 @@ function ProjectGrid({ projects }: { projects: ProjectCardProps[] }) {
 
 function LoadingSkeleton() {
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{Array.from({ length: 6 }).map((_, i) => (
 				<Card key={i}>
 					<CardHeader>
-						<Skeleton className="h-6 w-3/4 mb-2" />
+						<Skeleton className="mb-2 h-6 w-3/4" />
 						<Skeleton className="h-4 w-full" />
 					</CardHeader>
 					<CardContent>
@@ -138,7 +157,7 @@ export default function ProjectsPage() {
 				>
 					<Button asChild>
 						<Link href="/projects/new">
-							<Plus className="h-4 w-4 mr-2" />
+							<Plus className="mr-2 h-4 w-4" />
 							New Project
 						</Link>
 					</Button>
@@ -148,8 +167,10 @@ export default function ProjectsPage() {
 					{isLoading ? (
 						<LoadingSkeleton />
 					) : error ? (
-						<div className="text-center py-12">
-							<h3 className="font-semibold text-lg mb-2">Error loading projects</h3>
+						<div className="py-12 text-center">
+							<h3 className="mb-2 font-semibold text-lg">
+								Error loading projects
+							</h3>
 							<p className="text-muted-foreground">
 								There was an error loading your projects. Please try again.
 							</p>

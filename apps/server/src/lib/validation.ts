@@ -119,7 +119,11 @@ export const idSchema = z.object({
 export const createProjectSchema = z.object({
 	name: z.string().min(1).max(100),
 	description: z.string().max(500).optional(),
-	slug: z.string().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+	slug: z
+		.string()
+		.min(1)
+		.max(100)
+		.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
 	visibility: z.enum(["private", "public"]).default("private"),
 });
 

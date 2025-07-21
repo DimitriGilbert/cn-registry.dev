@@ -22,6 +22,7 @@
 		"@trpc/server": "^11.4.2",
 		"@trpc/client": "^11.4.2",
 		"drizzle-orm": "^0.44.2",
+		"drizzle-kit": "^0.31.2",
 		"pg": "^8.14.1",
 		"ai": "^4.3.16",
 		"@ai-sdk/google": "^1.2.3",
@@ -32,7 +33,6 @@
 		"@types/react": "^19",
 		"typescript": "^5",
 		"@types/bun": "^1.2.6",
-		"drizzle-kit": "^0.31.2",
 		"@types/pg": "^8.11.11"
 	}
 }

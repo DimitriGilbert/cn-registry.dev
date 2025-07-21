@@ -3,11 +3,12 @@ WORKDIR /app
 
 # Install dependencies only when needed
 FROM base AS deps
-# Copy package files
+# Copy package files for full monorepo
 COPY package.json bun.lockb* ./
 COPY apps/web/package.json ./apps/web/
+COPY apps/server/package.json ./apps/server/
 COPY turbo.json ./
-# Install dependencies
+# Install dependencies for all workspaces
 RUN bun install --frozen-lockfile
 
 # Build the application

@@ -292,10 +292,10 @@ export const adminRouter = router({
 					z.object({
 						name: z.string().min(1),
 						description: z.string().optional(),
-						repoUrl: z.string().url().optional(),
-						websiteUrl: z.string().url().optional(),
-						installUrl: z.string().url().optional(),
-						installCommand: z.string().optional(),
+						repoUrl: z.string().url("Repository URL is required"), // Required
+						websiteUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(),
+						installUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(), 
+						installCommand: z.string().min(1, "Install command is required"), // Required
 						tags: z.array(z.string()).optional(),
 						status: z
 							.enum(["published", "draft", "archived", "suggested"])
@@ -330,6 +330,65 @@ export const adminRouter = router({
 				return newCategory.id;
 			}
 
+			// Helper function to extract username from GitHub URL
+			function extractGitHubUsername(repoUrl: string): string | null {
+				try {
+					const url = new URL(repoUrl);
+					if (url.hostname === 'github.com') {
+						const pathParts = url.pathname.split('/').filter(Boolean);
+						if (pathParts.length >= 1) {
+							return pathParts[0]; // First part is the username
+						}
+					}
+				} catch (error) {
+					console.warn('Failed to extract GitHub username from URL:', repoUrl);
+				}
+				return null;
+			}
+
+			// Helper function to get or create user profile from GitHub username
+			async function getOrCreateUserFromGitHub(repoUrl: string): Promise<string> {
+				const username = extractGitHubUsername(repoUrl);
+				if (!username) {
+					return ctx.user.id; // Fallback to current admin user
+				}
+
+				// Check if user already exists by username
+				const existingUser = await db
+					.select()
+					.from(user)
+					.where(eq(user.username, username))
+					.limit(1);
+
+				if (existingUser.length > 0) {
+					return existingUser[0].id;
+				}
+
+				// Create new user profile
+				try {
+					const now = new Date();
+					const [newUser] = await db
+						.insert(user)
+						.values({
+							id: crypto.randomUUID(),
+							name: username, // Use GitHub username as display name
+							email: `${username}@github.local`, // Placeholder email
+							emailVerified: false,
+							username: username,
+							role: 'creator',
+							bio: `GitHub: https://github.com/${username}`,
+							verified: false,
+							createdAt: now,
+							updatedAt: now,
+						})
+						.returning();
+					return newUser.id;
+				} catch (error) {
+					console.warn('Failed to create user profile for GitHub username:', username, error);
+					return ctx.user.id; // Fallback to current admin user
+				}
+			}
+
 			// Process each component
 			for (const componentData of componentsData) {
 				try {
@@ -345,17 +404,20 @@ export const adminRouter = router({
 						continue;
 					}
 
+					// Get or create creator from GitHub URL
+					const creatorId = await getOrCreateUserFromGitHub(componentData.repoUrl);
+
 					// Insert component
 					const component = {
 						name: componentData.name,
 						description: componentData.description || "Component description",
-						repoUrl: componentData.repoUrl || null,
+						repoUrl: componentData.repoUrl,
 						websiteUrl: componentData.websiteUrl || null,
 						installUrl: componentData.installUrl || null,
-						installCommand: componentData.installCommand || null,
+						installCommand: componentData.installCommand,
 						tags: componentData.tags || [],
 						status: componentData.status || ("suggested" as const),
-						creatorId: ctx.user.id,
+						creatorId: creatorId, // Use GitHub username-based creator
 					};
 
 					const [insertedComponent] = await db

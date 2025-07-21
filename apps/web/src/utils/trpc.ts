@@ -19,10 +19,19 @@ export const queryClient = new QueryClient({
 	}),
 });
 
+const getServerUrl = () => {
+	// For server-side calls (SSR), use internal container URL
+	if (typeof window === "undefined") {
+		return process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL;
+	}
+	// For client-side calls, use public URL
+	return process.env.NEXT_PUBLIC_SERVER_URL;
+};
+
 export const trpcClient = createTRPCClient<AppRouter>({
 	links: [
 		httpBatchLink({
-			url: `${process.env.NEXT_PUBLIC_SERVER_URL}/trpc`,
+			url: `${getServerUrl()}/trpc`,
 			fetch(url, options) {
 				return fetch(url, {
 					...options,

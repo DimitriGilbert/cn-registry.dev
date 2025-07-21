@@ -72,8 +72,24 @@ export function ThemeSelector() {
 
 	const applyThemePreset = (themeName: string) => {
 		if (themeName === "default") {
+			// Reset to default theme without reloading
 			localStorage.removeItem("theme-preset");
-			location.reload();
+			
+			// Apply default theme styles from globals.css
+			const root = document.documentElement;
+			root.classList.remove("light", "dark");
+			root.classList.add(themeState.currentMode);
+			
+			// Remove any custom CSS variables and let defaults from CSS take over
+			const customProps = [
+				"--background", "--foreground", "--card", "--card-foreground", 
+				"--popover", "--popover-foreground", "--primary", "--primary-foreground",
+				"--secondary", "--secondary-foreground", "--muted", "--muted-foreground",
+				"--accent", "--accent-foreground", "--destructive", "--destructive-foreground",
+				"--border", "--input", "--ring", "--radius"
+			];
+			
+			customProps.forEach(prop => root.style.removeProperty(prop));
 			return;
 		}
 

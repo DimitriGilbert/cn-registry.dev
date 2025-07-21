@@ -16,6 +16,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { trpc, trpcClient } from "@/utils/trpc";
+import { generateMultipleInstallCommands } from "@/utils/install-command";
 
 interface SaveProjectDialogProps {
 	isOpen: boolean;
@@ -173,12 +174,6 @@ function CartContent() {
 	const { cart, removeFromCart, clearCart, getCartTotal } = useCart();
 	const [showSaveDialog, setShowSaveDialog] = useState(false);
 
-	const generateInstallCommand = () => {
-		if (cart.length === 0) return "";
-
-		const componentNames = cart.map((c) => c.name).join(" ");
-		return `npx shadcn@latest add ${componentNames}`;
-	};
 
 	const copyToClipboard = (text: string) => {
 		navigator.clipboard.writeText(text);
@@ -263,7 +258,7 @@ function CartContent() {
 				<Button
 					variant="outline"
 					className="w-full text-xs"
-					onClick={() => copyToClipboard(generateInstallCommand())}
+					onClick={() => copyToClipboard(generateMultipleInstallCommands(cart))}
 				>
 					<Download className="mr-2 h-3 w-3" />
 					Copy CLI Command

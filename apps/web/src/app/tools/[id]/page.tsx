@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc, trpcClient } from "@/utils/trpc";
+import { generateToolInstallCommand } from "@/utils/install-command";
 
 export default function ToolDetailPage({
 	params,
@@ -253,10 +254,7 @@ export default function ToolDetailPage({
 
 					<div className="space-y-6">
 						<CopyInstallCommand
-							command={
-								tool.installCommand ||
-								`npm install ${tool.installUrl ? `${tool.installUrl}/${tool.name.toLowerCase().replace(/\s+/g, "-")}` : tool.name.toLowerCase().replace(/\s+/g, "-")}`
-							}
+							command={generateToolInstallCommand(tool)}
 						/>
 
 						{tool.githubUrl && (

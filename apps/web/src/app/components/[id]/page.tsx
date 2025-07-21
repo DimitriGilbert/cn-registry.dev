@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/utils/trpc";
+import { generateInstallCommand } from "@/utils/install-command";
 
 export default function ComponentDetailPage({
 	params,
@@ -278,10 +279,7 @@ export default function ComponentDetailPage({
 
 					<div className="space-y-6">
 						<CopyInstallCommand
-							command={
-								component.installCommand ||
-								`npx shadcn@latest add ${component.installUrl ? `${component.installUrl}/${component.name.toLowerCase().replace(/\s+/g, "-")}` : component.name.toLowerCase().replace(/\s+/g, "-")}`
-							}
+							command={generateInstallCommand(component)}
 						/>
 
 						{component.githubUrl && (

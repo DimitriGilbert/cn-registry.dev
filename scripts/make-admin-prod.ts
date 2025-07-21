@@ -15,12 +15,18 @@ async function makeAdmin() {
 		process.exit(1);
 	}
 
-	const databaseUrl = process.env.DATABASE_URL;
-	
-	if (!databaseUrl) {
-		console.error("❌ DATABASE_URL environment variable is required");
-		process.exit(1);
-	}
+	// Build DATABASE_URL from individual environment variables
+	const buildDatabaseUrl = () => {
+		const user = process.env.POSTGRES_USER || "postgres";
+		const password = process.env.POSTGRES_PASSWORD || "postgres";
+		const host = process.env.POSTGRES_HOST || "postgres";
+		const port = process.env.POSTGRES_PORT || "5432";
+		const database = process.env.POSTGRES_DB || "cn_registry";
+		
+		return `postgresql://${user}:${password}@${host}:${port}/${database}`;
+	};
+
+	const databaseUrl = process.env.DATABASE_URL || buildDatabaseUrl();
 
 	try {
 		// Initialize database connection using same approach as server

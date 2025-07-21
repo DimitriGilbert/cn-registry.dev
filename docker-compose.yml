@@ -19,22 +19,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Database Init (runs once)
-  init-db:
-    build:
-      context: .
-      dockerfile: apps/server/Dockerfile
-      target: builder
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cn_registry}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: ["sh", "-c", "cd apps/server && bun run db:push --force"]
-    restart: "no"
-    profiles: ["init"]
-
-  # Server App (API/Backend)  
+  # Server App (API/Backend)
   server:
     build:
       context: .
@@ -59,8 +44,8 @@ services:
       test: ["CMD-SHELL", "curl -f http://localhost:42001 || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 60s
+      retries: 3
+      start_period: 30s
 
   # Web App (Frontend)
   web:

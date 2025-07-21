@@ -49,11 +49,11 @@ ENV HOSTNAME "0.0.0.0"
 USER root
 RUN apt-get update && apt-get install -y curl postgresql-client && rm -rf /var/lib/apt/lists/*
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Copy drizzle files and bun for database operations
+COPY --from=builder /app/apps/server/drizzle.config.ts ./apps/server/
+COPY --from=builder /app/apps/server/src/db ./apps/server/src/db
+COPY --from=builder /usr/local/bin/bun /usr/local/bin/bun
 
 USER nextjs
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "apps/server/server.js"]

@@ -45,4 +45,15 @@ EXPOSE 42001
 ENV PORT 42001
 ENV HOSTNAME "0.0.0.0"
 
+# Install curl and postgres client for health checks and migrations
+USER root
+RUN apt-get update && apt-get install -y curl postgresql-client && rm -rf /var/lib/apt/lists/*
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+USER nextjs
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "apps/server/server.js"]

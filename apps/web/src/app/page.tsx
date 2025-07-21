@@ -1,12 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Clock, Sparkles, TrendingUp } from "lucide-react";
+import { AlertTriangle, Clock, Sparkles, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CollectionSection } from "@/components/features/collection-section";
 import { SearchBar } from "@/components/features/search-bar";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/utils/trpc";
 
 export default function HomePage() {
@@ -45,6 +46,30 @@ export default function HomePage() {
 	return (
 		<Container>
 			<div className="py-12">
+				{/* Alpha Warning */}
+				<div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+					<div className="flex items-center gap-3">
+						<AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+						<div className="flex-1">
+							<h3 className="font-medium text-yellow-800 dark:text-yellow-200">
+								Alpha Version
+							</h3>
+							<p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+								This is an alpha version. You might encounter bugs and missing features. 
+								Please help us improve by reporting issues!
+							</p>
+						</div>
+						<Button 
+							variant="outline" 
+							size="sm"
+							onClick={() => window.open("https://github.com/DimitriGilbert/cn-registry.dev/issues", "_blank")}
+							className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-200 dark:hover:bg-yellow-900/40"
+						>
+							Report Issue
+						</Button>
+					</div>
+				</div>
+
 				{/* Hero Section */}
 				<div className="mb-16 space-y-6 text-center">
 					<PageTitle

@@ -9,6 +9,7 @@ import {
 	Menu,
 	Settings,
 	Tags,
+	Upload,
 	Users,
 	Wrench,
 } from "lucide-react";
@@ -42,6 +43,11 @@ const adminNavItems = [
 		href: "/admin/tools",
 		label: "Tools",
 		icon: Wrench,
+	},
+	{
+		href: "/admin/import",
+		label: "Import",
+		icon: Upload,
 	},
 	{
 		href: "/admin/users",

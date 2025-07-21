@@ -3,6 +3,8 @@ import { z } from "zod";
 import { db } from "../db";
 import {
 	adminNotifications,
+	categories,
+	componentCategories,
 	components,
 	editsLog,
 	tools,
@@ -279,6 +281,113 @@ export const adminRouter = router({
 				success: true,
 				userId: input.userId,
 				suspended: input.suspended,
+			};
+		}),
+
+	// Import components from JSON
+	importComponents: adminProcedure
+		.input(
+			z.object({
+				components: z.array(
+					z.object({
+						name: z.string().min(1),
+						description: z.string().optional(),
+						repoUrl: z.string().url().optional(),
+						websiteUrl: z.string().url().optional(),
+						installUrl: z.string().url().optional(),
+						installCommand: z.string().optional(),
+						tags: z.array(z.string()).optional(),
+						status: z.enum(["published", "draft", "archived", "suggested"]).optional(),
+						categoryNames: z.array(z.string()).optional(),
+					})
+				)
+			})
+		)
+		.mutation(async ({ input, ctx }) => {
+			const { components: componentsData } = input;
+			let importedCount = 0;
+			let skippedCount = 0;
+
+			// Helper function to get or create category
+			async function getOrCreateCategory(name: string): Promise<string> {
+				const existingCategory = await db
+					.select()
+					.from(categories)
+					.where(eq(categories.name, name))
+					.limit(1);
+
+				if (existingCategory.length > 0) {
+					return existingCategory[0].id;
+				}
+
+				const [newCategory] = await db
+					.insert(categories)
+					.values({ name })
+					.returning();
+
+				return newCategory.id;
+			}
+
+			// Process each component
+			for (const componentData of componentsData) {
+				try {
+					// Check if component already exists
+					const existingComponent = await db
+						.select()
+						.from(components)
+						.where(eq(components.name, componentData.name))
+						.limit(1);
+
+					if (existingComponent.length > 0) {
+						skippedCount++;
+						continue;
+					}
+
+					// Insert component
+					const component = {
+						name: componentData.name,
+						description: componentData.description || "Component description",
+						repoUrl: componentData.repoUrl || null,
+						websiteUrl: componentData.websiteUrl || null,
+						installUrl: componentData.installUrl || null,
+						installCommand: componentData.installCommand || null,
+						tags: componentData.tags || [],
+						status: componentData.status || "suggested" as const,
+						creatorId: ctx.user.id,
+					};
+
+					const [insertedComponent] = await db
+						.insert(components)
+						.values(component)
+						.returning();
+
+					// Handle categories
+					const categoryNames = componentData.categoryNames || [];
+					if (categoryNames.length > 0) {
+						const categoryIds = await Promise.all(
+							categoryNames.map((name) => getOrCreateCategory(name))
+						);
+
+						// Link component to categories
+						const categoryLinks = categoryIds.map((categoryId) => ({
+							componentId: insertedComponent.id,
+							categoryId,
+						}));
+
+						await db.insert(componentCategories).values(categoryLinks);
+					}
+
+					importedCount++;
+				} catch (error) {
+					console.error(`Failed to import component "${componentData.name}":`, error);
+					skippedCount++;
+				}
+			}
+
+			return {
+				imported: importedCount,
+				skipped: skippedCount,
+				total: componentsData.length,
 			};
 		}),
 });

@@ -104,6 +104,7 @@ Key environment variables:
 - project must build when you are done
 - use use-formedible for all the forms docs/llm/formedible.llm.txt
 - we use trpc 11 and you knowledege is outdated, check existing example to not create bad code ! docs/llm/trpc.md
+- always work from the root directory !
 
 ## Key Files
 

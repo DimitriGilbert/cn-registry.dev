@@ -295,7 +295,7 @@ export const adminRouter = router({
 						repoUrl: z.string().url("Repository URL is required"), // Required
 						websiteUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(),
 						installUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(), 
-						installCommand: z.string().min(1, "Install command is required"), // Required
+						installCommand: z.string().optional(), // Made optional - not always available
 						tags: z.array(z.string()).optional(),
 						status: z
 							.enum(["published", "draft", "archived", "suggested"])
@@ -309,6 +309,7 @@ export const adminRouter = router({
 			const { components: componentsData } = input;
 			let importedCount = 0;
 			let skippedCount = 0;
+			const errors: string[] = [];
 
 			// Helper function to get or create category
 			async function getOrCreateCategory(name: string): Promise<string> {
@@ -389,9 +390,16 @@ export const adminRouter = router({
 				}
 			}
 
-			// Process each component
+			// Process each component individually in its own transaction
 			for (const componentData of componentsData) {
 				try {
+					// Validate component data first
+					if (!componentData.name || !componentData.repoUrl) {
+						errors.push(`Component skipped: Missing required fields (name or repoUrl)`);
+						skippedCount++;
+						continue;
+					}
+
 					// Check if component already exists
 					const existingComponent = await db
 						.select()
@@ -400,6 +408,7 @@ export const adminRouter = router({
 						.limit(1);
 
 					if (existingComponent.length > 0) {
+						errors.push(`Component "${componentData.name}" already exists`);
 						skippedCount++;
 						continue;
 					}
@@ -407,19 +416,20 @@ export const adminRouter = router({
 					// Get or create creator from GitHub URL
 					const creatorId = await getOrCreateUserFromGitHub(componentData.repoUrl);
 
-					// Insert component
+					// Prepare component data with proper validation
 					const component = {
 						name: componentData.name,
 						description: componentData.description || "Component description",
 						repoUrl: componentData.repoUrl,
 						websiteUrl: componentData.websiteUrl || null,
 						installUrl: componentData.installUrl || null,
-						installCommand: componentData.installCommand,
+						installCommand: componentData.installCommand || null,
 						tags: componentData.tags || [],
 						status: componentData.status || ("suggested" as const),
-						creatorId: creatorId, // Use GitHub username-based creator
+						creatorId: creatorId,
 					};
 
+					// Insert component in its own transaction
 					const [insertedComponent] = await db
 						.insert(components)
 						.values(component)
@@ -428,25 +438,30 @@ export const adminRouter = router({
 					// Handle categories
 					const categoryNames = componentData.categoryNames || [];
 					if (categoryNames.length > 0) {
-						const categoryIds = await Promise.all(
-							categoryNames.map((name) => getOrCreateCategory(name)),
-						);
+						try {
+							const categoryIds = await Promise.all(
+								categoryNames.map((name) => getOrCreateCategory(name)),
+							);
 
-						// Link component to categories
-						const categoryLinks = categoryIds.map((categoryId) => ({
-							componentId: insertedComponent.id,
-							categoryId,
-						}));
+							// Link component to categories
+							const categoryLinks = categoryIds.map((categoryId) => ({
+								componentId: insertedComponent.id,
+								categoryId,
+							}));
 
-						await db.insert(componentCategories).values(categoryLinks);
+							await db.insert(componentCategories).values(categoryLinks);
+						} catch (categoryError) {
+							// Category linking failed, but component was inserted
+							console.warn(`Categories linking failed for "${componentData.name}":`, categoryError);
+							errors.push(`Component "${componentData.name}" imported but category linking failed`);
+						}
 					}
 
 					importedCount++;
 				} catch (error) {
-					console.error(
-						`Failed to import component "${componentData.name}":`,
-						error,
-					);
+					const errorMessage = error instanceof Error ? error.message : String(error);
+					console.error(`Failed to import component "${componentData.name}":`, error);
+					errors.push(`Component "${componentData.name}" failed: ${errorMessage}`);
 					skippedCount++;
 				}
 			}
@@ -455,6 +470,7 @@ export const adminRouter = router({
 				imported: importedCount,
 				skipped: skippedCount,
 				total: componentsData.length,
+				errors: errors.length > 0 ? errors : undefined,
 			};
 		}),
 });

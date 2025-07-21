@@ -28,15 +28,17 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/web/public ./apps/web/public
+# Copy public folder if it exists
+COPY --from=builder /app/apps/web/public* ./apps/web/public/ || true
 
 # Set the correct permission for prerender cache
 RUN mkdir -p ./apps/web/.next
 RUN chown nextjs:nodejs ./apps/web/.next
 
-# Automatically leverage output traces to reduce image size
+# Copy standalone files
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+# Copy static files if they exist
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static* ./apps/web/.next/static/ || true
 
 USER nextjs
 

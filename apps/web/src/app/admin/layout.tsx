@@ -1,14 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { trpc } from "@/utils/trpc";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Bell,
@@ -18,13 +9,23 @@ import {
 	Menu,
 	Settings,
 	Tags,
-	Wrench,
 	Users,
+	Wrench,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { trpc } from "@/utils/trpc";
 
 const adminNavItems = [
 	{
@@ -68,7 +69,7 @@ export default function AdminLayout({
 	const router = useRouter();
 
 	const { data: session, isLoading: sessionLoading } = useQuery(
-		trpc.getSession.queryOptions()
+		trpc.getSession.queryOptions(),
 	);
 
 	// Redirect non-admin users
@@ -82,8 +83,8 @@ export default function AdminLayout({
 	// Show loading while checking session
 	if (sessionLoading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 			</div>
 		);
 	}
@@ -97,22 +98,23 @@ export default function AdminLayout({
 		<div className="min-h-screen bg-background">
 			{/* Admin Header */}
 			<header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className="container mx-auto px-4 h-16 flex items-center justify-between">
+				<div className="container mx-auto flex h-16 items-center justify-between px-4">
 					<div className="flex items-center gap-6">
 						<Link href="/admin" className="font-bold text-xl">
 							Admin Panel
 						</Link>
-						<nav className="hidden md:flex items-center gap-1">
+						<nav className="hidden items-center gap-1 md:flex">
 							{adminNavItems.map((item) => {
 								const Icon = item.icon;
-								const isActive = pathname === item.href || 
+								const isActive =
+									pathname === item.href ||
 									(item.href !== "/admin" && pathname.startsWith(item.href));
-								
+
 								return (
 									<Link
 										key={item.href}
 										href={item.href}
-										className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
+										className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
 											isActive
 												? "bg-primary text-primary-foreground"
 												: "hover:bg-muted"
@@ -129,7 +131,7 @@ export default function AdminLayout({
 					<div className="flex items-center gap-4">
 						<Button variant="ghost" size="sm" asChild>
 							<Link href="/">
-								<Home className="h-4 w-4 mr-2" />
+								<Home className="mr-2 h-4 w-4" />
 								Back to Site
 							</Link>
 						</Button>
@@ -139,10 +141,12 @@ export default function AdminLayout({
 								<Button variant="ghost" size="sm">
 									<div className="flex items-center gap-2">
 										{session.user.image && (
-											<img
+											<Image
 												src={session.user.image}
 												alt={session.user.name || "Admin"}
 												className="h-6 w-6 rounded-full"
+												width={24}
+												height={24}
 											/>
 										)}
 										<span className="hidden sm:inline">
@@ -154,14 +158,14 @@ export default function AdminLayout({
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem asChild>
 									<Link href="/profile">
-										<Settings className="h-4 w-4 mr-2" />
+										<Settings className="mr-2 h-4 w-4" />
 										Profile Settings
 									</Link>
 								</DropdownMenuItem>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
 									<Link href="/auth/logout">
-										<LogOut className="h-4 w-4 mr-2" />
+										<LogOut className="mr-2 h-4 w-4" />
 										Sign Out
 									</Link>
 								</DropdownMenuItem>
@@ -181,7 +185,7 @@ export default function AdminLayout({
 									return (
 										<DropdownMenuItem key={item.href} asChild>
 											<Link href={item.href}>
-												<Icon className="h-4 w-4 mr-2" />
+												<Icon className="mr-2 h-4 w-4" />
 												{item.label}
 											</Link>
 										</DropdownMenuItem>

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const REGISTRY_FILE = path.join(__dirname, "..", "tweakcn-registry.json");
 const THEMES_DIR = path.join(

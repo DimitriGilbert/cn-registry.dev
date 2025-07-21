@@ -1,14 +1,4 @@
-import {
-	and,
-	avg,
-	count,
-	desc,
-	eq,
-	ilike,
-	inArray,
-	or,
-	sql,
-} from "drizzle-orm";
+import { and, avg, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import {

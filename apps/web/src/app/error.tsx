@@ -13,7 +13,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 
-export default function Error({
+export default function ErrorPage({
 	error,
 	reset,
 }: {

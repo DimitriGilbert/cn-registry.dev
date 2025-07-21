@@ -1,35 +1,43 @@
 "use client";
 
-import { ItemForm, type ItemFormData } from "@/components/forms/item-form";
-import { Container } from "@/components/layout/container";
-import { PageTitle } from "@/components/layout/page-title";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { trpc } from "@/utils/trpc";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ItemForm, type ItemFormData } from "@/components/forms/item-form";
+import { Container } from "@/components/layout/container";
+import { PageTitle } from "@/components/layout/page-title";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { trpc } from "@/utils/trpc";
 
 export default function SuggestComponentPage() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	const { data: categories = [] } = useQuery(
-		trpc.categories.getAll.queryOptions()
+		trpc.categories.getAll.queryOptions(),
 	);
 
 	const createMutation = useMutation(
 		trpc.components.create.mutationOptions({
 			onSuccess: () => {
-				toast.success("Component suggestion submitted successfully! We'll review it soon.");
+				toast.success(
+					"Component suggestion submitted successfully! We'll review it soon.",
+				);
 				router.push("/");
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to submit suggestion");
 			},
-		})
+		}),
 	);
 
 	const handleSubmit = (data: ItemFormData) => {
@@ -62,8 +70,9 @@ export default function SuggestComponentPage() {
 						<CardHeader>
 							<CardTitle>Component Suggestion</CardTitle>
 							<CardDescription>
-								Share details about a component you'd like to see in our registry.
-								Our team will review your suggestion and may add it to the collection.
+								Share details about a component you'd like to see in our
+								registry. Our team will review your suggestion and may add it to
+								the collection.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>

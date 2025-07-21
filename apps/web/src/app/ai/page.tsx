@@ -73,7 +73,6 @@ export default function AIPage() {
 							onChange={(e) => field.handleChange(e.target.value)}
 							onBlur={field.handleBlur}
 							autoComplete="off"
-							autoFocus
 						/>
 					)}
 				</form.Field>

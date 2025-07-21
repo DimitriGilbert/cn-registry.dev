@@ -2,8 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink, Github, ShoppingCart } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CommentForm } from "@/components/features/comment-form";
 import { CommentList } from "@/components/features/comment-list";
@@ -27,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 
 export default function ComponentDetailPage({
 	params,
@@ -41,9 +42,9 @@ export default function ComponentDetailPage({
 	const { addToCart, removeFromCart, isInCart } = useCart();
 
 	// Resolve params
-	useState(() => {
+	useEffect(() => {
 		params.then(setResolvedParams);
-	});
+	}, [params]);
 
 	const id = resolvedParams?.id;
 
@@ -53,13 +54,13 @@ export default function ComponentDetailPage({
 		isLoading,
 		error,
 	} = useQuery({
-		...trpc.components.getById.queryOptions({ id: id! }),
+		...trpc.components.getById.queryOptions({ id: id || "" }),
 		enabled: !!id,
 	});
 
 	// Fetch comments
 	const { data: comments = [] } = useQuery({
-		...trpc.components.getComments.queryOptions({ id: id! }),
+		...trpc.components.getComments.queryOptions({ id: id || "" }),
 		enabled: !!id,
 	});
 
@@ -94,15 +95,17 @@ export default function ComponentDetailPage({
 	);
 
 	const handleAddComment = (content: string, parentId?: string) => {
+		if (!id) return;
 		addCommentMutation.mutate({
-			itemId: id!,
+			itemId: id,
 			content,
 			parentId,
 		});
 	};
 
 	const handleToggleStar = () => {
-		starMutation.mutate({ itemId: id! });
+		if (!id) return;
+		starMutation.mutate({ itemId: id });
 	};
 
 	const handleCartToggle = () => {
@@ -277,7 +280,7 @@ export default function ComponentDetailPage({
 						<CopyInstallCommand
 							command={
 								component.installCommand ||
-								`npx shadcn@latest add ${component.name.toLowerCase().replace(/\s+/g, "-")}`
+								`npx shadcn@latest add ${component.installUrl ? `${component.installUrl}/${component.name.toLowerCase().replace(/\s+/g, "-")}` : component.name.toLowerCase().replace(/\s+/g, "-")}`
 							}
 						/>
 
@@ -293,10 +296,12 @@ export default function ComponentDetailPage({
 						<div className="space-y-4">
 							<h3 className="font-semibold">Created by</h3>
 							<div className="flex items-center gap-3">
-								<img
+								<Image
 									src={component.creator?.image || "/placeholder-user.jpg"}
 									alt={component.creator?.name || "Unknown"}
 									className="h-10 w-10 rounded-full"
+									width={40}
+									height={40}
 								/>
 								<div>
 									<p className="font-medium">
@@ -315,13 +320,18 @@ export default function ComponentDetailPage({
 							<div className="space-y-4">
 								<h3 className="font-semibold">Rating</h3>
 								<div className="flex items-center gap-2">
-									<div className="flex">
+									<div
+										className="flex"
+										role="img"
+										aria-label={`Rating: ${component.averageRating.toFixed(1)} out of 5 stars`}
+									>
 										{Array.from({ length: 5 }).map((_, i) => (
 											<svg
-												key={i}
+												key={`star-${i}`}
 												className={`h-4 w-4 ${i < Math.floor(component.averageRating || 0) ? "text-yellow-400" : "text-gray-300"}`}
 												fill="currentColor"
 												viewBox="0 0 20 20"
+												aria-hidden="true"
 											>
 												<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
 											</svg>

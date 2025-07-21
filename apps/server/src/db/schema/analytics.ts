@@ -16,6 +16,8 @@ export const analyticsEvents = pgTable("analytics_events", {
 	itemType: text("item_type").notNull(), // 'component' or 'tool'
 	itemId: uuid("item_id").notNull(),
 	userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+	referrer: text("referrer"), // Track referrer URL for traffic source analysis
+	userAgent: text("user_agent"), // Track user agent for device/browser analysis
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.notNull()
 		.default(sql`now()`),

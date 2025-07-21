@@ -115,7 +115,7 @@ function CreatorsSkeleton() {
 	return (
 		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{Array.from({ length: 9 }).map((_, i) => (
-				<Card key={i}>
+				<Card key={`creator-list-${i}`}>
 					<CardHeader>
 						<div className="flex items-start gap-4">
 							<Skeleton className="h-12 w-12 rounded-full" />

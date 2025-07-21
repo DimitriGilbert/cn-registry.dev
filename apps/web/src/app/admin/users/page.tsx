@@ -1,5 +1,11 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
+import { MoreHorizontal, Search, UserCheck, UserX } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
+import { toast } from "sonner";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,11 +33,6 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { trpc } from "@/utils/trpc";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
-import { MoreHorizontal, Search, UserCheck, UserX } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export default function AdminUsersPage() {
 	const [page, setPage] = useState(1);
@@ -48,31 +49,35 @@ export default function AdminUsersPage() {
 			search: search || undefined,
 			role: roleFilter,
 			limit: 20,
-		})
+		}),
 	);
 
 	const updateRoleMutation = useMutation(
 		trpc.admin.updateUserRole.mutationOptions({
 			onSuccess: () => {
 				toast.success("User role updated successfully");
-				queryClient.invalidateQueries({ queryKey: trpc.admin.getUsersForManagement.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.admin.getUsersForManagement.queryKey(),
+				});
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update user role");
 			},
-		})
+		}),
 	);
 
 	const suspendMutation = useMutation(
 		trpc.admin.suspendUser.mutationOptions({
 			onSuccess: () => {
 				toast.success("User status updated successfully");
-				queryClient.invalidateQueries({ queryKey: trpc.admin.getUsersForManagement.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.admin.getUsersForManagement.queryKey(),
+				});
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update user status");
 			},
-		})
+		}),
 	);
 
 	const handleRoleChange = async (userId: string, newRole: string) => {
@@ -103,7 +108,7 @@ export default function AdminUsersPage() {
 	};
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
+		<div className="container mx-auto space-y-6 p-6">
 			<AdminBreadcrumb
 				items={[
 					{ label: "Admin", href: "/admin" },
@@ -113,7 +118,7 @@ export default function AdminUsersPage() {
 
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold">User Management</h1>
+					<h1 className="font-bold text-3xl">User Management</h1>
 					<p className="text-muted-foreground">
 						Manage users, roles, and permissions
 					</p>
@@ -124,8 +129,8 @@ export default function AdminUsersPage() {
 				<CardHeader>
 					<CardTitle>Users</CardTitle>
 					<div className="flex gap-4">
-						<div className="relative flex-1 max-w-sm">
-							<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+						<div className="relative max-w-sm flex-1">
+							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-muted-foreground" />
 							<Input
 								placeholder="Search users..."
 								value={search}
@@ -158,7 +163,7 @@ export default function AdminUsersPage() {
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+							<div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 						</div>
 					) : (
 						<>
@@ -179,17 +184,19 @@ export default function AdminUsersPage() {
 											<TableCell>
 												<div className="flex items-center gap-3">
 													{user.image && (
-														<img
+														<Image
 															src={user.image}
 															alt={user.name || "User"}
 															className="h-8 w-8 rounded-full"
+															width={32}
+															height={32}
 														/>
 													)}
 													<div>
 														<div className="font-medium">
 															{user.name || "No name"}
 														</div>
-														<div className="text-sm text-muted-foreground">
+														<div className="text-muted-foreground text-sm">
 															@{user.username || "no-username"}
 														</div>
 													</div>
@@ -262,8 +269,8 @@ export default function AdminUsersPage() {
 							</Table>
 
 							{data && data.totalPages > 1 && (
-								<div className="flex items-center justify-between mt-4">
-									<div className="text-sm text-muted-foreground">
+								<div className="mt-4 flex items-center justify-between">
+									<div className="text-muted-foreground text-sm">
 										Showing {(page - 1) * 20 + 1} to{" "}
 										{Math.min(page * 20, data.totalCount)} of {data.totalCount}{" "}
 										users

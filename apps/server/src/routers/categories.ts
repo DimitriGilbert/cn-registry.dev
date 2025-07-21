@@ -1,5 +1,4 @@
 import { count, eq } from "drizzle-orm";
-import { z } from "zod";
 import { db } from "../db";
 import { categories, componentCategories, toolCategories } from "../db/schema";
 import { adminProcedure, publicProcedure, router } from "../lib/trpc";

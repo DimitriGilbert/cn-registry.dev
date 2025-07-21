@@ -1,4 +1,4 @@
-import { and, avg, count, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../db";
 import {
 	categories,
@@ -7,7 +7,6 @@ import {
 	projectCollaborators,
 	projectComponents,
 	projects,
-	ratings,
 	stars,
 	user,
 } from "../db/schema";

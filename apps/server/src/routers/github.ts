@@ -302,7 +302,7 @@ export const githubRouter = router({
 					language: repoData.language || "",
 					lastCommit: repoData.updated_at,
 				};
-			} catch (error) {
+			} catch {
 				throw new Error("Failed to fetch repository stats");
 			}
 		}),

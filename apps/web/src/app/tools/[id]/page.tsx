@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink, Github } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CommentForm } from "@/components/features/comment-form";
 import { CommentList } from "@/components/features/comment-list";
@@ -39,9 +39,9 @@ export default function ToolDetailPage({
 	const queryClient = useQueryClient();
 
 	// Resolve params
-	useState(() => {
+	useEffect(() => {
 		params.then(setResolvedParams);
-	});
+	}, [params]);
 
 	const id = resolvedParams?.id;
 
@@ -255,7 +255,7 @@ export default function ToolDetailPage({
 						<CopyInstallCommand
 							command={
 								tool.installCommand ||
-								`npm install ${tool.name.toLowerCase().replace(/\s+/g, "-")}`
+								`npm install ${tool.installUrl ? `${tool.installUrl}/${tool.name.toLowerCase().replace(/\s+/g, "-")}` : tool.name.toLowerCase().replace(/\s+/g, "-")}`
 							}
 						/>
 

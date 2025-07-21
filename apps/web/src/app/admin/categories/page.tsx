@@ -1,5 +1,10 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,11 +33,6 @@ import {
 } from "@/components/ui/table";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MoreHorizontal, Plus, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { z } from "zod";
 
 const categorySchema = z.object({
 	name: z.string().min(1, "Name is required").max(50, "Name too long"),
@@ -51,46 +51,52 @@ export default function AdminCategoriesPage() {
 	const queryClient = useQueryClient();
 
 	const { data: categories = [], isLoading } = useQuery(
-		trpc.categories.getAll.queryOptions()
+		trpc.categories.getAll.queryOptions(),
 	);
 
 	const createMutation = useMutation(
 		trpc.categories.create.mutationOptions({
 			onSuccess: () => {
 				toast.success("Category created successfully!");
-				queryClient.invalidateQueries({ queryKey: trpc.categories.getAll.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.categories.getAll.queryKey(),
+				});
 				setCreateDialogOpen(false);
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to create category");
 			},
-		})
+		}),
 	);
 
 	const updateMutation = useMutation(
 		trpc.categories.update.mutationOptions({
 			onSuccess: () => {
 				toast.success("Category updated successfully!");
-				queryClient.invalidateQueries({ queryKey: trpc.categories.getAll.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.categories.getAll.queryKey(),
+				});
 				setEditDialogOpen(false);
 				setEditingCategory(null);
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update category");
 			},
-		})
+		}),
 	);
 
 	const deleteMutation = useMutation(
 		trpc.categories.delete.mutationOptions({
 			onSuccess: () => {
 				toast.success("Category deleted successfully!");
-				queryClient.invalidateQueries({ queryKey: trpc.categories.getAll.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.categories.getAll.queryKey(),
+				});
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to delete category");
 			},
-		})
+		}),
 	);
 
 	const { Form: CreateForm } = useFormedible<CategoryFormData>({
@@ -153,17 +159,14 @@ export default function AdminCategoriesPage() {
 	};
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
+		<div className="container mx-auto space-y-6 p-6">
 			<AdminBreadcrumb
-				items={[
-					{ label: "Admin", href: "/admin" },
-					{ label: "Categories" },
-				]}
+				items={[{ label: "Admin", href: "/admin" }, { label: "Categories" }]}
 			/>
 
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold">Category Management</h1>
+					<h1 className="font-bold text-3xl">Category Management</h1>
 					<p className="text-muted-foreground">
 						Organize components and tools with categories
 					</p>
@@ -171,7 +174,7 @@ export default function AdminCategoriesPage() {
 				<Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
 					<DialogTrigger asChild>
 						<Button>
-							<Plus className="h-4 w-4 mr-2" />
+							<Plus className="mr-2 h-4 w-4" />
 							Add Category
 						</Button>
 					</DialogTrigger>
@@ -194,7 +197,7 @@ export default function AdminCategoriesPage() {
 				<CardContent>
 					{isLoading ? (
 						<div className="flex items-center justify-center py-8">
-							<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+							<div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
 						</div>
 					) : (
 						<Table>
@@ -237,7 +240,7 @@ export default function AdminCategoriesPage() {
 													<DropdownMenuItem
 														onClick={() => handleEdit(category)}
 													>
-														<Edit className="h-4 w-4 mr-2" />
+														<Edit className="mr-2 h-4 w-4" />
 														Edit
 													</DropdownMenuItem>
 													<DropdownMenuItem
@@ -247,7 +250,7 @@ export default function AdminCategoriesPage() {
 															category.componentCount + category.toolCount > 0
 														}
 													>
-														<Trash2 className="h-4 w-4 mr-2" />
+														<Trash2 className="mr-2 h-4 w-4" />
 														Delete
 													</DropdownMenuItem>
 												</DropdownMenuContent>
@@ -257,7 +260,7 @@ export default function AdminCategoriesPage() {
 								))}
 								{categories.length === 0 && (
 									<TableRow>
-										<TableCell colSpan={5} className="text-center py-8">
+										<TableCell colSpan={5} className="py-8 text-center">
 											No categories found. Create one to get started.
 										</TableCell>
 									</TableRow>

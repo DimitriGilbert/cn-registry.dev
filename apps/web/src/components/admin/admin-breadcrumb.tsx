@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import {
 	Breadcrumb,
@@ -7,7 +8,6 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import Link from "next/link";
 
 interface BreadcrumbItem {
 	label: string;

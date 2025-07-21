@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
-import { ThemePreview } from "@/components/theme/theme-preview";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -20,7 +19,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
@@ -68,7 +66,7 @@ export default function ManageThemesPage() {
 			defaultValues: { name: "", tokens: "" },
 			onSubmit: async ({ value }) => {
 				// Parse tokens string to object
-				let tokens;
+				let tokens: Record<string, string | number | boolean>;
 				try {
 					tokens = JSON.parse(value.tokens);
 				} catch {
@@ -150,8 +148,14 @@ export default function ManageThemesPage() {
 								<form.Field name="name">
 									{(field) => (
 										<div className="space-y-2">
-											<label className="font-medium text-sm">Theme Name</label>
+											<label
+												htmlFor={`theme-name-${field.name}`}
+												className="font-medium text-sm"
+											>
+												Theme Name
+											</label>
 											<input
+												id={`theme-name-${field.name}`}
 												className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -169,10 +173,14 @@ export default function ManageThemesPage() {
 								<form.Field name="tokens">
 									{(field) => (
 										<div className="space-y-2">
-											<label className="font-medium text-sm">
+											<label
+												htmlFor={`theme-tokens-${field.name}`}
+												className="font-medium text-sm"
+											>
 												Theme Tokens (JSON)
 											</label>
 											<textarea
+												id={`theme-tokens-${field.name}`}
 												className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -195,7 +203,7 @@ export default function ManageThemesPage() {
 				{isLoading ? (
 					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 						{Array.from({ length: 6 }).map((_, i) => (
-							<Card key={i}>
+							<Card key={`theme-loading-${i}`}>
 								<CardHeader>
 									<Skeleton className="h-5 w-32" />
 									<Skeleton className="h-4 w-48" />

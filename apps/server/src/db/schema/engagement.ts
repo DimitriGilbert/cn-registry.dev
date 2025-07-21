@@ -8,7 +8,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { components, tools } from "./content";
 
 export const stars = pgTable(
 	"stars",

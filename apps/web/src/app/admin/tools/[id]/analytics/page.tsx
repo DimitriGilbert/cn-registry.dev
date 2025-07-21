@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
 	ArrowLeft,
 	Download,
@@ -10,6 +11,7 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { use } from "react";
 import {
 	CartesianGrid,
 	Cell,
@@ -53,57 +55,119 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { trpc } from "@/utils/trpc";
 
-// Mock data
-const toolData = {
-	id: "1",
-	name: "CLI Development Tool",
-	category: "CLI Tools",
-};
-
-const kpiData = {
-	totalViews: 12450,
-	totalInstalls: 3420,
-	totalStars: 245,
-	totalComments: 18,
-	viewsChange: 12.5,
-	installsChange: -3.2,
-	starsChange: 8.7,
-	commentsChange: 25.0,
-};
-
-const viewsOverTime = [
-	{ date: "2024-01-01", views: 120, installs: 45 },
-	{ date: "2024-01-02", views: 150, installs: 52 },
-	{ date: "2024-01-03", views: 180, installs: 38 },
-	{ date: "2024-01-04", views: 220, installs: 67 },
-	{ date: "2024-01-05", views: 190, installs: 43 },
-	{ date: "2024-01-06", views: 250, installs: 78 },
-	{ date: "2024-01-07", views: 280, installs: 89 },
-];
-
-const referrerData = [
-	{ source: "GitHub", visits: 450, color: "hsl(var(--chart-1))" },
-	{ source: "Direct", visits: 320, color: "hsl(var(--chart-2))" },
-	{ source: "Twitter", visits: 180, color: "hsl(var(--chart-3))" },
-	{ source: "Reddit", visits: 120, color: "hsl(var(--chart-4))" },
-	{ source: "Other", visits: 80, color: "hsl(var(--chart-5))" },
-];
-
-const topUsers = [
-	{ name: "John Doe", stars: 5, comments: 3, lastActive: "2 hours ago" },
-	{ name: "Jane Smith", stars: 3, comments: 7, lastActive: "1 day ago" },
-	{ name: "Bob Wilson", stars: 4, comments: 2, lastActive: "3 days ago" },
-	{ name: "Alice Johnson", stars: 2, comments: 5, lastActive: "1 week ago" },
-	{ name: "Charlie Brown", stars: 1, comments: 4, lastActive: "2 weeks ago" },
-];
-
-export default async function ComponentAnalyticsPage({
+export default function ToolAnalyticsPage({
 	params,
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const { id } = await params;
+	const { id } = use(params);
+
+	// Get tool details
+	const { data: tool } = useQuery(trpc.tools.getById.queryOptions({ id }));
+
+	// Get analytics data
+	const { data: analytics, isLoading } = useQuery(
+		trpc.analytics.getToolAnalytics.queryOptions({
+			toolId: id,
+			period: "month",
+		}),
+	);
+
+	// Get referrer data
+	const { data: referrerAnalytics } = useQuery(
+		trpc.analytics.getReferrerData.queryOptions({
+			itemId: id,
+			itemType: "tool",
+			period: "month",
+		}),
+	);
+
+	if (isLoading || !tool || !analytics) {
+		return (
+			<Container>
+				<div className="py-8">
+					<div className="animate-pulse space-y-4">
+						<div className="h-8 w-64 rounded bg-muted" />
+						<div className="h-4 w-96 rounded bg-muted" />
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+							{Array.from({ length: 4 }).map((_, i) => (
+								<div
+									key={`tool-analytics-skeleton-${i}`}
+									className="h-32 rounded bg-muted"
+								/>
+							))}
+						</div>
+					</div>
+				</div>
+			</Container>
+		);
+	}
+
+	const { kpis, timeSeriesData, topStarUsers, topCommentUsers } = analytics;
+
+	// Format time series data for charts
+	const chartData = timeSeriesData.map((item) => ({
+		date: new Date(item.date).toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+		}),
+		views: item.views,
+		installs: item.installs,
+	}));
+
+	// Create combined user data for top engaged users
+	const topEngagedUsers = [
+		...topStarUsers.map((item) => ({
+			name: item.user.name || item.user.username || "Unknown",
+			stars: 1,
+			comments: 0,
+			lastActive: new Date(item.starredAt).toLocaleDateString(),
+		})),
+		...topCommentUsers.map((item) => ({
+			name: item.user.name || item.user.username || "Unknown",
+			stars: 0,
+			comments: item.commentCount,
+			lastActive: new Date(item.lastComment).toLocaleDateString(),
+		})),
+	]
+		.reduce(
+			(
+				acc: {
+					name: string;
+					stars: number;
+					comments: number;
+					lastActive: string;
+				}[],
+				user,
+			) => {
+				const existing = acc.find((u) => u.name === user.name);
+				if (existing) {
+					existing.stars += user.stars;
+					existing.comments += user.comments;
+					existing.lastActive =
+						new Date(existing.lastActive) > new Date(user.lastActive)
+							? existing.lastActive
+							: user.lastActive;
+				} else {
+					acc.push(user);
+				}
+				return acc;
+			},
+			[],
+		)
+		.slice(0, 5);
+
+	// Get real referrer data or fallback to basic data if none available
+	const referrerData = referrerAnalytics?.referrerData || [
+		{
+			source: "Direct",
+			visits: kpis.totalViews || 1,
+			color: "#8884d8",
+		},
+	];
+
 	return (
 		<Container>
 			<div className="py-8">
@@ -115,24 +179,30 @@ export default async function ComponentAnalyticsPage({
 							</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
-								<BreadcrumbLink href="/admin/tools">
-									Tools
-								</BreadcrumbLink>
+								<BreadcrumbLink href="/admin/tools">Tools</BreadcrumbLink>
 							</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
-								<BreadcrumbPage>{toolData.name} Analytics</BreadcrumbPage>
+								<BreadcrumbPage>{tool.name} Analytics</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>
 					</Breadcrumb>
 				</div>
 
 				<PageTitle
-					title={`${toolData.name} Analytics`}
+					title={`${tool.name} Analytics`}
 					subtitle="Detailed performance metrics and user engagement"
 				>
 					<div className="flex items-center gap-2">
-						<Badge variant="secondary">{toolData.category}</Badge>
+						{tool.categories
+							?.filter((category): category is NonNullable<typeof category> =>
+								Boolean(category),
+							)
+							.map((category) => (
+								<Badge key={category.id} variant="secondary">
+									{category.name}
+								</Badge>
+							))}
 						<Button variant="outline" asChild>
 							<Link href="/admin/tools">
 								<span className="flex items-center">
@@ -153,22 +223,22 @@ export default async function ComponentAnalyticsPage({
 						</CardHeader>
 						<CardContent>
 							<div className="font-bold text-2xl">
-								{kpiData.totalViews.toLocaleString()}
+								{kpis.totalViews.toLocaleString()}
 							</div>
 							<p className="flex items-center text-muted-foreground text-xs">
-								{kpiData.viewsChange > 0 ? (
+								{kpis.viewsChange > 0 ? (
 									<TrendingUp className="mr-1 h-3 w-3 text-green-500" />
 								) : (
 									<TrendingDown className="mr-1 h-3 w-3 text-red-500" />
 								)}
 								<span
 									className={
-										kpiData.viewsChange > 0 ? "text-green-600" : "text-red-600"
+										kpis.viewsChange > 0 ? "text-green-600" : "text-red-600"
 									}
 								>
-									{Math.abs(kpiData.viewsChange)}%
+									{Math.abs(kpis.viewsChange)}%
 								</span>{" "}
-								from last month
+								from last period
 							</p>
 						</CardContent>
 					</Card>
@@ -182,24 +252,22 @@ export default async function ComponentAnalyticsPage({
 						</CardHeader>
 						<CardContent>
 							<div className="font-bold text-2xl">
-								{kpiData.totalInstalls.toLocaleString()}
+								{kpis.totalInstalls.toLocaleString()}
 							</div>
 							<p className="flex items-center text-muted-foreground text-xs">
-								{kpiData.installsChange > 0 ? (
+								{kpis.installsChange > 0 ? (
 									<TrendingUp className="mr-1 h-3 w-3 text-green-500" />
 								) : (
 									<TrendingDown className="mr-1 h-3 w-3 text-red-500" />
 								)}
 								<span
 									className={
-										kpiData.installsChange > 0
-											? "text-green-600"
-											: "text-red-600"
+										kpis.installsChange > 0 ? "text-green-600" : "text-red-600"
 									}
 								>
-									{Math.abs(kpiData.installsChange)}%
+									{Math.abs(kpis.installsChange)}%
 								</span>{" "}
-								from last month
+								from last period
 							</p>
 						</CardContent>
 					</Card>
@@ -210,11 +278,11 @@ export default async function ComponentAnalyticsPage({
 							<Star className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
 						<CardContent>
-							<div className="font-bold text-2xl">{kpiData.totalStars}</div>
+							<div className="font-bold text-2xl">{kpis.totalStars}</div>
 							<p className="flex items-center text-muted-foreground text-xs">
 								<TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-								<span className="text-green-600">{kpiData.starsChange}%</span>{" "}
-								from last month
+								<span className="text-green-600">{kpis.starsChange}%</span>{" "}
+								cumulative
 							</p>
 						</CardContent>
 					</Card>
@@ -227,13 +295,11 @@ export default async function ComponentAnalyticsPage({
 							<MessageSquare className="h-4 w-4 text-muted-foreground" />
 						</CardHeader>
 						<CardContent>
-							<div className="font-bold text-2xl">{kpiData.totalComments}</div>
+							<div className="font-bold text-2xl">{kpis.totalComments}</div>
 							<p className="flex items-center text-muted-foreground text-xs">
 								<TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-								<span className="text-green-600">
-									{kpiData.commentsChange}%
-								</span>{" "}
-								from last month
+								<span className="text-green-600">{kpis.commentsChange}%</span>{" "}
+								cumulative
 							</p>
 						</CardContent>
 					</Card>
@@ -245,7 +311,7 @@ export default async function ComponentAnalyticsPage({
 						<CardHeader>
 							<CardTitle>Views & Installs Over Time</CardTitle>
 							<CardDescription>
-								Daily views and installs for the past week
+								Daily views and installs for the past month
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -263,7 +329,7 @@ export default async function ComponentAnalyticsPage({
 								className="h-[300px]"
 							>
 								<ResponsiveContainer width="100%" height="100%">
-									<LineChart data={viewsOverTime}>
+									<LineChart data={chartData}>
 										<CartesianGrid strokeDasharray="3 3" />
 										<XAxis dataKey="date" />
 										<YAxis />
@@ -291,7 +357,7 @@ export default async function ComponentAnalyticsPage({
 						<CardHeader>
 							<CardTitle>Traffic Sources</CardTitle>
 							<CardDescription>
-								Where your visitors are coming from
+								Estimated distribution of traffic sources
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -314,8 +380,8 @@ export default async function ComponentAnalyticsPage({
 											paddingAngle={5}
 											dataKey="visits"
 										>
-											{referrerData.map((entry, index) => (
-												<Cell key={`cell-${index}`} fill={entry.color} />
+											{referrerData.map((entry) => (
+												<Cell key={`cell-${entry.source}`} fill={entry.color} />
 											))}
 										</Pie>
 										<ChartTooltip content={<ChartTooltipContent />} />
@@ -344,48 +410,67 @@ export default async function ComponentAnalyticsPage({
 				</div>
 
 				{/* Top Engaged Users */}
-				<Card>
-					<CardHeader>
-						<CardTitle>Top Engaged Users</CardTitle>
-						<CardDescription>
-							Users with the most stars and comments
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>User</TableHead>
-									<TableHead>Stars Given</TableHead>
-									<TableHead>Comments</TableHead>
-									<TableHead>Last Active</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{topUsers.map((user, index) => (
-									<TableRow key={index}>
-										<TableCell className="font-medium">{user.name}</TableCell>
-										<TableCell>
-											<div className="flex items-center gap-1">
-												<Star className="h-3 w-3 text-yellow-500" />
-												{user.stars}
-											</div>
-										</TableCell>
-										<TableCell>
-											<div className="flex items-center gap-1">
-												<MessageSquare className="h-3 w-3 text-blue-500" />
-												{user.comments}
-											</div>
-										</TableCell>
-										<TableCell className="text-muted-foreground">
-											{user.lastActive}
-										</TableCell>
+				{topEngagedUsers.length > 0 && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Top Engaged Users</CardTitle>
+							<CardDescription>
+								Users with the most stars and comments
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>User</TableHead>
+										<TableHead>Stars Given</TableHead>
+										<TableHead>Comments</TableHead>
+										<TableHead>Last Active</TableHead>
 									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					</CardContent>
-				</Card>
+								</TableHeader>
+								<TableBody>
+									{topEngagedUsers.map((user, index) => (
+										<TableRow key={`${user.name}-${index}`}>
+											<TableCell className="font-medium">{user.name}</TableCell>
+											<TableCell>
+												<div className="flex items-center gap-1">
+													<Star className="h-3 w-3 text-yellow-500" />
+													{user.stars}
+												</div>
+											</TableCell>
+											<TableCell>
+												<div className="flex items-center gap-1">
+													<MessageSquare className="h-3 w-3 text-blue-500" />
+													{user.comments}
+												</div>
+											</TableCell>
+											<TableCell className="text-muted-foreground">
+												{user.lastActive}
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						</CardContent>
+					</Card>
+				)}
+
+				{topEngagedUsers.length === 0 && (
+					<Card>
+						<CardHeader>
+							<CardTitle>Top Engaged Users</CardTitle>
+							<CardDescription>
+								Users with the most stars and comments
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="py-8 text-center">
+							<p className="text-muted-foreground">
+								No user engagement data available yet. Stars and comments will
+								appear here once users start interacting with this tool.
+							</p>
+						</CardContent>
+					</Card>
+				)}
 			</div>
 		</Container>
 	);

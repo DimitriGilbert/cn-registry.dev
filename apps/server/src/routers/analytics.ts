@@ -1,22 +1,16 @@
-import { and, count, desc, eq, gt, gte, lt, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import {
 	analyticsEvents,
 	comments,
 	components,
-	countersCache,
 	stars,
 	tools,
 	user,
 } from "../db/schema";
-import {
-	adminProcedure,
-	protectedProcedure,
-	publicProcedure,
-	router,
-} from "../lib/trpc";
-import { idSchema, trackEventSchema } from "../lib/validation";
+import { adminProcedure, publicProcedure, router } from "../lib/trpc";
+import { trackEventSchema } from "../lib/validation";
 
 export const analyticsRouter = router({
 	// Public/Protected: Track event
@@ -28,6 +22,8 @@ export const analyticsRouter = router({
 				.values({
 					...input,
 					userId: ctx?.session?.user?.id || null,
+					referrer: input.referrer || null,
+					userAgent: input.userAgent || null,
 				})
 				.returning();
 
@@ -99,6 +95,119 @@ export const analyticsRouter = router({
 			);
 
 			return detailedResults.filter((item) => item.details !== null);
+		}),
+
+	// Admin: Get referrer data for specific item
+	getReferrerData: adminProcedure
+		.input(
+			z.object({
+				itemId: z.string().uuid(),
+				itemType: z.enum(["component", "tool"]),
+				period: z.enum(["day", "week", "month"]).default("month"),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { itemId, itemType, period } = input;
+
+			const daysAgo = period === "day" ? 1 : period === "week" ? 7 : 30;
+			const threshold = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+
+			// Get referrer data grouped by domain
+			const referrerStats = await db
+				.select({
+					referrer: analyticsEvents.referrer,
+					count: sql<number>`count(*)`,
+				})
+				.from(analyticsEvents)
+				.where(
+					and(
+						eq(analyticsEvents.itemId, itemId),
+						eq(analyticsEvents.itemType, itemType),
+						eq(analyticsEvents.eventType, "view"), // Only count views for referrer data
+						gte(analyticsEvents.createdAt, threshold),
+					),
+				)
+				.groupBy(analyticsEvents.referrer)
+				.orderBy(desc(sql`count(*)`));
+
+			// Process referrer data to categorize traffic sources
+			const processedReferrers = referrerStats.map((stat) => {
+				const referrer = stat.referrer;
+				let source = "Direct";
+				let domain = "";
+
+				if (referrer && referrer !== "") {
+					try {
+						const url = new URL(referrer);
+						domain = url.hostname.toLowerCase();
+
+						// Categorize based on domain patterns
+						if (domain.includes("google.")) {
+							source = "Google";
+						} else if (domain.includes("github.")) {
+							source = "GitHub";
+						} else if (
+							domain.includes("facebook.") ||
+							domain.includes("twitter.") ||
+							domain.includes("linkedin.") ||
+							domain.includes("reddit.") ||
+							domain.includes("discord.")
+						) {
+							source = "Social";
+						} else if (
+							domain.includes("stackoverflow.") ||
+							domain.includes("dev.to") ||
+							domain.includes("hashnode.")
+						) {
+							source = "Developer Communities";
+						} else {
+							source = domain;
+						}
+					} catch {
+						source = "Other";
+					}
+				}
+
+				return {
+					source,
+					domain,
+					visits: stat.count,
+				};
+			});
+
+			// Aggregate by source category
+			const sourceMap = new Map<string, number>();
+			for (const item of processedReferrers) {
+				const current = sourceMap.get(item.source) || 0;
+				sourceMap.set(item.source, current + item.visits);
+			}
+
+			// Convert to array and add colors
+			const colors = [
+				"#8884d8",
+				"#82ca9d",
+				"#ffc658",
+				"#ff7c7c",
+				"#8dd1e1",
+				"#d084d0",
+				"#87ceeb",
+				"#ffb347",
+				"#98fb98",
+				"#f0e68c",
+			];
+
+			const referrerData = Array.from(sourceMap.entries())
+				.map(([source, visits], index) => ({
+					source,
+					visits,
+					color: colors[index % colors.length],
+				}))
+				.sort((a, b) => b.visits - a.visits);
+
+			return {
+				referrerData,
+				totalViews: referrerStats.reduce((sum, stat) => sum + stat.count, 0),
+			};
 		}),
 
 	// Admin: Get analytics summary

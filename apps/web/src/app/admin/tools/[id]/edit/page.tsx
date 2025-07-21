@@ -1,14 +1,14 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { use } from "react";
+import { toast } from "sonner";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { ItemForm, type ItemFormData } from "@/components/forms/item-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/utils/trpc";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { use } from "react";
-import { toast } from "sonner";
 
 export default function EditToolPage({
 	params,
@@ -16,28 +16,32 @@ export default function EditToolPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = use(params);
-	const router = useRouter();
+	const _router = useRouter();
 	const queryClient = useQueryClient();
 
 	const { data: tool, isLoading } = useQuery(
-		trpc.tools.getById.queryOptions({ id })
+		trpc.tools.getById.queryOptions({ id }),
 	);
 
 	const { data: categories = [] } = useQuery(
-		trpc.categories.getAll.queryOptions()
+		trpc.categories.getAll.queryOptions(),
 	);
 
 	const updateMutation = useMutation(
 		trpc.tools.update.mutationOptions({
 			onSuccess: () => {
 				toast.success("Tool updated successfully!");
-				queryClient.invalidateQueries({ queryKey: trpc.tools.getById.queryKey({ id }) });
-				queryClient.invalidateQueries({ queryKey: trpc.tools.getAll.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.tools.getById.queryKey({ id }),
+				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.tools.getAll.queryKey(),
+				});
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update tool");
 			},
-		})
+		}),
 	);
 
 	const handleSubmit = (data: ItemFormData) => {
@@ -49,7 +53,7 @@ export default function EditToolPage({
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6 space-y-6">
+			<div className="container mx-auto space-y-6 p-6">
 				<Skeleton className="h-8 w-96" />
 				<Card>
 					<CardHeader>
@@ -69,8 +73,8 @@ export default function EditToolPage({
 		return (
 			<div className="container mx-auto p-6">
 				<div className="text-center">
-					<h1 className="text-2xl font-bold mb-2">Tool Not Found</h1>
-					<p className="text-muted-foreground mb-4">
+					<h1 className="mb-2 font-bold text-2xl">Tool Not Found</h1>
+					<p className="mb-4 text-muted-foreground">
 						The tool you're looking for doesn't exist.
 					</p>
 				</div>
@@ -79,7 +83,7 @@ export default function EditToolPage({
 	}
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
+		<div className="container mx-auto space-y-6 p-6">
 			<AdminBreadcrumb
 				items={[
 					{ label: "Admin", href: "/admin" },
@@ -90,7 +94,7 @@ export default function EditToolPage({
 
 			<div className="flex items-center justify-between">
 				<div>
-					<h1 className="text-3xl font-bold">Edit Tool</h1>
+					<h1 className="font-bold text-3xl">Edit Tool</h1>
 					<p className="text-muted-foreground">
 						Update tool information and settings
 					</p>
@@ -116,8 +120,15 @@ export default function EditToolPage({
 							installUrl: tool.installUrl || "",
 							installCommand: tool.installCommand || "",
 							tags: tool.tags || [],
-							status: tool.status as "published" | "draft" | "archived" | "suggested",
-							categoryIds: tool.categories?.map(cat => cat?.id).filter((id): id is string => Boolean(id)) || [],
+							status: tool.status as
+								| "published"
+								| "draft"
+								| "archived"
+								| "suggested",
+							categoryIds:
+								tool.categories
+									?.map((cat) => cat?.id)
+									.filter((id): id is string => Boolean(id)) || [],
 						}}
 					/>
 				</CardContent>

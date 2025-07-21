@@ -113,7 +113,7 @@ export const adminRouter = router({
 
 	// Mark all notifications as read
 	markAllNotificationsAsRead: adminProcedure.mutation(async () => {
-		const result = await db
+		await db
 			.update(adminNotifications)
 			.set({ isRead: true })
 			.where(eq(adminNotifications.isRead, false));
@@ -208,7 +208,7 @@ export const adminRouter = router({
 			}),
 		)
 		.query(async ({ input }) => {
-			const { search, role, page, limit } = input;
+			const { role, page, limit } = input;
 			const offset = (page - 1) * limit;
 
 			const baseQuery = db
@@ -275,6 +275,10 @@ export const adminRouter = router({
 		.mutation(async ({ input }) => {
 			// For now, we'll just return success since we don't have a suspended field
 			// In a real app, you'd add a suspended field to the user table
-			return { success: true, userId: input.userId, suspended: input.suspended };
+			return {
+				success: true,
+				userId: input.userId,
+				suspended: input.suspended,
+			};
 		}),
 });

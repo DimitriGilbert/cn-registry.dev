@@ -1,11 +1,9 @@
 "use client";
-import { ArrowLeft, Save, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
-import { Badge } from "@/components/ui/badge";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -15,7 +13,6 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormedible } from "@/hooks/use-formedible";
 
 const componentSchema = z.object({
@@ -72,7 +69,7 @@ export default async function EditComponentPage({
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const { id } = await params;
+	const { id: _id } = await params;
 	const { Form } = useFormedible<ComponentFormValues>({
 		schema: componentSchema,
 		fields: [

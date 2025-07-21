@@ -1,15 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-	MessageSquare,
-	Package,
-	Plus,
-	Star,
-	TrendingDown,
-	TrendingUp,
-	Users,
-} from "lucide-react";
+import { MessageSquare, Package, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import {
 	CartesianGrid,
@@ -24,7 +16,6 @@ import {
 } from "recharts";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -87,7 +78,7 @@ export default function AdminDashboard() {
 					</div>
 					<div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 						{Array.from({ length: 4 }).map((_, i) => (
-							<Card key={i}>
+							<Card key={`admin-dashboard-skeleton-${i}`}>
 								<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 									<Skeleton className="h-4 w-24" />
 									<Skeleton className="h-4 w-4" />
@@ -279,9 +270,9 @@ export default function AdminDashboard() {
 												paddingAngle={5}
 												dataKey="value"
 											>
-												{analyticsData.eventCounts.map((_, index) => (
+												{analyticsData.eventCounts.map((event, index) => (
 													<Cell
-														key={`cell-${index}`}
+														key={`cell-${event.eventType}`}
 														fill={`hsl(var(--chart-${(index % 5) + 1}))`}
 													/>
 												))}

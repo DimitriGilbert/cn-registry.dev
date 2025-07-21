@@ -40,7 +40,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { trpc, trpcClient } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 
 const formatDate = (date: string) => {
 	return new Date(date).toLocaleDateString("en-US", {
@@ -188,7 +188,7 @@ export default function ManageToolsPage() {
 						<TableBody>
 							{isLoading ? (
 								Array.from({ length: 5 }).map((_, i) => (
-									<TableRow key={i}>
+									<TableRow key={`tool-loading-${i}`}>
 										<TableCell>
 											<Skeleton className="h-4 w-[200px]" />
 										</TableCell>

@@ -10,12 +10,7 @@ import {
 	user,
 	userSettings,
 } from "../db/schema";
-import {
-	adminProcedure,
-	protectedProcedure,
-	publicProcedure,
-	router,
-} from "../lib/trpc";
+import { adminProcedure, protectedProcedure, router } from "../lib/trpc";
 import {
 	idSchema,
 	updateUserSchema,

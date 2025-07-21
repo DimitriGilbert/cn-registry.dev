@@ -85,6 +85,8 @@ export const trackEventSchema = z.object({
 	eventType: z.enum(["view", "install", "star", "comment"]),
 	itemType: z.enum(["component", "tool"]),
 	itemId: z.string().uuid(),
+	referrer: z.string().optional(), // Track referrer URL
+	userAgent: z.string().optional(), // Track user agent
 });
 
 // Theme schemas

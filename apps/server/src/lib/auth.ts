@@ -8,7 +8,11 @@ export const auth = betterAuth({
 		provider: "pg",
 		schema: schema,
 	}),
-	trustedOrigins: [process.env.CORS_ORIGIN || ""],
+	trustedOrigins: [
+		"https://cn-registry.dev", 
+		"https://api.cn-registry.dev",
+		process.env.CORS_ORIGIN || ""
+	].filter(Boolean),
 	emailAndPassword: {
 		enabled: true,
 	},

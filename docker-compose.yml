@@ -19,8 +19,8 @@ services:
       timeout: 5s
       retries: 5
 
-  # Database Migration Service
-  migrate:
+  # Database Init (runs once)
+  init-db:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
@@ -30,10 +30,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["bun", "run", "db:push", "--filter=server"]
+    command: ["sh", "-c", "cd apps/server && bun run db:push --force"]
     restart: "no"
+    profiles: ["init"]
 
-  # Server App (API/Backend)
+  # Server App (API/Backend)  
   server:
     build:
       context: .
@@ -54,8 +55,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:42001 || exit 1"]
       interval: 30s

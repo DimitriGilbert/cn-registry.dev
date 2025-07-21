@@ -18,6 +18,7 @@ import {
 	Menu,
 	Settings,
 	Tags,
+	Wrench,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +36,11 @@ const adminNavItems = [
 		href: "/admin/components",
 		label: "Components",
 		icon: Component,
+	},
+	{
+		href: "/admin/tools",
+		label: "Tools",
+		icon: Wrench,
 	},
 	{
 		href: "/admin/users",

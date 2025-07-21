@@ -17,6 +17,13 @@ Stores user information.
 | `image` | `text` | URL to the user's profile image. |
 | `username` | `text` | The user's unique username. |
 | `role` | `text` | The user's role (`user`, `creator`, `admin`). Defaults to `user`. |
+| `bio` | `text` | The user's bio/description. |
+| `website` | `text` | URL to the user's website. |
+| `location` | `text` | The user's location. |
+| `company` | `text` | The user's company. |
+| `socialLinks` | `jsonb` | Social media links (GitHub, Twitter, etc.). |
+| `verified` | `boolean` | Whether the user is verified. |
+| `specialties` | `text[]` | Array of user's specialties/skills. |
 | `createdAt` | `timestamp` | The timestamp when the user was created. |
 | `updatedAt` | `timestamp` | The timestamp when the user was last updated. |
 
@@ -34,7 +41,7 @@ Stores information about shared components.
 | `installUrl` | `text` | URL to the component's installation guide. |
 | `installCommand`| `text` | The command to install the component. |
 | `tags` | `text[]` | An array of tags for the component. |
-| `status` | `text` | The component's status (`published`, `draft`, `archived`). Defaults to `published`. |
+| `status` | `text` | The component's status (`published`, `draft`, `archived`, `suggested`). Defaults to `published`. |
 | `creatorId` | `text` | **Foreign Key** to `user.id`. The ID of the user who created the component. |
 | `createdAt` | `timestamp` | The timestamp when the component was created. |
 | `updatedAt` | `timestamp` | The timestamp when the component was last updated. |
@@ -53,7 +60,7 @@ Stores information about shared tools.
 | `installUrl` | `text` | URL to the tool's installation guide. |
 | `installCommand`| `text` | The command to install the tool. |
 | `tags` | `text[]` | An array of tags for the tool. |
-| `status` | `text` | The tool's status (`published`, `draft`, `archived`). Defaults to `published`. |
+| `status` | `text` | The tool's status (`published`, `draft`, `archived`, `suggested`). Defaults to `published`. |
 | `creatorId` | `text` | **Foreign Key** to `user.id`. The ID of the user who created the tool. |
 | `createdAt` | `timestamp` | The timestamp when the tool was created. |
 | `updatedAt` | `timestamp` | The timestamp when the tool was last updated. |
@@ -66,6 +73,82 @@ Stores categories for components and tools.
 | :--- | :--- | :--- |
 | `id` | `uuid` | **Primary Key.** The category's unique ID. |
 | `name` | `text` | The category's name (unique). |
+
+### `component_categories`
+
+Junction table linking components to categories.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `componentId` | `uuid` | **Primary Key.** **Foreign Key** to `components.id`. |
+| `categoryId` | `uuid` | **Primary Key.** **Foreign Key** to `categories.id`. |
+
+### `tool_categories`
+
+Junction table linking tools to categories.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `toolId` | `uuid` | **Primary Key.** **Foreign Key** to `tools.id`. |
+| `categoryId` | `uuid` | **Primary Key.** **Foreign Key** to `categories.id`. |
+
+### `projects`
+
+Stores user projects that organize components.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | `uuid` | **Primary Key.** The project's unique ID. |
+| `name` | `text` | The project's name. |
+| `description` | `text` | The project's description. |
+| `slug` | `text` | The project's unique slug (unique). |
+| `userId` | `text` | **Foreign Key** to `user.id`. The project owner. |
+| `visibility` | `text` | The project's visibility (`private`, `public`). Defaults to `private`. |
+| `createdAt` | `timestamp` | The timestamp when the project was created. |
+| `updatedAt` | `timestamp` | The timestamp when the project was last updated. |
+
+### `project_components`
+
+Junction table linking projects to components.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `projectId` | `uuid` | **Primary Key.** **Foreign Key** to `projects.id`. |
+| `componentId` | `uuid` | **Primary Key.** **Foreign Key** to `components.id`. |
+| `addedAt` | `timestamp` | The timestamp when the component was added to the project. |
+
+### `project_collaborators`
+
+Stores project collaborators and their roles.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `projectId` | `uuid` | **Primary Key.** **Foreign Key** to `projects.id`. |
+| `userId` | `text` | **Primary Key.** **Foreign Key** to `user.id`. |
+| `role` | `text` | The collaborator's role (`owner`, `editor`, `viewer`). Defaults to `viewer`. |
+| `addedAt` | `timestamp` | The timestamp when the collaborator was added. |
+
+### `github_cache`
+
+Caches GitHub repository data to reduce API calls.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `repoUrl` | `text` | **Primary Key.** The GitHub repository URL. |
+| `data` | `text` | The cached repository data (JSON string). |
+| `lastFetched` | `timestamp` | The timestamp when the data was last fetched. |
+| `expiresAt` | `timestamp` | The timestamp when the cache expires. |
+
+### `user_settings`
+
+Stores user-specific settings and preferences.
+
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `userId` | `text` | **Primary Key.** **Foreign Key** to `user.id`. |
+| `theme` | `text` | The user's preferred theme. |
+| `notifications` | `jsonb` | Notification preferences. |
+| `locale` | `text` | The user's preferred locale. |
 
 ## Engagement Tables
 
@@ -141,7 +224,9 @@ Stores notifications for admins.
 | Column | Type | Description |
 | :--- | :--- | :--- |
 | `id` | `uuid` | **Primary Key.** The notification's unique ID. |
+| `title` | `text` | The notification title. |
 | `message` | `text` | The notification message. |
+| `type` | `text` | The notification type (`info`, `warning`, `error`, `success`). Defaults to `info`. |
 | `isRead` | `boolean` | Whether the notification has been read. Defaults to `false`. |
 | `createdAt` | `timestamp` | The timestamp when the notification was created. |
 

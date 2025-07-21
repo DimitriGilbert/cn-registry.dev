@@ -1,13 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -15,10 +14,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
 
@@ -94,8 +90,64 @@ export default function ProfilePage() {
 		}),
 	);
 
-	const { Form: ProfileForm, form } = useFormedible<ProfileFormValues>({
+	const { Form: ProfileForm } = useFormedible<ProfileFormValues>({
 		schema: profileSchema,
+		fields: [
+			{
+				name: "bio",
+				type: "textarea",
+				label: "Bio",
+				placeholder: "Tell others about yourself...",
+				textareaConfig: {
+					rows: 4,
+					maxLength: 500,
+					showWordCount: true,
+				},
+			},
+			{
+				name: "location",
+				type: "text",
+				label: "Location",
+				placeholder: "e.g., San Francisco, CA",
+			},
+			{
+				name: "company",
+				type: "text",
+				label: "Company",
+				placeholder: "e.g., Acme Corp",
+			},
+			{
+				name: "website",
+				type: "url",
+				label: "Website",
+				placeholder: "https://your-website.com",
+			},
+			{
+				name: "github",
+				type: "url",
+				label: "GitHub URL",
+				placeholder: "https://github.com/username",
+			},
+			{
+				name: "twitter",
+				type: "url",
+				label: "Twitter URL",
+				placeholder: "https://twitter.com/username",
+			},
+			{
+				name: "linkedin",
+				type: "url",
+				label: "LinkedIn URL",
+				placeholder: "https://linkedin.com/in/username",
+			},
+			{
+				name: "specialties",
+				type: "text",
+				label: "Specialties",
+				placeholder: "e.g., React, TypeScript, UI/UX (comma-separated)",
+				description: "Enter your areas of expertise, separated by commas",
+			},
+		],
 		formOptions: {
 			defaultValues: {
 				bio: profile?.bio || "",
@@ -133,24 +185,9 @@ export default function ProfilePage() {
 				});
 			},
 		},
+		loading: updateProfileMutation.isPending,
+		submitLabel: "Save Changes",
 	});
-
-	// Reset form when profile loads
-	React.useEffect(() => {
-		if (profile) {
-			form.reset({
-				bio: profile.bio || "",
-				website: profile.website || "",
-				location: profile.location || "",
-				company: profile.company || "",
-				github: (profile.socialLinks as Record<string, string>)?.github || "",
-				twitter: (profile.socialLinks as Record<string, string>)?.twitter || "",
-				linkedin:
-					(profile.socialLinks as Record<string, string>)?.linkedin || "",
-				specialties: profile.specialties?.join(", ") || "",
-			});
-		}
-	}, [profile, form]);
 
 	if (isLoading) {
 		return <ProfileSkeleton />;
@@ -218,176 +255,7 @@ export default function ProfilePage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<ProfileForm className="space-y-6">
-								<form.Field name="bio">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor="bio">Bio</Label>
-											<Textarea
-												id="bio"
-												placeholder="Tell others about yourself..."
-												rows={4}
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-											{field.state.meta.errors.length > 0 && (
-												<div className="text-destructive text-sm">
-													{field.state.meta.errors[0]}
-												</div>
-											)}
-										</div>
-									)}
-								</form.Field>
-
-								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-									<form.Field name="location">
-										{(field) => (
-											<div className="space-y-2">
-												<Label htmlFor="location">Location</Label>
-												<Input
-													id="location"
-													placeholder="e.g., San Francisco, CA"
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-												/>
-												{field.state.meta.errors.length > 0 && (
-													<div className="text-destructive text-sm">
-														{field.state.meta.errors[0]}
-													</div>
-												)}
-											</div>
-										)}
-									</form.Field>
-
-									<form.Field name="company">
-										{(field) => (
-											<div className="space-y-2">
-												<Label htmlFor="company">Company</Label>
-												<Input
-													id="company"
-													placeholder="e.g., Acme Corp"
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-												/>
-												{field.state.meta.errors.length > 0 && (
-													<div className="text-destructive text-sm">
-														{field.state.meta.errors[0]}
-													</div>
-												)}
-											</div>
-										)}
-									</form.Field>
-								</div>
-
-								<form.Field name="website">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor="website">Website</Label>
-											<Input
-												id="website"
-												type="url"
-												placeholder="https://your-website.com"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-											{field.state.meta.errors.length > 0 && (
-												<div className="text-destructive text-sm">
-													{field.state.meta.errors[0]}
-												</div>
-											)}
-										</div>
-									)}
-								</form.Field>
-
-								<div className="space-y-4">
-									<Label>Social Links</Label>
-									<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-										<form.Field name="github">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="github" className="text-sm">
-														GitHub
-													</Label>
-													<Input
-														id="github"
-														placeholder="https://github.com/username"
-														value={field.state.value}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-
-										<form.Field name="twitter">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="twitter" className="text-sm">
-														Twitter
-													</Label>
-													<Input
-														id="twitter"
-														placeholder="https://twitter.com/username"
-														value={field.state.value}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-
-										<form.Field name="linkedin">
-											{(field) => (
-												<div className="space-y-2">
-													<Label htmlFor="linkedin" className="text-sm">
-														LinkedIn
-													</Label>
-													<Input
-														id="linkedin"
-														placeholder="https://linkedin.com/in/username"
-														value={field.state.value}
-														onChange={(e) => field.handleChange(e.target.value)}
-														onBlur={field.handleBlur}
-													/>
-												</div>
-											)}
-										</form.Field>
-									</div>
-								</div>
-
-								<form.Field name="specialties">
-									{(field) => (
-										<div className="space-y-2">
-											<Label htmlFor="specialties">Specialties</Label>
-											<Input
-												id="specialties"
-												placeholder="e.g., React, TypeScript, UI/UX (comma-separated)"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-											<p className="text-muted-foreground text-sm">
-												Enter your areas of expertise, separated by commas
-											</p>
-										</div>
-									)}
-								</form.Field>
-
-								<div className="flex justify-end">
-									<Button
-										type="submit"
-										disabled={updateProfileMutation.isPending}
-									>
-										{updateProfileMutation.isPending
-											? "Saving..."
-											: "Save Changes"}
-									</Button>
-								</div>
-							</ProfileForm>
+							<ProfileForm />
 						</CardContent>
 					</Card>
 				</div>

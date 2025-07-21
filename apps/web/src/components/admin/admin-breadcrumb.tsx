@@ -1,3 +1,4 @@
+import React from "react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -22,22 +23,22 @@ export function AdminBreadcrumb({ items }: AdminBreadcrumbProps) {
 		<Breadcrumb>
 			<BreadcrumbList>
 				{items.map((item, index) => (
-					<BreadcrumbItem key={index}>
-						{index < items.length - 1 ? (
-							<>
-								{item.href ? (
+					<React.Fragment key={index}>
+						<BreadcrumbItem>
+							{index < items.length - 1 ? (
+								item.href ? (
 									<BreadcrumbLink asChild>
 										<Link href={item.href}>{item.label}</Link>
 									</BreadcrumbLink>
 								) : (
 									<span>{item.label}</span>
-								)}
-								<BreadcrumbSeparator />
-							</>
-						) : (
-							<BreadcrumbPage>{item.label}</BreadcrumbPage>
-						)}
-					</BreadcrumbItem>
+								)
+							) : (
+								<BreadcrumbPage>{item.label}</BreadcrumbPage>
+							)}
+						</BreadcrumbItem>
+						{index < items.length - 1 && <BreadcrumbSeparator />}
+					</React.Fragment>
 				))}
 			</BreadcrumbList>
 		</Breadcrumb>

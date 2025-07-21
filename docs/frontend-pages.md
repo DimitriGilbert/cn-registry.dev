@@ -46,6 +46,46 @@ This document provides an overview of the frontend pages in the cn-registry appl
 *   **File:** `apps/web/src/app/dashboard/page.tsx`
 *   **Description:** The user's personal dashboard, showing their starred components and tools, recent activity, and other stats.
 
+### Profile (`/profile`)
+
+*   **File:** `apps/web/src/app/profile/page.tsx`
+*   **Description:** User profile page where creators can update their information using schema-driven forms.
+
+### Creator Profiles (`/creators`)
+
+*   **File:** `apps/web/src/app/creators/page.tsx`
+*   **Description:** Browse all creators and their public profiles.
+
+### Creator Profile Detail (`/creators/[username]`)
+
+*   **File:** `apps/web/src/app/creators/[username]/page.tsx`
+*   **Description:** Public profile page showing a creator's components, tools, and information.
+
+### Projects (`/projects`)
+
+*   **File:** `apps/web/src/app/projects/page.tsx`
+*   **Description:** Browse and manage user projects that organize components.
+
+### Create Project (`/projects/new`)
+
+*   **File:** `apps/web/src/app/projects/new/page.tsx`
+*   **Description:** Create a new project to organize components and tools.
+
+### Project Detail (`/projects/[slug]`)
+
+*   **File:** `apps/web/src/app/projects/[slug]/page.tsx`
+*   **Description:** View a project and its organized components.
+
+### Edit Project (`/projects/[slug]/edit`)
+
+*   **File:** `apps/web/src/app/projects/[slug]/edit/page.tsx`
+*   **Description:** Edit project settings and information (owners/editors only).
+
+### Suggest Component (`/suggest/component`)
+
+*   **File:** `apps/web/src/app/suggest/component/page.tsx`
+*   **Description:** Public form for users to suggest new components using the shared ItemForm.
+
 ## Admin Pages
 
 ### Admin Dashboard (`/admin`)
@@ -57,6 +97,11 @@ This document provides an overview of the frontend pages in the cn-registry appl
 
 *   **File:** `apps/web/src/app/admin/components/page.tsx`
 *   **Description:** A table view of all components, allowing admins to manage them.
+
+### Create Component (`/admin/components/new`)
+
+*   **File:** `apps/web/src/app/admin/components/new/page.tsx`
+*   **Description:** A form for admins to create new components using the shared ItemForm.
 
 ### Edit Component (`/admin/components/[id]/edit`)
 
@@ -72,6 +117,36 @@ This document provides an overview of the frontend pages in the cn-registry appl
 
 *   **File:** `apps/web/src/app/admin/tools/page.tsx`
 *   **Description:** A table view of all tools, allowing admins to manage them.
+
+### Create Tool (`/admin/tools/new`)
+
+*   **File:** `apps/web/src/app/admin/tools/new/page.tsx`
+*   **Description:** A form for admins to create new tools using the shared ItemForm.
+
+### Edit Tool (`/admin/tools/[id]/edit`)
+
+*   **File:** `apps/web/src/app/admin/tools/[id]/edit/page.tsx`
+*   **Description:** A form for admins to edit the details of a specific tool.
+
+### Tool Analytics (`/admin/tools/[id]/analytics`)
+
+*   **File:** `apps/web/src/app/admin/tools/[id]/analytics/page.tsx`
+*   **Description:** Displays detailed analytics for a specific tool.
+
+### Manage Categories (`/admin/categories`)
+
+*   **File:** `apps/web/src/app/admin/categories/page.tsx`
+*   **Description:** A page for admins to create, edit, and delete categories with full CRUD operations.
+
+### Manage Users (`/admin/users`)
+
+*   **File:** `apps/web/src/app/admin/users/page.tsx`
+*   **Description:** A page for admins to manage users, update roles, and suspend accounts.
+
+### Admin Notifications (`/admin/notifications`)
+
+*   **File:** `apps/web/src/app/admin/notifications/page.tsx`
+*   **Description:** A page for admins to create, read, and manage system notifications.
 
 ### Manage Themes (`/admin/themes`)
 

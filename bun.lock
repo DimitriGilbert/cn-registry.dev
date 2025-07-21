@@ -5,6 +5,7 @@
       "name": "cn-registry",
       "dependencies": {
         "culori": "^4.0.2",
+        "drizzle-orm": "^0.44.2",
         "embla-carousel-autoplay": "^8.6.0",
         "zustand": "^5.0.6",
       },

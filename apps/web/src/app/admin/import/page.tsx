@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FileText, CheckCircle, Upload } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle, FileText, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { z } from "zod";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
-import { toast } from "sonner";
 
 const importSchema = z.object({
 	componentsJson: z.string().min(1, "Please paste the JSON content"),
@@ -46,7 +46,7 @@ export default function ImportPage() {
 			onError: (error) => {
 				toast.error(`Import failed: ${error.message}`);
 			},
-		})
+		}),
 	);
 
 	const downloadExample = () => {
@@ -59,19 +59,19 @@ export default function ImportPage() {
 				installCommand: "npx shadcn@latest add button",
 				tags: ["ui", "button", "form"],
 				status: "suggested",
-				categoryNames: ["Buttons", "Forms"]
+				categoryNames: ["Buttons", "Forms"],
 			},
 			{
 				name: "example-card",
 				description: "A flexible card component",
 				tags: ["ui", "layout"],
 				status: "suggested",
-				categoryNames: ["Layout"]
-			}
+				categoryNames: ["Layout"],
+			},
 		];
 
 		const blob = new Blob([JSON.stringify(exampleData, null, 2)], {
-			type: "application/json"
+			type: "application/json",
 		});
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
@@ -128,16 +128,15 @@ export default function ImportPage() {
 			<div className="space-y-6">
 				<div className="flex items-center justify-between">
 					<div>
-						<h1 className="text-3xl font-bold tracking-tight">Import Components</h1>
+						<h1 className="font-bold text-3xl tracking-tight">
+							Import Components
+						</h1>
 						<p className="text-muted-foreground">
 							Bulk import components from JSON files
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						onClick={downloadExample}
-					>
-						<FileText className="h-4 w-4 mr-2" />
+					<Button variant="outline" onClick={downloadExample}>
+						<FileText className="mr-2 h-4 w-4" />
 						Download Example
 					</Button>
 				</div>
@@ -157,9 +156,12 @@ export default function ImportPage() {
 						<CardTitle>JSON Format</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-3 text-sm">
-						<p>The JSON file should contain an array of component objects with the following structure:</p>
-						<pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
-{`[
+						<p>
+							The JSON file should contain an array of component objects with
+							the following structure:
+						</p>
+						<pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
+							{`[
   {
     "name": "component-name",           // Required
     "description": "Component description",
@@ -173,12 +175,16 @@ export default function ImportPage() {
 ]`}
 						</pre>
 						<div className="flex items-start space-x-2">
-							<CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+							<CheckCircle className="mt-0.5 h-4 w-4 text-green-600" />
 							<div>
 								<p className="font-medium">Tips:</p>
-								<ul className="list-disc list-inside space-y-1 text-muted-foreground">
-									<li>Only the <code>name</code> field is required</li>
-									<li>Categories will be created automatically if they don't exist</li>
+								<ul className="list-inside list-disc space-y-1 text-muted-foreground">
+									<li>
+										Only the <code>name</code> field is required
+									</li>
+									<li>
+										Categories will be created automatically if they don't exist
+									</li>
 									<li>Use "suggested" status for community contributions</li>
 									<li>Download the example file to see the exact format</li>
 								</ul>

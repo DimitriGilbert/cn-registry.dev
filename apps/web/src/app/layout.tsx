@@ -9,31 +9,31 @@ import { ThemeScript } from "@/components/theme-script";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "cn-registry - shadcn/ui Component Registry",
-  description: "Discover and share shadcn/ui components and developer tools",
+	title: "cn-registry - shadcn/ui Component Registry",
+	description: "Discover and share shadcn/ui components and developer tools",
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-        <script
-          src="https://cdn.counter.dev/script.js"
-          data-id="154c6878-7558-4eff-90f9-bd4904015df1"
-          data-utcoffset="1"
-          async
-        />
-      </head>
-      <body className={inter.className}>
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
-      </body>
-    </html>
-  );
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<head>
+				<ThemeScript />
+				<script
+					src="https://cdn.counter.dev/script.js"
+					data-id="154c6878-7558-4eff-90f9-bd4904015df1"
+					data-utcoffset="1"
+					async
+				/>
+			</head>
+			<body className={inter.className}>
+				<Providers>
+					<AppShell>{children}</AppShell>
+				</Providers>
+			</body>
+		</html>
+	);
 }

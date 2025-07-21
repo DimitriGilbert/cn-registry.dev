@@ -22,7 +22,11 @@ export const queryClient = new QueryClient({
 const getServerUrl = () => {
 	// For server-side calls (SSR), use internal container URL
 	if (typeof window === "undefined") {
-		return process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";
+		return (
+			process.env.SERVER_URL ||
+			process.env.NEXT_PUBLIC_SERVER_URL ||
+			"https://api.cn-registry.dev"
+		);
 	}
 	// For client-side calls, use public URL
 	return process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";

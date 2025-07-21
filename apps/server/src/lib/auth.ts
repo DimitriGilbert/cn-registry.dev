@@ -9,9 +9,9 @@ export const auth = betterAuth({
 		schema: schema,
 	}),
 	trustedOrigins: [
-		"https://cn-registry.dev", 
+		"https://cn-registry.dev",
 		"https://api.cn-registry.dev",
-		process.env.CORS_ORIGIN || ""
+		process.env.CORS_ORIGIN || "",
 	].filter(Boolean),
 	emailAndPassword: {
 		enabled: true,

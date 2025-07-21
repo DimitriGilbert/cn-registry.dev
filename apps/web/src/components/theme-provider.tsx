@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { defaultThemeState } from "@/config/theme";
 import { applyThemeToElement } from "@/lib/apply-theme";
 import type { ThemeMode, ThemePreset, ThemeState } from "@/types/theme";
+import { loadThemePresets } from "@/utils/theme-presets";
 
 interface ThemeContextType {
 	themeState: ThemeState;
@@ -30,34 +31,62 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 	const [themeState, setThemeState] = useState<ThemeState>(defaultThemeState);
 
 	useEffect(() => {
-		const storedTheme = localStorage.getItem("theme");
-		if (storedTheme) {
-			try {
-				const parsed = JSON.parse(storedTheme);
-				setThemeState(parsed);
-			} catch {
-				const mode = storedTheme as ThemeMode;
-				if (mode === "light" || mode === "dark") {
-					setThemeState((prev) => ({ ...prev, currentMode: mode }));
+		const initTheme = async () => {
+			const storedTheme = localStorage.getItem("theme");
+			const storedPreset = localStorage.getItem("theme-preset");
+
+			if (storedTheme) {
+				try {
+					const parsed = JSON.parse(storedTheme);
+					setThemeState(parsed);
+				} catch {
+					const mode = storedTheme as ThemeMode;
+					if (mode === "light" || mode === "dark") {
+						setThemeState((prev) => ({ ...prev, currentMode: mode }));
+					}
+				}
+			} else {
+				// First time visit - apply starry-night theme
+				const prefersDark = window.matchMedia(
+					"(prefers-color-scheme: dark)",
+				).matches;
+
+				try {
+					const presets = await loadThemePresets();
+					const starryNightPreset = presets["starry-night"];
+
+					if (starryNightPreset) {
+						const newThemeState = {
+							styles: starryNightPreset.styles,
+							currentMode: prefersDark ? "dark" : ("light" as ThemeMode),
+							selectedPreset: "starry-night",
+						};
+						setThemeState(newThemeState);
+						localStorage.setItem("theme-preset", "starry-night");
+					} else {
+						// Fallback to default theme if starry-night not found
+						setThemeState((prev) => ({
+							...prev,
+							currentMode: prefersDark ? "dark" : "light",
+						}));
+					}
+				} catch (error) {
+					console.error("Failed to load starry-night theme:", error);
+					// Fallback to default theme
+					setThemeState((prev) => ({
+						...prev,
+						currentMode: prefersDark ? "dark" : "light",
+					}));
 				}
 			}
-		} else {
-			const prefersDark = window.matchMedia(
-				"(prefers-color-scheme: dark)",
-			).matches;
-			setThemeState((prev) => ({
-				...prev,
-				currentMode: prefersDark ? "dark" : "light",
-			}));
-		}
+		};
+
+		initTheme();
 	}, []);
 
 	useEffect(() => {
-		// Only apply default theme if no custom theme preset is active
-		const currentPreset = localStorage.getItem("theme-preset");
-		if (!currentPreset || currentPreset === "default") {
-			applyThemeToElement(themeState);
-		}
+		// Apply theme styles to DOM
+		applyThemeToElement(themeState);
 		localStorage.setItem("theme", JSON.stringify(themeState));
 	}, [themeState.currentMode, themeState.selectedPreset]);
 

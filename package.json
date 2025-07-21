@@ -21,12 +21,14 @@
 		"db:watch": "turbo -F server db:watch",
 		"db:stop": "turbo -F server db:stop",
 		"db:down": "turbo -F server db:down",
-		"make-admin": "bun scripts/make-admin.ts"
+		"make-admin": "bun scripts/make-admin.ts",
+		"make-admin-prod": "bun scripts/make-admin-prod.ts"
 	},
 	"dependencies": {
 		"culori": "^4.0.2",
 		"embla-carousel-autoplay": "^8.6.0",
-		"zustand": "^5.0.6"
+		"zustand": "^5.0.6",
+		"drizzle-orm": "^0.44.2"
 	},
 	"devDependencies": {
 		"turbo": "^2.5.4",

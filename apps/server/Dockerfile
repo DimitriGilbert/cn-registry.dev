@@ -54,6 +54,11 @@ COPY --from=builder /app/apps/server/drizzle.config.ts ./apps/server/
 COPY --from=builder /app/apps/server/src/db ./apps/server/src/db
 COPY --from=builder /usr/local/bin/bun /usr/local/bin/bun
 
+# Copy admin scripts and root package.json for admin operations
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/scripts ./scripts/
+COPY --from=builder /app/node_modules ./node_modules/
+
 USER nextjs
 
 CMD ["node", "apps/server/server.js"]

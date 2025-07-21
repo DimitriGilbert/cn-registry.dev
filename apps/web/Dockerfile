@@ -45,6 +45,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 USER root
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
+# Copy admin scripts and root package.json for admin operations (fallback container)
+# COPY --from=builder /app/package.json ./package.json
+# COPY --from=builder /app/scripts ./scripts/
+# COPY --from=builder /app/node_modules ./node_modules/
+# COPY --from=builder /app/apps/server/src/db ./apps/server/src/db
+# COPY --from=builder /usr/local/bin/bun /usr/local/bin/bun
+
 USER nextjs
 
 EXPOSE 3000

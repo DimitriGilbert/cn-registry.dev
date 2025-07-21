@@ -297,11 +297,13 @@ export const adminRouter = router({
 						installUrl: z.string().url().optional(),
 						installCommand: z.string().optional(),
 						tags: z.array(z.string()).optional(),
-						status: z.enum(["published", "draft", "archived", "suggested"]).optional(),
+						status: z
+							.enum(["published", "draft", "archived", "suggested"])
+							.optional(),
 						categoryNames: z.array(z.string()).optional(),
-					})
-				)
-			})
+					}),
+				),
+			}),
 		)
 		.mutation(async ({ input, ctx }) => {
 			const { components: componentsData } = input;
@@ -352,7 +354,7 @@ export const adminRouter = router({
 						installUrl: componentData.installUrl || null,
 						installCommand: componentData.installCommand || null,
 						tags: componentData.tags || [],
-						status: componentData.status || "suggested" as const,
+						status: componentData.status || ("suggested" as const),
 						creatorId: ctx.user.id,
 					};
 
@@ -365,7 +367,7 @@ export const adminRouter = router({
 					const categoryNames = componentData.categoryNames || [];
 					if (categoryNames.length > 0) {
 						const categoryIds = await Promise.all(
-							categoryNames.map((name) => getOrCreateCategory(name))
+							categoryNames.map((name) => getOrCreateCategory(name)),
 						);
 
 						// Link component to categories
@@ -379,7 +381,10 @@ export const adminRouter = router({
 
 					importedCount++;
 				} catch (error) {
-					console.error(`Failed to import component "${componentData.name}":`, error);
+					console.error(
+						`Failed to import component "${componentData.name}":`,
+						error,
+					);
 					skippedCount++;
 				}
 			}

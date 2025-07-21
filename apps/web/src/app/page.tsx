@@ -47,23 +47,25 @@ export default function HomePage() {
 		<Container>
 			<div className="py-12">
 				{/* Alpha Warning */}
-				<div className="mb-8 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+				<div className="mb-8 rounded-lg border border-border bg-muted/50 p-4">
 					<div className="flex items-center gap-3">
-						<AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+						<AlertTriangle className="h-5 w-5 text-muted-foreground" />
 						<div className="flex-1">
-							<h3 className="font-medium text-yellow-800 dark:text-yellow-200">
-								Alpha Version
-							</h3>
-							<p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-								This is an alpha version. You might encounter bugs and missing features. 
-								Please help us improve by reporting issues!
+							<h3 className="font-medium text-foreground">Alpha Version</h3>
+							<p className="mt-1 text-muted-foreground text-sm">
+								This is an alpha version. You might encounter bugs and missing
+								features. Please help us improve by reporting issues!
 							</p>
 						</div>
-						<Button 
-							variant="outline" 
+						<Button
+							variant="outline"
 							size="sm"
-							onClick={() => window.open("https://github.com/DimitriGilbert/cn-registry.dev/issues", "_blank")}
-							className="border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-600 dark:text-yellow-200 dark:hover:bg-yellow-900/40"
+							onClick={() =>
+								window.open(
+									"https://github.com/DimitriGilbert/cn-registry.dev/issues",
+									"_blank",
+								)
+							}
 						>
 							Report Issue
 						</Button>

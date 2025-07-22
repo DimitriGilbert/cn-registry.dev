@@ -11,6 +11,26 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
 	title: "cn-registry - shadcn/ui Component Registry",
 	description: "Discover and share shadcn/ui components and developer tools",
+	openGraph: {
+		title: "cn-registry - shadcn/ui Component Registry",
+		description: "Discover, share, and build with shadcn/ui components and tools. A central hub for the developer community.",
+		images: [
+			{
+				url: "/images/opengraph.jpg",
+				width: 1200,
+				height: 630,
+				alt: "cn-registry - shadcn/ui Component Registry",
+			},
+		],
+		locale: "en_US",
+		type: "website",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "cn-registry - shadcn/ui Component Registry",
+		description: "Discover, share, and build with shadcn/ui components and tools. A central hub for the developer community.",
+		images: ["/images/opengraph.jpg"],
+	},
 };
 
 export default function RootLayout({

@@ -89,10 +89,10 @@ export default function EditComponentPage({
 				description: component.description,
 				repoUrl: component.repoUrl || "",
 				websiteUrl: component.websiteUrl || "",
-				installCommand: component.installCommand,
+				installCommand: component.installCommand || "",
 				tags: component.tags || [],
-				status: component.status,
-				categoryIds: component.categories?.map((c) => c.id) || [],
+				status: component.status as "draft" | "published" | "archived",
+				categoryIds: component.categories?.map((c) => c?.id).filter((id): id is string => Boolean(id)) || [],
 			}
 		: {
 				name: "",

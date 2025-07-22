@@ -26,7 +26,6 @@ services:
       dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cn_registry}
       NODE_ENV: production
       PORT: 42001
       POSTGRES_USER: ${POSTGRES_USER:-postgres}

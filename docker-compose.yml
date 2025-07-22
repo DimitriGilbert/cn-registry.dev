@@ -9,15 +9,19 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-cn_registry}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    # SECURITY: Remove public port exposure - only accessible within Docker network
+    # ports:
+    #   - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - cn-registry-network
 
   # Server App (API/Backend)
   server:
@@ -28,7 +32,6 @@ services:
     environment:
       NODE_ENV: production
       PORT: 42001
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       # Add your other environment variables here
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://yourdomain.com}
@@ -46,6 +49,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - cn-registry-network
 
   # Web App (Frontend)
   web:
@@ -68,11 +73,14 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - cn-registry-network
 
 volumes:
   postgres_data:
     driver: local
 
 networks:
-  default:
-    name: cn-registry-network
+  cn-registry-network:
+    driver: bridge
+    internal: false

@@ -1,4 +1,5 @@
 "use client";
+import { use } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
@@ -64,12 +65,12 @@ const statuses = [
 	{ value: "archived", label: "Archived" },
 ];
 
-export default async function EditComponentPage({
+export default function EditComponentPage({
 	params,
 }: {
 	params: Promise<{ id: string }>;
 }) {
-	const { id: _id } = await params;
+	const { id: _id } = use(params);
 	const { Form } = useFormedible<ComponentFormValues>({
 		schema: componentSchema,
 		fields: [

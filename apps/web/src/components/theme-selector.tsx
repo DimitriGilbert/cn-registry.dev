@@ -10,7 +10,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { applyRegistryTheme } from "@/lib/apply-theme";
 
 interface ThemeItem {
 	name: string;
@@ -23,7 +22,7 @@ interface ThemeItem {
 }
 
 export function ThemeSelector() {
-	const { themeState } = useTheme();
+	const { themeState, setThemePreset } = useTheme();
 	const [availableThemes, setAvailableThemes] = useState<ThemeItem[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -31,19 +30,6 @@ export function ThemeSelector() {
 		loadThemes();
 	}, []);
 
-	useEffect(() => {
-		const currentPreset = localStorage.getItem("theme-preset");
-		if (
-			currentPreset &&
-			currentPreset !== "default" &&
-			availableThemes.length > 0
-		) {
-			const theme = availableThemes.find((t) => t.name === currentPreset);
-			if (theme?.cssVars) {
-				applyRegistryTheme(theme, themeState.currentMode);
-			}
-		}
-	}, [themeState.currentMode, availableThemes]);
 
 	const loadThemes = async () => {
 		try {
@@ -72,7 +58,7 @@ export function ThemeSelector() {
 
 	const applyThemePreset = (themeName: string) => {
 		if (themeName === "default") {
-			// Reset to default theme without reloading
+			// Reset to default theme
 			localStorage.removeItem("theme-preset");
 			
 			// Apply default theme styles from globals.css
@@ -90,13 +76,17 @@ export function ThemeSelector() {
 			];
 			
 			customProps.forEach(prop => root.style.removeProperty(prop));
+			
+			// Update theme state to default
+			setThemePreset({ name: "default" });
 			return;
 		}
 
 		const theme = availableThemes.find((t) => t.name === themeName);
 
 		if (theme?.cssVars) {
-			applyRegistryTheme(theme, themeState.currentMode);
+			// Update theme state through provider
+			setThemePreset({ name: themeName });
 			localStorage.setItem("theme-preset", themeName);
 		}
 	};

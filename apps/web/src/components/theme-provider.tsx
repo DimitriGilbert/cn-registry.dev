@@ -10,7 +10,7 @@ interface ThemeContextType {
 	themeState: ThemeState;
 	setTheme: (mode: ThemeMode) => void;
 	toggleTheme: () => void;
-	setThemePreset: (preset: ThemePreset) => void;
+	setThemePreset: (preset: { name: string; styles?: any }) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -40,6 +40,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 			const storedTheme = localStorage.getItem("theme");
 			const storedPreset = localStorage.getItem("theme-preset");
 
+			// If there's a stored theme state, use it
 			if (storedTheme) {
 				try {
 					const parsed = JSON.parse(storedTheme);
@@ -74,10 +75,34 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 				}
 			}
 
-			// Default fallback - just set the mode based on system preference
+			// No stored theme - initialize with bubblegum as default
+			try {
+				const response = await fetch("/tweakcn-registry.json");
+				const registry = await response.json();
+				
+				const bubblegumTheme = registry.items.find(
+					(item: any) => item.type === "registry:style" && item.name === "bubblegum"
+				);
+				
+				if (bubblegumTheme?.cssVars) {
+					const newThemeState = {
+						styles: defaultThemeState.styles, // Keep fallback styles
+						currentMode: prefersDark ? "dark" : ("light" as ThemeMode),
+						selectedPreset: "bubblegum",
+					};
+					setThemeState(newThemeState);
+					localStorage.setItem("theme-preset", "bubblegum");
+					return;
+				}
+			} catch (error) {
+				console.error("Failed to load bubblegum theme:", error);
+			}
+
+			// Final fallback - default theme with system preference
 			setThemeState((prev) => ({
 				...prev,
 				currentMode: prefersDark ? "dark" : "light",
+				selectedPreset: "bubblegum",
 			}));
 		};
 
@@ -86,16 +111,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
 	useEffect(() => {
 		const applyCurrentTheme = async () => {
-			const storedPreset = localStorage.getItem("theme-preset");
-			
-			// If a registry theme is active, apply it instead of themeState.styles
-			if (storedPreset && storedPreset !== "default") {
+			// Always apply registry theme if selectedPreset is set
+			if (themeState.selectedPreset && themeState.selectedPreset !== "default") {
 				try {
 					const response = await fetch("/tweakcn-registry.json");
 					const registry = await response.json();
 					
 					const registryTheme = registry.items.find(
-						(item: any) => item.type === "registry:style" && item.name === storedPreset
+						(item: any) => item.type === "registry:style" && item.name === themeState.selectedPreset
 					);
 					
 					if (registryTheme?.cssVars) {
@@ -111,6 +134,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 						}
 						
 						localStorage.setItem("theme", JSON.stringify(themeState));
+						localStorage.setItem("theme-preset", themeState.selectedPreset);
 						return;
 					}
 				} catch (error) {
@@ -134,14 +158,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 		setTheme(themeState.currentMode === "light" ? "dark" : "light");
 	};
 
-	const setThemePreset = (preset: ThemePreset) => {
-		if (preset?.styles) {
-			setThemeState((prev) => ({
-				...prev,
-				styles: preset.styles,
-				selectedPreset: preset.name,
-			}));
-		}
+	const setThemePreset = (preset: { name: string; styles?: any }) => {
+		setThemeState((prev) => ({
+			...prev,
+			selectedPreset: preset.name,
+		}));
 	};
 
 	return (

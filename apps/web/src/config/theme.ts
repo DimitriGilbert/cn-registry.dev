@@ -126,5 +126,5 @@ export const defaultThemeStyles = {
 export const defaultThemeState = {
 	styles: defaultThemeStyles,
 	currentMode: "light" as const,
-	selectedPreset: "starry-night",
+	selectedPreset: "bubblegum",
 };

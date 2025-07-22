@@ -49,6 +49,20 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<head>
 				<ThemeScript />
+				<meta property="og:url" content={baseUrl} />
+				<meta property="og:type" content="website" />
+				<meta property="og:title" content="cn-registry - shadcn/ui Component Registry" />
+				<meta property="og:description" content="Discover, share, and build with shadcn/ui components and tools. A central hub for the developer community." />
+				<meta property="og:image" content={`${baseUrl}/images/opengraph.jpg`} />
+				<meta property="og:image:width" content="1200" />
+				<meta property="og:image:height" content="630" />
+				<meta property="og:image:alt" content="cn-registry - shadcn/ui Component Registry" />
+				<meta property="og:site_name" content="cn-registry" />
+				<meta property="og:locale" content="en_US" />
+				<meta name="twitter:card" content="summary_large_image" />
+				<meta name="twitter:title" content="cn-registry - shadcn/ui Component Registry" />
+				<meta name="twitter:description" content="Discover, share, and build with shadcn/ui components and tools. A central hub for the developer community." />
+				<meta name="twitter:image" content={`${baseUrl}/images/opengraph.jpg`} />
 				<script
 					src="https://cdn.counter.dev/script.js"
 					data-id="154c6878-7558-4eff-90f9-bd4904015df1"

@@ -8,12 +8,19 @@ import { ThemeScript } from "@/components/theme-script";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const baseUrl = process.env.NODE_ENV === "production" 
+	? "https://cn-registry.dev" 
+	: "http://localhost:3001";
+
 export const metadata: Metadata = {
 	title: "cn-registry - shadcn/ui Component Registry",
 	description: "Discover and share shadcn/ui components and developer tools",
+	metadataBase: new URL(baseUrl),
 	openGraph: {
 		title: "cn-registry - shadcn/ui Component Registry",
 		description: "Discover, share, and build with shadcn/ui components and tools. A central hub for the developer community.",
+		url: baseUrl,
+		siteName: "cn-registry",
 		images: [
 			{
 				url: "/images/opengraph.jpg",

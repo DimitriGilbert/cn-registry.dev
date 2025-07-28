@@ -2,6 +2,19 @@
 
 This document provides a detailed overview of the database schema for cn-registry. The schema is designed to support all the features of the application, from content management to user engagement and analytics.
 
+## Schema Files
+
+The database schema is defined in the `apps/server/src/db/schema/` directory. Each file corresponds to a table or a set of related tables in the database:
+
+-   `admin.ts`: Admin-related tables.
+-   `analytics.ts`: Analytics tables.
+-   `auth.ts`: Authentication-related tables from Better Auth.
+-   `content.ts`: Core content tables like `components`, `tools`, and `categories`.
+-   `engagement.ts`: User engagement tables like `stars`, `ratings`, and `comments`.
+-   `index.ts`: Exports all schemas.
+-   `themes.ts`: Theme-related tables.
+-   `users.ts.bak`: A backup file, needs investigation.
+
 ## Core Tables
 
 ### `user`

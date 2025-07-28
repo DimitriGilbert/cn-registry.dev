@@ -23,6 +23,8 @@ cn-registry/
 
 ## Key Technologies
 
+- **Monorepo**: Turborepo (configured in `turbo.json`)
+
 - **Runtime**: Bun (package manager + runtime)
 - **Frontend**: Next.js 15 with App Router
 - **Backend**: Next.js API with tRPC 11

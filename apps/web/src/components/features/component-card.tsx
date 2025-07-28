@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/components/providers/cart-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type { trpcClient } from "@/utils/trpc";
-import { trpc } from "@/utils/trpc";
 import { StarButton } from "./star-button";
 
 // Helper function to format numbers with K abbreviation
@@ -63,18 +61,8 @@ export function ComponentCard({
 	const { addToCart, removeFromCart, isInCart } = useCart();
 	const finalGithubUrl = githubUrl || repoUrl;
 
-	// Fetch GitHub data for star count
-	const { data: githubData } = useQuery(
-		{
-			...trpc.github.getRepoStats.queryOptions({
-				repoUrl: finalGithubUrl || ""
-			}),
-			enabled: !!(finalGithubUrl && finalGithubUrl.includes("github.com") && finalGithubUrl.trim() !== ""),
-			staleTime: 10 * 60 * 1000, // 10 minutes cache
-			retry: 2,
-			retryDelay: 1000,
-		}
-	);
+	// Use database stored GitHub data instead of live API calls
+	const githubData = starsCount > 0 ? { stars: starsCount } : null;
 
 	const handleCartToggle = () => {
 		const component = {
@@ -141,7 +129,7 @@ export function ComponentCard({
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-1">
 							<Star className="h-3 w-3" />
-							{starsCount}
+							{starsCount || 0}
 						</div>
 					</div>
 				</div>

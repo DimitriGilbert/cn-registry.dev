@@ -12,8 +12,15 @@ import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
 
 const importSchema = z.object({
-	componentsJson: z.string().min(1, "Please paste the JSON content"),
-});
+	componentsJson: z.string().optional(),
+	jsonFile: z.instanceof(File).optional(),
+}).refine(
+	(data) => data.componentsJson || data.jsonFile,
+	{
+		message: "Please either paste JSON content or upload a file",
+		path: ["componentsJson"],
+	}
+);
 
 type ImportFormData = z.infer<typeof importSchema>;
 
@@ -87,9 +94,19 @@ export default function ImportPage() {
 		schema: importSchema,
 		fields: [
 			{
+				name: "jsonFile",
+				type: "file",
+				label: "Upload JSON File",
+				placeholder: "Choose a JSON file to upload",
+				fileConfig: {
+					accept: ".json,application/json",
+					multiple: false,
+				},
+			},
+			{
 				name: "componentsJson",
 				type: "textarea",
-				label: "Components JSON",
+				label: "Or Paste JSON Content",
 				placeholder: "Paste your JSON array of components here...",
 				textareaConfig: {
 					rows: 12,
@@ -99,10 +116,23 @@ export default function ImportPage() {
 		formOptions: {
 			defaultValues: {
 				componentsJson: "",
+				jsonFile: undefined,
 			},
 			onSubmit: async ({ value }) => {
 				try {
-					const content = JSON.parse(value.componentsJson);
+					let content: any;
+					
+					if (value.jsonFile) {
+						// Handle file upload
+						const fileContent = await value.jsonFile.text();
+						content = JSON.parse(fileContent);
+					} else if (value.componentsJson) {
+						// Handle textarea content
+						content = JSON.parse(value.componentsJson);
+					} else {
+						throw new Error("Please provide JSON content either by file upload or textarea");
+					}
+					
 					if (!Array.isArray(content)) {
 						throw new Error("JSON must contain an array of components");
 					}
@@ -117,7 +147,7 @@ export default function ImportPage() {
 	});
 
 	return (
-		<div className="py-8">
+		<div className="p-8">
 			<AdminBreadcrumb
 				items={[
 					{ label: "Dashboard", href: "/admin" },
@@ -143,7 +173,13 @@ export default function ImportPage() {
 
 				<Card>
 					<CardHeader>
-						<CardTitle>Import Components</CardTitle>
+						<CardTitle className="flex items-center gap-2">
+							<Upload className="h-5 w-5" />
+							Import Components
+						</CardTitle>
+						<p className="text-sm text-muted-foreground">
+							Upload a JSON file or paste JSON content directly
+						</p>
 					</CardHeader>
 					<CardContent>
 						<Form />

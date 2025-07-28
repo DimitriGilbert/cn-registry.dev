@@ -5,9 +5,11 @@ import {
 	BarChart3,
 	Edit,
 	Eye,
+	Github,
 	MoreHorizontal,
 	Plus,
 	Trash2,
+	RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -89,6 +91,18 @@ export default function ManageComponentsPage() {
 		}),
 	);
 
+	// GitHub refresh mutation
+	const githubRefreshMutation = useMutation(
+		trpc.admin.importGitHubData.mutationOptions({
+			onSuccess: () => {
+				toast.success("GitHub data refreshed successfully");
+			},
+			onError: (error) => {
+				toast.error(`GitHub refresh failed: ${error.message}`);
+			},
+		}),
+	);
+
 	// Reset page when search or filter changes
 	useEffect(() => {
 		setCurrentPage(1);
@@ -149,14 +163,29 @@ export default function ManageComponentsPage() {
 					title="Manage Components"
 					subtitle="View and manage all components in the registry"
 				>
-					<Button asChild>
-						<Link href="/admin/components/new">
-							<span className="flex items-center">
-								<Plus className="mr-2 h-4 w-4" />
-								Add Component
-							</span>
-						</Link>
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							variant="outline"
+							onClick={() => {
+								githubRefreshMutation.mutate({
+									type: "components",
+									force: false
+								});
+							}}
+							disabled={githubRefreshMutation.isPending}
+						>
+							<RefreshCw className="mr-2 h-4 w-4" />
+							{githubRefreshMutation.isPending ? "Refreshing..." : "Refresh All GitHub Data"}
+						</Button>
+						<Button asChild>
+							<Link href="/admin/components/new">
+								<span className="flex items-center">
+									<Plus className="mr-2 h-4 w-4" />
+									Add Component
+								</span>
+							</Link>
+						</Button>
+					</div>
 				</PageTitle>
 
 				<div className="mb-8 flex flex-col gap-6 lg:flex-row">
@@ -236,7 +265,7 @@ export default function ManageComponentsPage() {
 									<TableRow key={component.id}>
 										<TableCell className="font-medium">
 											<Link
-												href={`/components/${component.id}`}
+												href={`/admin/components/${component.id}/edit`}
 												className="hover:underline"
 											>
 												{component.name}
@@ -246,7 +275,16 @@ export default function ManageComponentsPage() {
 											{component.categories?.[0]?.name || "Uncategorized"}
 										</TableCell>
 										<TableCell>
-											{component.creator?.name || "Unknown"}
+											{component.creator?.name ? (
+												<Link
+													href={`/admin/users/${component.creator.id}/edit`}
+													className="hover:underline text-primary"
+												>
+													{component.creator.name}
+												</Link>
+											) : (
+												"Unknown"
+											)}
 										</TableCell>
 										<TableCell>{formatDate(component.createdAt)}</TableCell>
 										<TableCell>{component.starsCount || 0}</TableCell>
@@ -283,6 +321,20 @@ export default function ManageComponentsPage() {
 															Analytics
 														</Link>
 													</DropdownMenuItem>
+													{component.repoUrl && component.repoUrl.includes("github.com") && (
+														<DropdownMenuItem
+															onClick={() => {
+																githubRefreshMutation.mutate({
+																	type: "components",
+																	force: true
+																});
+															}}
+															disabled={githubRefreshMutation.isPending}
+														>
+															<Github className="mr-2 h-4 w-4" />
+															Refresh GitHub Data
+														</DropdownMenuItem>
+													)}
 													<DropdownMenuItem
 														className="text-destructive"
 														onClick={() =>

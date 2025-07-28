@@ -1,6 +1,6 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, Github, RefreshCw, Star, GitFork, AlertCircle, Calendar } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,9 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
 
@@ -66,6 +69,17 @@ export default function EditComponentPage({
 		trpc.categories.getAll.queryOptions(),
 	);
 
+	// Fetch GitHub data ONLY when manually triggered
+	const { data: githubData, isLoading: isLoadingGithub, refetch: refetchGithub } = useQuery(
+		{
+			...trpc.github.getRepoData.queryOptions({
+				repoUrl: component?.repoUrl || ""
+			}),
+			enabled: false, // NEVER auto-fetch on page load
+			staleTime: 5 * 60 * 1000, // 5 minutes
+		}
+	);
+
 	// Update mutation
 	const updateMutation = useMutation(
 		trpc.components.update.mutationOptions({
@@ -80,6 +94,19 @@ export default function EditComponentPage({
 			},
 			onError: (error) => {
 				toast.error(error.message || "Failed to update component");
+			},
+		}),
+	);
+
+	// GitHub refresh mutation
+	const githubRefreshMutation = useMutation(
+		trpc.admin.importGitHubData.mutationOptions({
+			onSuccess: () => {
+				toast.success("GitHub data refreshed successfully");
+				refetchGithub();
+			},
+			onError: (error) => {
+				toast.error(`GitHub refresh failed: ${error.message}`);
 			},
 		}),
 	);
@@ -209,20 +236,131 @@ export default function EditComponentPage({
 				</div>
 
 				<PageTitle
-					title="Edit Component"
+					title={`Edit ${component.name}`}
 					subtitle="Update component information and settings"
 				>
-					<Button variant="outline" asChild>
-						<Link href="/admin/components">
-							<span className="flex items-center">
+					<div className="flex gap-2">
+						<Button variant="outline" asChild>
+							<Link href={`/components/${id}`}>
+								<Eye className="mr-2 h-4 w-4" />
+								View Component
+							</Link>
+						</Button>
+						{component.repoUrl && component.repoUrl.includes("github.com") && (
+							<Button
+								variant="outline"
+								onClick={() => {
+									refetchGithub();
+								}}
+								disabled={isLoadingGithub}
+							>
+								<RefreshCw className={`mr-2 h-4 w-4 ${isLoadingGithub ? 'animate-spin' : ''}`} />
+								{isLoadingGithub ? "Loading..." : "Load GitHub Data"}
+							</Button>
+						)}
+						<Button variant="outline" asChild>
+							<Link href="/admin/components">
 								<ArrowLeft className="mr-2 h-4 w-4" />
 								Back to Components
-							</span>
-						</Link>
-					</Button>
+							</Link>
+						</Button>
+					</div>
 				</PageTitle>
 
-				<Form />
+				{/* GitHub Data Section */}
+				{component.repoUrl && component.repoUrl.includes("github.com") && (
+					<Card className="mb-8">
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<Github className="h-5 w-5" />
+								GitHub Information
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							{!githubData && !isLoadingGithub ? (
+								<div className="flex items-center gap-2 text-muted-foreground">
+									<Github className="h-4 w-4" />
+									Click "Load GitHub Data" to fetch repository information
+								</div>
+							) : isLoadingGithub ? (
+								<div className="flex items-center gap-2 text-muted-foreground">
+									<RefreshCw className="h-4 w-4 animate-spin" />
+									Loading GitHub data...
+								</div>
+							) : githubData ? (
+								<div className="space-y-4">
+									<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+										<div className="flex items-center gap-2">
+											<Star className="h-4 w-4 text-yellow-500" />
+											<span className="font-medium">{githubData.stars}</span>
+											<span className="text-muted-foreground text-sm">stars</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<GitFork className="h-4 w-4 text-blue-500" />
+											<span className="font-medium">{githubData.forks}</span>
+											<span className="text-muted-foreground text-sm">forks</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<AlertCircle className="h-4 w-4 text-red-500" />
+											<span className="font-medium">{githubData.issues}</span>
+											<span className="text-muted-foreground text-sm">issues</span>
+										</div>
+										<div className="flex items-center gap-2">
+											<Calendar className="h-4 w-4 text-green-500" />
+											<span className="text-muted-foreground text-sm">
+												{new Date(githubData.lastCommit).toLocaleDateString()}
+											</span>
+										</div>
+									</div>
+									
+									{githubData.language && (
+										<div>
+											<Badge variant="secondary">{githubData.language}</Badge>
+										</div>
+									)}
+									
+									{githubData.topics && githubData.topics.length > 0 && (
+										<div>
+											<h4 className="text-sm font-medium mb-2">Topics:</h4>
+											<div className="flex flex-wrap gap-1">
+												{githubData.topics.map((topic: string) => (
+													<Badge key={topic} variant="outline" className="text-xs">
+														{topic}
+													</Badge>
+												))}
+											</div>
+										</div>
+									)}
+									
+									{githubData.license && (
+										<div>
+											<span className="text-sm text-muted-foreground">License: </span>
+											<Badge variant="outline">{githubData.license}</Badge>
+										</div>
+									)}
+									
+									<div className="text-xs text-muted-foreground">
+										Last updated: {new Date().toLocaleString()}
+									</div>
+								</div>
+							) : (
+								<div className="flex items-center gap-2 text-destructive">
+									<AlertCircle className="h-4 w-4" />
+									Failed to load GitHub data. You may have hit the rate limit. Wait a few minutes and try again.
+								</div>
+							)}
+						</CardContent>
+					</Card>
+				)}
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Component Details</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<Form />
+					</CardContent>
+				</Card>
 			</div>
 		</Container>
 	);

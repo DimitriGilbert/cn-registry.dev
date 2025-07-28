@@ -53,12 +53,24 @@ async function fetchGitHubData(
 				headers: {
 					Accept: "application/vnd.github.v3+json",
 					"User-Agent": "CN-Registry",
+					...(process.env.GITHUB_TOKEN && {
+						"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
+					})
 				},
 			},
 		);
 
 		if (!repoResponse.ok) {
-			return null;
+			const errorText = await repoResponse.text();
+			console.error(`GitHub API error for ${owner}/${repo}: ${repoResponse.status} ${repoResponse.statusText}`, errorText);
+			
+			if (repoResponse.status === 403) {
+				throw new Error(`GitHub API rate limit exceeded. Please wait and try again later.`);
+			}
+			if (repoResponse.status === 404) {
+				throw new Error(`Repository ${owner}/${repo} not found.`);
+			}
+			throw new Error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`);
 		}
 
 		const repoData = await repoResponse.json();
@@ -72,6 +84,9 @@ async function fetchGitHubData(
 					headers: {
 						Accept: "application/vnd.github.v3+json",
 						"User-Agent": "CN-Registry",
+						...(process.env.GITHUB_TOKEN && {
+							"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
+						})
 					},
 				},
 			);
@@ -93,6 +108,9 @@ async function fetchGitHubData(
 					headers: {
 						Accept: "application/vnd.github.v3+json",
 						"User-Agent": "CN-Registry",
+						...(process.env.GITHUB_TOKEN && {
+							"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
+						})
 					},
 				},
 			);
@@ -222,6 +240,9 @@ export const githubRouter = router({
 						headers: {
 							Accept: "application/vnd.github.v3+json",
 							"User-Agent": "CN-Registry",
+							...(process.env.GITHUB_TOKEN && {
+								"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
+							})
 						},
 					},
 				);
@@ -284,12 +305,24 @@ export const githubRouter = router({
 						headers: {
 							Accept: "application/vnd.github.v3+json",
 							"User-Agent": "CN-Registry",
+							...(process.env.GITHUB_TOKEN && {
+								"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
+							})
 						},
 					},
 				);
 
 				if (!repoResponse.ok) {
-					throw new Error("Repository not found");
+					const errorText = await repoResponse.text();
+					console.error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`, errorText);
+					
+					if (repoResponse.status === 403) {
+						throw new Error(`GitHub API rate limit exceeded. Please wait and try again later.`);
+					}
+					if (repoResponse.status === 404) {
+						throw new Error(`Repository not found.`);
+					}
+					throw new Error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`);
 				}
 
 				const repoData = await repoResponse.json();

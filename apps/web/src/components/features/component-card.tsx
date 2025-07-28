@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/components/providers/cart-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,16 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type { trpcClient } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 import { StarButton } from "./star-button";
+
+// Helper function to format numbers with K abbreviation
+function formatStars(count: number): string {
+	if (count >= 1000) {
+		return `${(count / 1000).toFixed(1).replace('.0', '')}K`;
+	}
+	return count.toString();
+}
 
 type ComponentCardProps = Awaited<
 	ReturnType<typeof trpcClient.components.getAll.query>
@@ -50,6 +60,17 @@ export function ComponentCard({
 }: ComponentCardProps) {
 	const { addToCart, removeFromCart, isInCart } = useCart();
 	const finalGithubUrl = githubUrl || repoUrl;
+
+	// Fetch GitHub data for star count
+	const { data: githubData } = useQuery(
+		{
+			...trpc.github.getRepoStats.queryOptions({
+				repoUrl: finalGithubUrl || ""
+			}),
+			enabled: !!(finalGithubUrl && finalGithubUrl.includes("github.com")),
+			staleTime: 10 * 60 * 1000, // 10 minutes cache
+		}
+	);
 
 	const handleCartToggle = () => {
 		const component = {
@@ -132,9 +153,17 @@ export function ComponentCard({
 						<ShoppingCart className="h-3 w-3" />
 					</Button>
 					{finalGithubUrl && (
-						<Button variant="outline" size="sm" asChild>
-							<Link href={finalGithubUrl} target="_blank">
+						<Button variant="outline" size="sm" asChild className="relative">
+							<Link href={finalGithubUrl} target="_blank" className="relative">
 								<Github className="h-3 w-3" />
+								{githubData?.stars !== undefined && (
+									<Badge 
+										variant="secondary" 
+										className="absolute -top-1 -right-1 h-3 px-1 text-[10px] leading-none bg-foreground text-background font-medium min-w-0"
+									>
+										{formatStars(githubData.stars)}
+									</Badge>
+								)}
 							</Link>
 						</Button>
 					)}

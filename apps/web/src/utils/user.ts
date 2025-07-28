@@ -22,14 +22,21 @@ function extractGithubUsername(githubUrl: string): string | null {
  */
 export function getUserAvatarUrl(user: {
 	image?: string | null;
-	socialLinks?: Record<string, string> | null;
+	socialLinks?: unknown;
+	username?: string | null;
+	name?: string;
 }): string {
 	// If user has a direct image URL, use it
 	if (user.image) {
 		return user.image;
 	}
 
-	// Try to get GitHub avatar
+	// Try to get GitHub avatar from username (if it looks like a GitHub username)
+	if (user.username) {
+		return `https://github.com/${user.username}.png`;
+	}
+
+	// Try to get GitHub avatar from social links
 	const socialLinks = user.socialLinks as Record<string, string> | null;
 	if (socialLinks?.github) {
 		const githubUsername = extractGithubUsername(socialLinks.github);

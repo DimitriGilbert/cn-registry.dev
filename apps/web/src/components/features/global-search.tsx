@@ -21,6 +21,15 @@ import {
 } from "@/components/ui/popover";
 import { trpc } from "@/utils/trpc";
 
+interface SearchResultItem {
+	type: "component" | "tool" | "project";
+	id: string;
+	slug?: string;
+	name: string;
+	description?: string | null;
+	visibility?: string;
+}
+
 interface GlobalSearchProps {
 	className?: string;
 	placeholder?: string;
@@ -35,7 +44,7 @@ export function GlobalSearch({
 	const router = useRouter();
 
 	// Get search suggestions
-	const { data: suggestions = [] } = useQuery({
+	const { data: suggestions = [], error: suggestionsError } = useQuery({
 		...trpc.search.suggestions.queryOptions({
 			query,
 			limit: 5,
@@ -60,7 +69,7 @@ export function GlobalSearch({
 		}
 	};
 
-	const handleItemSelect = (item: any) => {
+	const handleItemSelect = (item: SearchResultItem) => {
 		let path = "";
 		switch (item.type) {
 			case "component":
@@ -121,13 +130,8 @@ export function GlobalSearch({
 					align="start"
 				>
 					<Command>
-						<CommandInput
-							placeholder={placeholder}
-							value={query}
-							onValueChange={setQuery}
-						/>
 						<CommandList>
-							{query.length > 0 && searchResults?.results.length === 0 && (
+							{query.length > 2 && searchResults?.results.length === 0 && (
 								<CommandEmpty>No results found.</CommandEmpty>
 							)}
 
@@ -160,7 +164,7 @@ export function GlobalSearch({
 												.map((item) => (
 													<CommandItem
 														key={`${item.type}-${item.id}`}
-														onSelect={() => handleItemSelect(item)}
+														onSelect={() => handleItemSelect(item as SearchResultItem)}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">
@@ -185,7 +189,7 @@ export function GlobalSearch({
 												.map((item) => (
 													<CommandItem
 														key={`${item.type}-${item.id}`}
-														onSelect={() => handleItemSelect(item)}
+														onSelect={() => handleItemSelect(item as SearchResultItem)}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">
@@ -209,8 +213,8 @@ export function GlobalSearch({
 												.slice(0, 5)
 												.map((item) => (
 													<CommandItem
-														key={`${item.type}-${item.id}`}
-														onSelect={() => handleItemSelect(item)}
+														key={`${item.type}-${(item as any).slug}`}
+														onSelect={() => handleItemSelect(item as SearchResultItem)}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">

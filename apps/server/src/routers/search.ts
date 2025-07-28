@@ -53,7 +53,7 @@ export const searchRouter = router({
 					),
 				)
 				.orderBy(desc(components.createdAt))
-				.limit(Math.ceil(limit / 3));
+				.limit(Math.floor(limit / 3) + 1);
 
 			// Search tools
 			const toolResults = await db
@@ -78,7 +78,7 @@ export const searchRouter = router({
 					or(ilike(tools.name, searchTerm), ilike(tools.description, searchTerm)),
 				)
 				.orderBy(desc(tools.createdAt))
-				.limit(Math.ceil(limit / 3));
+				.limit(Math.floor(limit / 3) + 1);
 
 			// Search public projects
 			const projectResults = await db
@@ -108,7 +108,7 @@ export const searchRouter = router({
 					),
 				)
 				.orderBy(desc(projects.createdAt))
-				.limit(Math.ceil(limit / 3));
+				.limit(Math.floor(limit / 3) + 1);
 
 			// Combine results and sort by relevance/date
 			const allResults = [
@@ -135,10 +135,11 @@ export const searchRouter = router({
 				query: z.string().min(1),
 				categoryId: z.string().uuid().optional(),
 				limit: z.number().int().min(1).max(100).default(20),
+				offset: z.number().int().min(0).default(0),
 			}),
 		)
 		.query(async ({ input }) => {
-			const { query, categoryId, limit } = input;
+			const { query, categoryId, limit, offset } = input;
 			const searchTerm = `%${query}%`;
 
 			// Build WHERE conditions
@@ -149,19 +150,7 @@ export const searchRouter = router({
 				),
 			];
 
-			if (categoryId) {
-				const componentIdsInCategory = await db
-					.select({ componentId: componentCategories.componentId })
-					.from(componentCategories)
-					.where(eq(componentCategories.categoryId, categoryId));
-
-				const componentIds = componentIdsInCategory.map(row => row.componentId);
-				if (componentIds.length > 0) {
-					whereConditions.push(inArray(components.id, componentIds));
-				}
-			}
-
-			const results = await db
+			let baseQuery = db
 				.select({
 					id: components.id,
 					name: components.name,
@@ -182,52 +171,70 @@ export const searchRouter = router({
 					},
 				})
 				.from(components)
-				.leftJoin(user, eq(components.creatorId, user.id))
+				.leftJoin(user, eq(components.creatorId, user.id));
+
+			if (categoryId) {
+				baseQuery = baseQuery.innerJoin(
+					componentCategories,
+					and(
+						eq(componentCategories.componentId, components.id),
+						eq(componentCategories.categoryId, categoryId)
+					)
+				);
+			}
+
+			const results = await baseQuery
 				.where(and(...whereConditions))
 				.orderBy(desc(components.createdAt))
-				.limit(limit);
+				.limit(limit)
+				.offset(offset);
 
-			// Get categories and stats for each component
-			const componentsWithDetails = await Promise.all(
-				results.map(async (component) => {
-					// Get categories
-					const componentCategoriesData = await db
-						.select({ category: categories })
-						.from(componentCategories)
-						.leftJoin(
-							categories,
-							eq(componentCategories.categoryId, categories.id),
-						)
-						.where(eq(componentCategories.componentId, component.id));
+			// Batch fetch categories and stats to avoid N+1 queries
+			const componentIds = results.map(r => r.id);
+			
+			// Batch fetch categories
+			const allCategories = await db
+				.select({
+					componentId: componentCategories.componentId,
+					category: categories
+				})
+				.from(componentCategories)
+				.leftJoin(categories, eq(componentCategories.categoryId, categories.id))
+				.where(inArray(componentCategories.componentId, componentIds));
 
-					// Get stats
-					const [starsCount] = await db
-						.select({ count: count() })
-						.from(stars)
-						.where(
-							and(
-								eq(stars.itemType, "component"),
-								eq(stars.itemId, component.id),
-							),
-						);
+			// Batch fetch star counts
+			const starCounts = await db
+				.select({
+					itemId: stars.itemId,
+					count: count()
+				})
+				.from(stars)
+				.where(
+					and(
+						eq(stars.itemType, "component"),
+						inArray(stars.itemId, componentIds)
+					)
+				)
+				.groupBy(stars.itemId);
 
-					return {
-						...component,
-						categories: componentCategoriesData
-							.map((cc) => cc.category)
-							.filter(Boolean),
-						starsCount: starsCount.count,
-						githubUrl: component.repoUrl,
-						isStarred: false,
-						forksCount: 0,
-						issuesCount: 0,
-						watchersCount: 0,
-						readme: null,
-						exampleCode: null,
-						previewUrl: null,
-					};
-				}),
-			);
+			// Map the data
+			const componentsWithDetails = results.map(component => {
+				const cats = allCategories.filter(c => c.componentId === component.id);
+				const starCount = starCounts.find(s => s.itemId === component.id);
+				return {
+					...component,
+					categories: cats.map(c => c.category).filter(Boolean),
+					starsCount: starCount?.count || 0,
+					githubUrl: component.repoUrl,
+					isStarred: false,
+					forksCount: 0,
+					issuesCount: 0,
+					watchersCount: 0,
+					readme: null,
+					exampleCode: null,
+					previewUrl: null,
+				};
+			});
 
 			return {
 				components: componentsWithDetails,

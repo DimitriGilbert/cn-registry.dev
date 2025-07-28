@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Marquee } from "@/components/magicui/marquee";
 import { ShineBorder } from "@/components/magicui/shine-border";
 import { trpc } from "@/utils/trpc";
+import { getUserAvatarUrl } from "@/utils/user";
 
 export default function HomePage() {
   const router = useRouter();
@@ -154,27 +155,21 @@ export default function HomePage() {
                     <a 
                       key={creator?.id || i} 
                       href={creator?.username ? `/creators/${creator.username}` : '#'}
-                      className="h-24 w-64 cursor-pointer overflow-hidden rounded-xl border border-border p-4 hover:bg-muted/30 transition-colors"
+                      className="h-24 w-64 cursor-pointer overflow-hidden rounded-xl border bg-muted/30 p-4 hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        {creator?.image ? (
-                          <img 
-                            src={creator.image} 
-                            alt={creator.name || 'Creator'} 
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-semibold">
-                            {creator?.name?.[0] || '?'}
-                          </div>
-                        )}
+                        <img 
+                          src={getUserAvatarUrl(creator || {})} 
+                          alt={creator?.name || 'Creator'} 
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm truncate">{creator?.name || 'Loading...'}</div>
-                          <div className="text-xs text-muted-foreground truncate">@{creator?.username || 'username'}</div>
+                          <div className="text-xs text-muted-foreground truncate">{creator?.componentCount || 0} components</div>
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {creator?.totalStars || 0} ★ • {creator?.bio || 'Component creator'}
+                        {creator?.totalStars || 0} ★ • {(creator?.bio || 'Component creator').replace(/GitHub:\s*https?:\/\/[^\s•]+/g, '').replace(/•\s*$/, '').trim()}
                       </div>
                     </a>
                   ))}
@@ -184,27 +179,21 @@ export default function HomePage() {
                     <a 
                       key={creator?.id || i + 6} 
                       href={creator?.username ? `/creators/${creator.username}` : '#'}
-                      className="h-24 w-64 cursor-pointer overflow-hidden rounded-xl border border-border p-4 hover:bg-muted/30 transition-colors"
+                      className="h-24 w-64 cursor-pointer overflow-hidden rounded-xl border bg-muted/30 p-4 hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        {creator?.image ? (
-                          <img 
-                            src={creator.image} 
-                            alt={creator.name || 'Creator'} 
-                            className="h-8 w-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-green-500 flex items-center justify-center text-white text-sm font-semibold">
-                            {creator?.name?.[0] || '?'}
-                          </div>
-                        )}
+                        <img 
+                          src={getUserAvatarUrl(creator || {})} 
+                          alt={creator?.name || 'Creator'} 
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
                         <div className="min-w-0 flex-1">
                           <div className="font-medium text-sm truncate">{creator?.name || 'Loading...'}</div>
-                          <div className="text-xs text-muted-foreground truncate">@{creator?.username || 'username'}</div>
+                          <div className="text-xs text-muted-foreground truncate">{creator?.componentCount || 0} components</div>
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {creator?.totalStars || 0} ★ • {creator?.bio || 'Component creator'}
+                        {creator?.totalStars || 0} ★ • {(creator?.bio || 'Component creator').replace(/GitHub:\s*https?:\/\/[^\s•]+/g, '').replace(/•\s*$/, '').trim()}
                       </div>
                     </a>
                   ))}

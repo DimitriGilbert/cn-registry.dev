@@ -7,9 +7,11 @@ import {
 	ShoppingCart,
 	Star,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useCart } from "@/components/providers/cart-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +22,13 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import type { trpcClient } from "@/utils/trpc";
+import { getUserAvatarUrl } from "@/utils/user";
 import { StarButton } from "./star-button";
 
 // Helper function to format numbers with K abbreviation
 function formatStars(count: number): string {
-	if (count < 0) return '0';
 	if (count >= 1000) {
-		const formatted = (count / 1000).toFixed(1);
-		return formatted.endsWith('.0') ? `${Math.floor(count / 1000)}K` : `${formatted}K`;
+		return `${(count / 1000).toFixed(1).replace('.0', '')}K`;
 	}
 	return count.toString();
 }
@@ -61,8 +62,8 @@ export function ComponentCard({
 	const { addToCart, removeFromCart, isInCart } = useCart();
 	const finalGithubUrl = githubUrl || repoUrl;
 
-	// Use database stored GitHub data instead of live API calls
-	const githubData = starsCount > 0 ? { stars: starsCount } : null;
+	// Use database stored GitHub data (already cached from backend)
+	const githubData = { stars: starsCount || 0 };
 
 	const handleCartToggle = () => {
 		const component = {
@@ -114,14 +115,36 @@ export function ComponentCard({
 					</div>
 					<StarButton isStarred={isStarred} onToggle={onToggleStar} />
 				</div>
-				<div className="flex items-center gap-2">
-					{categories
-						?.filter((cat): cat is NonNullable<typeof cat> => Boolean(cat))
-						.map((category) => (
-							<Badge key={category.id} variant="secondary">
-								{category.name}
-							</Badge>
-						))}
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						{categories
+							?.filter((cat): cat is NonNullable<typeof cat> => Boolean(cat))
+							.map((category) => (
+								<Badge key={category.id} variant="secondary">
+									{category.name}
+								</Badge>
+							))}
+					</div>
+					{creator && creator.username && (
+						<Link 
+							href={`/creators/${creator.username}`}
+							className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+							title={`View ${creator.name || creator.username}'s profile`}
+						>
+							<Avatar className="h-6 w-6">
+								<AvatarImage src={getUserAvatarUrl(creator)} alt={creator.name || creator.username} />
+								<AvatarFallback className="text-xs">
+									{(creator.name || creator.username)
+										.split(" ")
+										.map((n) => n[0])
+										.join("")
+										.slice(0, 2)
+										.toUpperCase()}
+								</AvatarFallback>
+							</Avatar>
+							<span className="hidden sm:inline">{creator.name || creator.username}</span>
+						</Link>
+					)}
 				</div>
 			</CardHeader>
 			<CardContent>
@@ -145,19 +168,13 @@ export function ComponentCard({
 						<ShoppingCart className="h-3 w-3" />
 					</Button>
 					{finalGithubUrl && (
-						<Button variant="outline" size="sm" asChild className="relative overflow-visible">
-							<Link 
-								href={finalGithubUrl} 
-								target="_blank" 
-								className="relative"
-								aria-label={`View on GitHub${githubData?.stars !== undefined ? ` (${formatStars(githubData.stars)} stars)` : ''}`}
-							>
+						<Button variant="outline" size="sm" asChild className="relative">
+							<Link href={finalGithubUrl} target="_blank" className="relative">
 								<Github className="h-3 w-3" />
 								{githubData?.stars !== undefined && (
 									<Badge 
 										variant="secondary" 
-										className="absolute -top-2 -right-2 h-4 px-1.5 text-[10px] leading-tight font-medium min-w-0 pointer-events-none"
-										aria-hidden="true"
+										className="absolute -top-1 -right-1 h-3 px-1 text-[10px] leading-none bg-foreground text-background font-medium min-w-0"
 									>
 										{formatStars(githubData.stars)}
 									</Badge>

@@ -1,5 +1,6 @@
 import { Download, ExternalLink, Github, Star } from "lucide-react";
 import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { getUserAvatarUrl } from "@/utils/user";
 import { StarButton } from "./star-button";
 
 interface ToolCardProps {
@@ -22,6 +24,12 @@ interface ToolCardProps {
 	repoUrl?: string | null;
 	websiteUrl?: string | null;
 	installCommand?: string | null;
+	creator?: {
+		id: string;
+		name: string;
+		username: string | null;
+		image: string | null;
+	} | null;
 	isStarred?: boolean;
 	onToggleStar?: () => void;
 }
@@ -37,6 +45,7 @@ export function ToolCard({
 	repoUrl,
 	websiteUrl,
 	installCommand,
+	creator,
 	isStarred = false,
 	onToggleStar,
 }: ToolCardProps) {
@@ -57,14 +66,36 @@ export function ToolCard({
 					</div>
 					<StarButton isStarred={isStarred} onToggle={onToggleStar} />
 				</div>
-				<div className="flex items-center gap-2">
-					{categories
-						?.filter((cat): cat is NonNullable<typeof cat> => Boolean(cat))
-						.map((category) => (
-							<Badge key={category.id} variant="secondary">
-								{category.name}
-							</Badge>
-						))}
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						{categories
+							?.filter((cat): cat is NonNullable<typeof cat> => Boolean(cat))
+							.map((category) => (
+								<Badge key={category.id} variant="secondary">
+									{category.name}
+								</Badge>
+							))}
+					</div>
+					{creator && creator.username && (
+						<Link 
+							href={`/creators/${creator.username}`}
+							className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+							title={`View ${creator.name || creator.username}'s profile`}
+						>
+							<Avatar className="h-6 w-6">
+								<AvatarImage src={getUserAvatarUrl(creator)} alt={creator.name || creator.username} />
+								<AvatarFallback className="text-xs">
+									{(creator.name || creator.username)
+										.split(" ")
+										.map((n) => n[0])
+										.join("")
+										.slice(0, 2)
+										.toUpperCase()}
+								</AvatarFallback>
+							</Avatar>
+							<span className="hidden sm:inline">{creator.name || creator.username}</span>
+						</Link>
+					)}
 				</div>
 			</CardHeader>
 			<CardContent>

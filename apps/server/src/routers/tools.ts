@@ -39,7 +39,20 @@ async function getGitHubDataFromCache(repoUrl: string | null) {
 			.limit(1);
 
 		if (cached[0]) {
-			const data = JSON.parse(cached[0].data);
+			let data;
+			try {
+				data = JSON.parse(cached[0].data);
+			} catch (parseError) {
+				console.error('Error parsing cached GitHub data for', repoUrl, ':', parseError);
+				return null;
+			}
+			
+			// Validate that data is an object
+			if (!data || typeof data !== 'object') {
+				console.error('Invalid cached GitHub data format for', repoUrl);
+				return null;
+			}
+			
 			return {
 				readme: data.readme || null,
 				stars: data.stargazers_count || data.stars || 0,
@@ -50,8 +63,8 @@ async function getGitHubDataFromCache(repoUrl: string | null) {
 				lastCommit: data.lastCommit || data.updated_at || null,
 			};
 		}
-	} catch (error) {
-		console.error('Error fetching GitHub data from cache:', error);
+	} catch (dbError) {
+		console.error('Database error fetching GitHub data from cache for', repoUrl, ':', dbError);
 	}
 	
 	return null;

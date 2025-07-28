@@ -13,7 +13,7 @@ export function RepoStats({ stars, forks, issues, watchers }: RepoStatsProps) {
 		{ label: "Stars", value: stars, icon: Star },
 		{ label: "Forks", value: forks, icon: GitFork },
 		{ label: "Issues", value: issues, icon: AlertCircle },
-		{ label: "Watchers", value: watchers, icon: Eye },
+		{ label: "GitHub Stars", value: stars, icon: Star },
 	];
 
 	return (

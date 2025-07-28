@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
+import { getUserAvatarUrl } from "@/utils/user";
 
 function CreatorCard({ creator }: { creator: any }) {
 	return (
@@ -29,7 +30,7 @@ function CreatorCard({ creator }: { creator: any }) {
 			<CardHeader>
 				<div className="flex items-start gap-4">
 					<Avatar className="h-12 w-12">
-						<AvatarImage src={creator.image || undefined} alt={creator.name} />
+						<AvatarImage src={getUserAvatarUrl(creator)} alt={creator.name} />
 						<AvatarFallback>
 							{creator.name
 								.split(" ")

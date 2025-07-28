@@ -287,7 +287,7 @@ export default function ComponentDetailPage({
 								stars={component.starsCount || 0}
 								forks={component.forksCount || 0}
 								issues={component.issuesCount || 0}
-								watchers={component.watchersCount || 0}
+								watchers={component.starsCount || 0}
 							/>
 						)}
 

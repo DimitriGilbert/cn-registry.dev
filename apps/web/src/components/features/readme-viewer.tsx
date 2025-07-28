@@ -1,7 +1,14 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
+import rehypeHighlight from "rehype-highlight";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Import highlight.js CSS
+import "highlight.js/styles/github-dark.css";
 
 interface ReadmeViewerProps {
 	content?: string;
@@ -36,7 +43,80 @@ export function ReadmeViewer({
 			<CardContent>
 				<div className="prose prose-sm dark:prose-invert max-w-none">
 					{content ? (
-						<div dangerouslySetInnerHTML={{ __html: content }} />
+						<ReactMarkdown
+							remarkPlugins={[remarkGfm]}
+							rehypePlugins={[rehypeHighlight, rehypeRaw]}
+							components={{
+								// Custom components for better styling
+								code: ({ node, inline, className, children, ...props }: any) => {
+									const match = /language-(\w+)/.exec(className || "");
+									return !inline && match ? (
+										<code className={className} {...props}>
+											{children}
+										</code>
+									) : (
+										<code
+											className="px-1 py-0.5 bg-muted rounded text-sm font-mono"
+											{...props}
+										>
+											{children}
+										</code>
+									);
+								},
+								pre: ({ children, ...props }: any) => (
+									<pre
+										className="bg-muted p-4 rounded-lg overflow-x-auto text-sm"
+										{...props}
+									>
+										{children}
+									</pre>
+								),
+								blockquote: ({ children, ...props }: any) => (
+									<blockquote
+										className="border-l-4 border-muted-foreground/20 pl-4 italic text-muted-foreground"
+										{...props}
+									>
+										{children}
+									</blockquote>
+								),
+								table: ({ children, ...props }: any) => (
+									<div className="overflow-x-auto">
+										<table
+											className="w-full border-collapse border border-border"
+											{...props}
+										>
+											{children}
+										</table>
+									</div>
+								),
+								th: ({ children, ...props }: any) => (
+									<th
+										className="border border-border bg-muted px-3 py-2 text-left font-medium"
+										{...props}
+									>
+										{children}
+									</th>
+								),
+								td: ({ children, ...props }: any) => (
+									<td className="border border-border px-3 py-2" {...props}>
+										{children}
+									</td>
+								),
+								a: ({ children, href, ...props }: any) => (
+									<a
+										href={href}
+										className="text-primary hover:underline"
+										target="_blank"
+										rel="noopener noreferrer"
+										{...props}
+									>
+										{children}
+									</a>
+								),
+							}}
+						>
+							{content}
+						</ReactMarkdown>
 					) : (
 						<p className="text-muted-foreground">No README available.</p>
 					)}

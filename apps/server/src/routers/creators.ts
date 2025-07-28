@@ -307,7 +307,7 @@ export const creatorsRouter = router({
 				)
 				.limit(limit * 2); // Get more to filter by stars
 
-			// Calculate stars for each creator
+			// Calculate stars and component count for each creator
 			const trending = await Promise.all(
 				creatorsWithComponents.map(async (creator) => {
 					const starCount = await db
@@ -319,9 +319,15 @@ export const creatorsRouter = router({
 							)`,
 						);
 
+					const componentCount = await db
+						.select({ count: count() })
+						.from(components)
+						.where(eq(components.creatorId, creator.id));
+
 					return {
 						...creator,
 						totalStars: starCount[0]?.count || 0,
+						componentCount: componentCount[0]?.count || 0,
 					};
 				}),
 			);

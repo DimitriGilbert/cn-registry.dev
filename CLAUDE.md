@@ -105,6 +105,7 @@ Key environment variables:
 - use use-formedible for all the forms docs/llm/formedible.llm.txt
 - we use trpc 11 and you knowledege is outdated, check existing example to not create bad code ! docs/llm/trpc.md
 - always work from the root directory !
+- NEVER USE EITHER CONFIRM NOR ALERTS ! THESE ARE ANTIPATTERNS !
 
 ## Key Files
 

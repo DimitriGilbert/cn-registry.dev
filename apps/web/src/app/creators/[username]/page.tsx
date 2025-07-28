@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/utils/trpc";
+import { getUserAvatarUrl } from "@/utils/user";
 
 type PageProps = {
 	params: Promise<{ username: string }>;
@@ -101,7 +102,7 @@ export default function CreatorProfilePage({ params }: PageProps) {
 				{/* Profile Header */}
 				<div className="mb-8 flex flex-col items-start gap-6 md:flex-row">
 					<Avatar className="h-24 w-24">
-						<AvatarImage src={creator.image || undefined} alt={creator.name} />
+						<AvatarImage src={getUserAvatarUrl(creator)} alt={creator.name} />
 						<AvatarFallback className="text-2xl">
 							{creator.name
 								.split(" ")
@@ -166,10 +167,10 @@ export default function CreatorProfilePage({ params }: PageProps) {
 							)}
 							{Object.entries(socialLinks).map(([platform, url]) => (
 								<Button key={platform} variant="outline" size="sm" asChild>
-									<Link href={url} target="_blank" rel="noopener noreferrer">
+									<a href={url} target="_blank" rel="noopener noreferrer">
 										{platform}
 										<ExternalLink className="ml-1 h-3 w-3" />
-									</Link>
+									</a>
 								</Button>
 							))}
 						</div>

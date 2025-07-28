@@ -293,8 +293,16 @@ export const adminRouter = router({
 						name: z.string().min(1),
 						description: z.string().optional(),
 						repoUrl: z.string().url("Repository URL is required"), // Required
-						websiteUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(),
-						installUrl: z.string().transform(val => val === "" ? undefined : val).pipe(z.string().url().optional()).optional(), 
+						websiteUrl: z
+							.string()
+							.transform((val) => (val === "" ? undefined : val))
+							.pipe(z.string().url().optional())
+							.optional(),
+						installUrl: z
+							.string()
+							.transform((val) => (val === "" ? undefined : val))
+							.pipe(z.string().url().optional())
+							.optional(),
 						installCommand: z.string().optional(), // Made optional - not always available
 						tags: z.array(z.string()).optional(),
 						status: z
@@ -335,20 +343,22 @@ export const adminRouter = router({
 			function extractGitHubUsername(repoUrl: string): string | null {
 				try {
 					const url = new URL(repoUrl);
-					if (url.hostname === 'github.com') {
-						const pathParts = url.pathname.split('/').filter(Boolean);
+					if (url.hostname === "github.com") {
+						const pathParts = url.pathname.split("/").filter(Boolean);
 						if (pathParts.length >= 1) {
 							return pathParts[0]; // First part is the username
 						}
 					}
 				} catch (error) {
-					console.warn('Failed to extract GitHub username from URL:', repoUrl);
+					console.warn("Failed to extract GitHub username from URL:", repoUrl);
 				}
 				return null;
 			}
 
 			// Helper function to get or create user profile from GitHub username
-			async function getOrCreateUserFromGitHub(repoUrl: string): Promise<string> {
+			async function getOrCreateUserFromGitHub(
+				repoUrl: string,
+			): Promise<string> {
 				const username = extractGitHubUsername(repoUrl);
 				if (!username) {
 					return ctx.user.id; // Fallback to current admin user
@@ -376,7 +386,7 @@ export const adminRouter = router({
 							email: `${username}@github.local`, // Placeholder email
 							emailVerified: false,
 							username: username,
-							role: 'creator',
+							role: "creator",
 							bio: `GitHub: https://github.com/${username}`,
 							verified: false,
 							createdAt: now,
@@ -385,7 +395,11 @@ export const adminRouter = router({
 						.returning();
 					return newUser.id;
 				} catch (error) {
-					console.warn('Failed to create user profile for GitHub username:', username, error);
+					console.warn(
+						"Failed to create user profile for GitHub username:",
+						username,
+						error,
+					);
 					return ctx.user.id; // Fallback to current admin user
 				}
 			}
@@ -395,7 +409,9 @@ export const adminRouter = router({
 				try {
 					// Validate component data first
 					if (!componentData.name || !componentData.repoUrl) {
-						errors.push(`Component skipped: Missing required fields (name or repoUrl)`);
+						errors.push(
+							"Component skipped: Missing required fields (name or repoUrl)",
+						);
 						skippedCount++;
 						continue;
 					}
@@ -414,7 +430,9 @@ export const adminRouter = router({
 					}
 
 					// Get or create creator from GitHub URL
-					const creatorId = await getOrCreateUserFromGitHub(componentData.repoUrl);
+					const creatorId = await getOrCreateUserFromGitHub(
+						componentData.repoUrl,
+					);
 
 					// Prepare component data with proper validation
 					const component = {
@@ -452,16 +470,27 @@ export const adminRouter = router({
 							await db.insert(componentCategories).values(categoryLinks);
 						} catch (categoryError) {
 							// Category linking failed, but component was inserted
-							console.warn(`Categories linking failed for "${componentData.name}":`, categoryError);
-							errors.push(`Component "${componentData.name}" imported but category linking failed`);
+							console.warn(
+								`Categories linking failed for "${componentData.name}":`,
+								categoryError,
+							);
+							errors.push(
+								`Component "${componentData.name}" imported but category linking failed`,
+							);
 						}
 					}
 
 					importedCount++;
 				} catch (error) {
-					const errorMessage = error instanceof Error ? error.message : String(error);
-					console.error(`Failed to import component "${componentData.name}":`, error);
-					errors.push(`Component "${componentData.name}" failed: ${errorMessage}`);
+					const errorMessage =
+						error instanceof Error ? error.message : String(error);
+					console.error(
+						`Failed to import component "${componentData.name}":`,
+						error,
+					);
+					errors.push(
+						`Component "${componentData.name}" failed: ${errorMessage}`,
+					);
 					skippedCount++;
 				}
 			}

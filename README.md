@@ -8,27 +8,27 @@ cn-registry is a central hub for the developer community to find and share UI co
 
 ### For Everyone
 
-*   **Discover:** Browse a curated collection of components and tools. Find what you need quickly with powerful search and filtering options.
-*   **Explore:** View detailed information for each item, including live previews, installation commands, and documentation.
-*   **Community-driven:** See what's popular with star ratings and engage in discussions through threaded comments.
-*   **Personalize:** Customize your viewing experience with selectable themes.
+- **Discover:** Browse a curated collection of components and tools. Find what you need quickly with powerful search and filtering options.
+- **Explore:** View detailed information for each item, including live previews, installation commands, and documentation.
+- **Community-driven:** See what's popular with star ratings and engage in discussions through threaded comments.
+- **Personalize:** Customize your viewing experience with selectable themes.
 
 ### For Users
 
-*   **Dashboard:** Keep track of your starred items, comments, and other activities in your personal dashboard.
-*   **Favorites:** Star your favorite components and tools to easily find them later.
+- **Dashboard:** Keep track of your starred items, comments, and other activities in your personal dashboard.
+- **Favorites:** Star your favorite components and tools to easily find them later.
 
 ### For Creators
 
-*   **Showcase your work:** Share your components and tools with the community.
-*   **Manage your content:** Edit the metadata and documentation for your creations.
-*   **Track your impact:** View analytics to see how the community is engaging with your work.
+- **Showcase your work:** Share your components and tools with the community.
+- **Manage your content:** Edit the metadata and documentation for your creations.
+- **Track your impact:** View analytics to see how the community is engaging with your work.
 
 ### For Admins
 
-*   **Curate content:** Manage all components, tools, and themes in the registry.
-*   **Monitor activity:** Inspect analytics for the entire platform.
-*   **Stay informed:** Receive notifications about important events.
+- **Curate content:** Manage all components, tools, and themes in the registry.
+- **Monitor activity:** Inspect analytics for the entire platform.
+- **Stay informed:** Receive notifications about important events.
 
 ## Getting Started
 

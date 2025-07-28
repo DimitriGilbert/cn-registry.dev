@@ -96,6 +96,7 @@ export default function HomePage() {
 					itemType="component"
 					layout="carousel"
 					skeletonCount={10}
+					animationType="opacity"
 				/>
 
 				<CollectionSection
@@ -108,6 +109,7 @@ export default function HomePage() {
 					layout="carousel"
 					emptyMessage="No popular components available yet."
 					skeletonCount={10}
+					animationType="scale"
 				/>
 
 				<CollectionSection
@@ -119,6 +121,7 @@ export default function HomePage() {
 					itemType="tool"
 					layout="carousel"
 					skeletonCount={10}
+					animationType="default"
 				/>
 			</div>
 		</Container>

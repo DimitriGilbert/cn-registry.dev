@@ -30,7 +30,6 @@ export function ThemeSelector() {
 		loadThemes();
 	}, []);
 
-
 	const loadThemes = async () => {
 		try {
 			const response = await fetch("/tweakcn-registry.json");
@@ -60,23 +59,38 @@ export function ThemeSelector() {
 		if (themeName === "default") {
 			// Reset to default theme
 			localStorage.removeItem("theme-preset");
-			
+
 			// Apply default theme styles from globals.css
 			const root = document.documentElement;
 			root.classList.remove("light", "dark");
 			root.classList.add(themeState.currentMode);
-			
+
 			// Remove any custom CSS variables and let defaults from CSS take over
 			const customProps = [
-				"--background", "--foreground", "--card", "--card-foreground", 
-				"--popover", "--popover-foreground", "--primary", "--primary-foreground",
-				"--secondary", "--secondary-foreground", "--muted", "--muted-foreground",
-				"--accent", "--accent-foreground", "--destructive", "--destructive-foreground",
-				"--border", "--input", "--ring", "--radius"
+				"--background",
+				"--foreground",
+				"--card",
+				"--card-foreground",
+				"--popover",
+				"--popover-foreground",
+				"--primary",
+				"--primary-foreground",
+				"--secondary",
+				"--secondary-foreground",
+				"--muted",
+				"--muted-foreground",
+				"--accent",
+				"--accent-foreground",
+				"--destructive",
+				"--destructive-foreground",
+				"--border",
+				"--input",
+				"--ring",
+				"--radius",
 			];
-			
-			customProps.forEach(prop => root.style.removeProperty(prop));
-			
+
+			customProps.forEach((prop) => root.style.removeProperty(prop));
+
 			// Update theme state to default
 			setThemePreset({ name: "default" });
 			return;

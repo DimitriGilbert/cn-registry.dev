@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { trpc, trpcClient } from "@/utils/trpc";
 import { generateMultipleInstallCommands } from "@/utils/install-command";
+import { trpc, trpcClient } from "@/utils/trpc";
 
 interface SaveProjectDialogProps {
 	isOpen: boolean;
@@ -173,7 +173,6 @@ export function CartButton() {
 function CartContent() {
 	const { cart, removeFromCart, clearCart, getCartTotal } = useCart();
 	const [showSaveDialog, setShowSaveDialog] = useState(false);
-
 
 	const copyToClipboard = (text: string) => {
 		navigator.clipboard.writeText(text);

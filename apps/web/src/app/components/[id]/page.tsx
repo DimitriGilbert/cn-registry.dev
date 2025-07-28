@@ -28,8 +28,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { trpc } from "@/utils/trpc";
 import { generateInstallCommand } from "@/utils/install-command";
+import { trpc } from "@/utils/trpc";
+import { getUserAvatarUrl } from "@/utils/user";
 
 export default function ComponentDetailPage({
 	params,
@@ -259,6 +260,7 @@ export default function ComponentDetailPage({
 								<Showcase
 									code={component.exampleCode || "// No example code available"}
 									preview={component.previewUrl}
+									enableSandbox={!!component.exampleCode}
 								/>
 							</TabsContent>
 
@@ -278,9 +280,7 @@ export default function ComponentDetailPage({
 					</div>
 
 					<div className="space-y-6">
-						<CopyInstallCommand
-							command={generateInstallCommand(component)}
-						/>
+						<CopyInstallCommand command={generateInstallCommand(component)} />
 
 						{component.githubUrl && (
 							<RepoStats
@@ -295,16 +295,25 @@ export default function ComponentDetailPage({
 							<h3 className="font-semibold">Created by</h3>
 							<div className="flex items-center gap-3">
 								<Image
-									src={component.creator?.image || "/placeholder-user.jpg"}
+									src={getUserAvatarUrl(component.creator || {})}
 									alt={component.creator?.name || "Unknown"}
 									className="h-10 w-10 rounded-full"
 									width={40}
 									height={40}
 								/>
 								<div>
-									<p className="font-medium">
-										{component.creator?.name || "Unknown"}
-									</p>
+									{component.creator?.username ? (
+										<Link
+											href={`/creators/${component.creator.username}`}
+											className="font-medium hover:underline"
+										>
+											{component.creator.name || "Unknown"}
+										</Link>
+									) : (
+										<p className="font-medium">
+											{component.creator?.name || "Unknown"}
+										</p>
+									)}
 									<p className="text-muted-foreground text-sm">
 										{component.creator?.username
 											? `@${component.creator.username}`

@@ -2,6 +2,7 @@
 "use client";
 
 import Autoplay from "embla-carousel-autoplay";
+import Fade from "embla-carousel-fade";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentCard } from "@/components/features/component-card";
@@ -13,8 +14,10 @@ import {
 	CarouselItem,
 	CarouselNext,
 	CarouselPrevious,
-} from "@/components/ui/carousel";
+} from "@/components/features/enhanced-carousel";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type AnimationType = "default" | "fade" | "scale" | "opacity";
 
 interface CollectionSectionProps {
 	title: string;
@@ -26,6 +29,7 @@ interface CollectionSectionProps {
 	layout: "carousel" | "grid";
 	emptyMessage?: string;
 	skeletonCount?: number;
+	animationType?: AnimationType;
 }
 
 export function CollectionSection({
@@ -38,6 +42,7 @@ export function CollectionSection({
 	layout = "carousel",
 	emptyMessage,
 	skeletonCount = 4,
+	animationType = "default",
 }: CollectionSectionProps) {
 	const renderSkeleton = () => {
 		if (layout === "grid") {
@@ -85,18 +90,26 @@ export function CollectionSection({
 			);
 		}
 
+
+		const plugins = [
+			Autoplay({
+				delay: 2000,
+			}),
+			...(animationType === "fade" ? [Fade()] : []),
+		];
+
+		const tweenEffect = animationType === "scale" || animationType === "opacity" ? animationType : null;
+
 		return (
 			<Carousel
 				opts={{
-					align: "start",
+					align: "center",
 					loop: true,
+					slidesToScroll: 1,
 				}}
 				className="w-full"
-				plugins={[
-					Autoplay({
-						delay: 2000,
-					}),
-				]}
+				plugins={plugins}
+				tweenEffect={tweenEffect}
 			>
 				<CarouselContent className="-ml-2 md:-ml-4">
 					{items.map((item) => (

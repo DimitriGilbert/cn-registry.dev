@@ -6,7 +6,7 @@ import { user } from "../apps/server/src/db/schema";
 
 async function makeAdmin() {
 	const email = process.argv[2];
-	
+
 	if (!email) {
 		console.error("❌ Please provide an email address");
 		console.log("Usage: bun scripts/make-admin-prod.ts <email>");
@@ -22,7 +22,7 @@ async function makeAdmin() {
 		const host = process.env.POSTGRES_HOST || "localhost";
 		const port = process.env.POSTGRES_PORT || "5432";
 		const database = process.env.POSTGRES_DB || "cn_registry";
-		
+
 		return `postgresql://${user}:${password}@${host}:${port}/${database}`;
 	};
 
@@ -31,7 +31,7 @@ async function makeAdmin() {
 	try {
 		// Initialize database connection using same approach as server
 		const db = drizzle(databaseUrl);
-		
+
 		console.log(`🔍 Looking for user with email: ${email}`);
 
 		// Find user by email
@@ -60,7 +60,6 @@ async function makeAdmin() {
 		console.log(`🎉 Successfully made "${email}" an admin!`);
 		console.log(`User: ${currentUser.name} (${currentUser.email})`);
 		console.log("They can now access the admin panel");
-		
 	} catch (error) {
 		console.error("❌ Error making user admin:", error);
 		process.exit(1);

@@ -83,7 +83,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 				const response = await fetch("/tweakcn-registry.json");
 				const registry = await response.json();
 
-				const bubblegumTheme = registry.items.find(
+				const items = Array.isArray(registry.items) ? registry.items : [];
+				const bubblegumTheme = items.find(
 					(item: any) =>
 						item.type === "registry:style" && item.name === "bubblegum",
 				);
@@ -124,7 +125,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 					const response = await fetch("/tweakcn-registry.json");
 					const registry = await response.json();
 
-					const registryTheme = registry.items.find(
+					const items = Array.isArray(registry.items) ? registry.items : [];
+					const registryTheme = items.find(
 						(item: any) =>
 							item.type === "registry:style" &&
 							item.name === themeState.selectedPreset,

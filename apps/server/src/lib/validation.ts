@@ -112,6 +112,8 @@ export const paginationSchema = z.object({
 export const searchSchema = z.object({
 	query: z.string().optional(),
 	categoryId: z.string().uuid().optional(),
+	sort: z.enum(["name", "stars", "createdAt", "updatedAt"]).optional(),
+	order: z.enum(["asc", "desc"]).optional(),
 	...paginationSchema.shape,
 });
 

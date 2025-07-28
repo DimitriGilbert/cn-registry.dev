@@ -26,8 +26,10 @@ import { StarButton } from "./star-button";
 
 // Helper function to format numbers with K abbreviation
 function formatStars(count: number): string {
+	if (count < 0) return '0';
 	if (count >= 1000) {
-		return `${(count / 1000).toFixed(1).replace('.0', '')}K`;
+		const formatted = (count / 1000).toFixed(1);
+		return formatted.endsWith('.0') ? `${Math.floor(count / 1000)}K` : `${formatted}K`;
 	}
 	return count.toString();
 }
@@ -67,8 +69,10 @@ export function ComponentCard({
 			...trpc.github.getRepoStats.queryOptions({
 				repoUrl: finalGithubUrl || ""
 			}),
-			enabled: !!(finalGithubUrl && finalGithubUrl.includes("github.com")),
+			enabled: !!(finalGithubUrl && finalGithubUrl.includes("github.com") && finalGithubUrl.trim() !== ""),
 			staleTime: 10 * 60 * 1000, // 10 minutes cache
+			retry: 2,
+			retryDelay: 1000,
 		}
 	);
 
@@ -153,13 +157,19 @@ export function ComponentCard({
 						<ShoppingCart className="h-3 w-3" />
 					</Button>
 					{finalGithubUrl && (
-						<Button variant="outline" size="sm" asChild className="relative">
-							<Link href={finalGithubUrl} target="_blank" className="relative">
+						<Button variant="outline" size="sm" asChild className="relative overflow-visible">
+							<Link 
+								href={finalGithubUrl} 
+								target="_blank" 
+								className="relative"
+								aria-label={`View on GitHub${githubData?.stars !== undefined ? ` (${formatStars(githubData.stars)} stars)` : ''}`}
+							>
 								<Github className="h-3 w-3" />
 								{githubData?.stars !== undefined && (
 									<Badge 
 										variant="secondary" 
-										className="absolute -top-1 -right-1 h-3 px-1 text-[10px] leading-none bg-foreground text-background font-medium min-w-0"
+										className="absolute -top-2 -right-2 h-4 px-1.5 text-[10px] leading-tight font-medium min-w-0 pointer-events-none"
+										aria-hidden="true"
 									>
 										{formatStars(githubData.stars)}
 									</Badge>

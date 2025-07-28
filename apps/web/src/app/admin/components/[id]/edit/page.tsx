@@ -308,7 +308,7 @@ export default function EditComponentPage({
 										<div className="flex items-center gap-2">
 											<Calendar className="h-4 w-4 text-green-500" />
 											<span className="text-muted-foreground text-sm">
-												{new Date(githubData.lastCommit).toLocaleDateString()}
+												{githubData.lastCommit ? new Date(githubData.lastCommit).toLocaleDateString() : 'N/A'}
 											</span>
 										</div>
 									</div>
@@ -340,13 +340,13 @@ export default function EditComponentPage({
 									)}
 									
 									<div className="text-xs text-muted-foreground">
-										Last updated: {new Date().toLocaleString()}
+										Last fetched: Just now
 									</div>
 								</div>
 							) : (
 								<div className="flex items-center gap-2 text-destructive">
 									<AlertCircle className="h-4 w-4" />
-									Failed to load GitHub data. You may have hit the rate limit. Wait a few minutes and try again.
+									Failed to load GitHub data. This could be due to rate limiting, network issues, or invalid repository URL.
 								</div>
 							)}
 						</CardContent>

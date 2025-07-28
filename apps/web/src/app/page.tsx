@@ -28,6 +28,8 @@ export default function HomePage() {
     trpc.components.getAll.queryOptions({
       page: 1,
       limit: 10,
+      sort: 'name',
+      order: 'asc'
     })
   );
 

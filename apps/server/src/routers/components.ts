@@ -1,4 +1,4 @@
-import { and, avg, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, avg, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import {
@@ -30,7 +30,7 @@ import {
 export const componentsRouter = router({
 	// Public: Get all components with filters and pagination
 	getAll: publicProcedure.input(searchSchema).query(async ({ input }) => {
-		const { query, categoryId, page, limit } = input;
+		const { query, categoryId, page, limit, sort = "createdAt", order = "desc" } = input;
 		const offset = (page - 1) * limit;
 
 		// Build WHERE conditions
@@ -79,7 +79,11 @@ export const componentsRouter = router({
 			.leftJoin(user, eq(components.creatorId, user.id))
 			.limit(limit)
 			.offset(offset)
-			.orderBy(desc(components.createdAt));
+			.orderBy(
+				sort === "name" ? (order === "asc" ? asc(components.name) : desc(components.name)) :
+				sort === "updatedAt" ? (order === "asc" ? asc(components.updatedAt) : desc(components.updatedAt)) :
+				order === "asc" ? asc(components.createdAt) : desc(components.createdAt)
+			);
 
 		const results =
 			whereConditions.length > 0

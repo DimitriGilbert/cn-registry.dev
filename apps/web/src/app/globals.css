@@ -48,6 +48,11 @@
   /* marquee magicui */
   --animate-marquee: marquee var(--duration) infinite linear;
   --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  /* shiny borders */
+  --animate-shine: shine var(--duration) infinite linear;
+}
+
+@layer utilities {
   @keyframes marquee {
     from {
       transform: translateX(0);
@@ -64,9 +69,6 @@
       transform: translateY(calc(-100% - var(--gap)));
     }
   }
-  /* shiny borders */
-
-  --animate-shine: shine var(--duration) infinite linear;
   @keyframes shine {
     0% {
       background-position: 0% 0%;

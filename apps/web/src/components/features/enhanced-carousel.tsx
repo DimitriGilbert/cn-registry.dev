@@ -78,7 +78,12 @@ function Carousel({
 
 	const setTweenNodes = React.useCallback((emblaApi: EmblaCarouselType): void => {
 		tweenNodes.current = emblaApi.slideNodes().map((slideNode) => {
-			return slideNode.firstElementChild as HTMLElement;
+			const firstChild = slideNode.firstElementChild;
+			if (!firstChild || !(firstChild instanceof HTMLElement)) {
+				console.warn('Slide node missing HTMLElement child');
+				return slideNode as HTMLElement; // fallback to the slide node itself
+			}
+			return firstChild;
 		});
 	}, []);
 
@@ -187,15 +192,25 @@ function Carousel({
 
 	const handleKeyDown = React.useCallback(
 		(event: React.KeyboardEvent<HTMLDivElement>) => {
-			if (event.key === "ArrowLeft") {
-				event.preventDefault();
-				scrollPrev();
-			} else if (event.key === "ArrowRight") {
-				event.preventDefault();
-				scrollNext();
+			if (orientation === "horizontal") {
+				if (event.key === "ArrowLeft") {
+					event.preventDefault();
+					scrollPrev();
+				} else if (event.key === "ArrowRight") {
+					event.preventDefault();
+					scrollNext();
+				}
+			} else {
+				if (event.key === "ArrowUp") {
+					event.preventDefault();
+					scrollPrev();
+				} else if (event.key === "ArrowDown") {
+					event.preventDefault();
+					scrollNext();
+				}
 			}
 		},
-		[scrollPrev, scrollNext],
+		[orientation, scrollPrev, scrollNext],
 	);
 
 	React.useEffect(() => {
@@ -210,6 +225,7 @@ function Carousel({
 		api.on("select", onSelect);
 
 		return () => {
+			api?.off("reInit", onSelect);
 			api?.off("select", onSelect);
 		};
 	}, [api, onSelect]);

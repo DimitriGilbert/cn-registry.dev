@@ -14,6 +14,19 @@ import {
 import { adminProcedure, router } from "../lib/trpc";
 import { createAdminNotificationSchema, idSchema } from "../lib/validation";
 
+export interface ImportResult {
+	type: string;
+	total: number;
+	success: number;
+	errors: number;
+	items: Array<{
+		name: string;
+		status: "success" | "cached" | "error";
+		stars?: number;
+		error?: string;
+	}>;
+}
+
 // Progress tracking for bulk operations
 const progressCache = new Map<string, {
 	total: number;
@@ -66,11 +79,10 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					name: components.name,
 					repoUrl: components.repoUrl
 				})
-				.from(components)
-				.where(eq(components.repoUrl, components.repoUrl));
+				.from(components);
 
 			allItems.push(...componentsList
-				.filter(c => c.repoUrl && c.repoUrl.includes("github.com"))
+				.filter((c): c is typeof c & { repoUrl: string } => c.repoUrl !== null && c.repoUrl.includes("github.com"))
 				.map(c => ({ ...c, type: "component" }))
 			);
 		}
@@ -82,11 +94,10 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					name: tools.name,
 					repoUrl: tools.repoUrl
 				})
-				.from(tools)
-				.where(eq(tools.repoUrl, tools.repoUrl));
+				.from(tools);
 
 			allItems.push(...toolsList
-				.filter(t => t.repoUrl && t.repoUrl.includes("github.com"))
+				.filter((t): t is typeof t & { repoUrl: string } => t.repoUrl !== null && t.repoUrl.includes("github.com"))
 				.map(t => ({ ...t, type: "tool" }))
 			);
 		}
@@ -754,19 +765,6 @@ export const adminRouter = router({
 		}))
 		.mutation(async ({ input }) => {
 			const { type, force } = input;
-			
-			interface ImportResult {
-				type: string;
-				total: number;
-				success: number;
-				errors: number;
-				items: Array<{
-					name: string;
-					status: "success" | "cached" | "error";
-					stars?: number;
-					error?: string;
-				}>;
-			}
 			
 			async function importGitHubForItems(
 				items: Array<{ id: string; name: string; repoUrl: string | null }>,

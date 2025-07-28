@@ -1,0 +1,286 @@
+import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "../db";
+import {
+	categories,
+	componentCategories,
+	components,
+	projects,
+	projectCollaborators,
+	stars,
+	tools,
+	toolCategories,
+	user,
+} from "../db/schema";
+import { publicProcedure, router } from "../lib/trpc";
+
+export const searchRouter = router({
+	// Global search across components, tools, and projects
+	global: publicProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				limit: z.number().int().min(1).max(50).default(20),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { query, limit } = input;
+			const searchTerm = `%${query}%`;
+
+			// Search components
+			const componentResults = await db
+				.select({
+					id: components.id,
+					name: components.name,
+					description: components.description,
+					repoUrl: components.repoUrl,
+					websiteUrl: components.websiteUrl,
+					tags: components.tags,
+					createdAt: components.createdAt,
+					creator: {
+						id: user.id,
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+				})
+				.from(components)
+				.leftJoin(user, eq(components.creatorId, user.id))
+				.where(
+					or(
+						ilike(components.name, searchTerm),
+						ilike(components.description, searchTerm),
+					),
+				)
+				.orderBy(desc(components.createdAt))
+				.limit(Math.ceil(limit / 3));
+
+			// Search tools
+			const toolResults = await db
+				.select({
+					id: tools.id,
+					name: tools.name,
+					description: tools.description,
+					repoUrl: tools.repoUrl,
+					websiteUrl: tools.websiteUrl,
+					tags: tools.tags,
+					createdAt: tools.createdAt,
+					creator: {
+						id: user.id,
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+				})
+				.from(tools)
+				.leftJoin(user, eq(tools.creatorId, user.id))
+				.where(
+					or(ilike(tools.name, searchTerm), ilike(tools.description, searchTerm)),
+				)
+				.orderBy(desc(tools.createdAt))
+				.limit(Math.ceil(limit / 3));
+
+			// Search public projects
+			const projectResults = await db
+				.select({
+					id: projects.id,
+					name: projects.name,
+					description: projects.description,
+					slug: projects.slug,
+					visibility: projects.visibility,
+					createdAt: projects.createdAt,
+					creator: {
+						id: user.id,
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+				})
+				.from(projects)
+				.innerJoin(user, eq(projects.userId, user.id))
+				.where(
+					and(
+						eq(projects.visibility, "public"),
+						or(
+							ilike(projects.name, searchTerm),
+							ilike(projects.description, searchTerm),
+						),
+					),
+				)
+				.orderBy(desc(projects.createdAt))
+				.limit(Math.ceil(limit / 3));
+
+			// Combine results and sort by relevance/date
+			const allResults = [
+				...componentResults.map((r) => ({ ...r, type: "component" as const, score: 1 })),
+				...toolResults.map((r) => ({ ...r, type: "tool" as const, score: 1 })),
+				...projectResults.map((r) => ({ ...r, type: "project" as const, score: 1 })),
+			]
+				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+				.slice(0, limit);
+
+			return {
+				results: allResults,
+				total: allResults.length,
+				components: componentResults.length,
+				tools: toolResults.length,
+				projects: projectResults.length,
+			};
+		}),
+
+	// Search components with enhanced results
+	components: publicProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				categoryId: z.string().uuid().optional(),
+				limit: z.number().int().min(1).max(100).default(20),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { query, categoryId, limit } = input;
+			const searchTerm = `%${query}%`;
+
+			// Build WHERE conditions
+			const whereConditions = [
+				or(
+					ilike(components.name, searchTerm),
+					ilike(components.description, searchTerm),
+				),
+			];
+
+			if (categoryId) {
+				const componentIdsInCategory = await db
+					.select({ componentId: componentCategories.componentId })
+					.from(componentCategories)
+					.where(eq(componentCategories.categoryId, categoryId));
+
+				const componentIds = componentIdsInCategory.map(row => row.componentId);
+				if (componentIds.length > 0) {
+					whereConditions.push(inArray(components.id, componentIds));
+				}
+			}
+
+			const results = await db
+				.select({
+					id: components.id,
+					name: components.name,
+					description: components.description,
+					repoUrl: components.repoUrl,
+					websiteUrl: components.websiteUrl,
+					installUrl: components.installUrl,
+					installCommand: components.installCommand,
+					tags: components.tags,
+					status: components.status,
+					createdAt: components.createdAt,
+					updatedAt: components.updatedAt,
+					creator: {
+						id: user.id,
+						name: user.name,
+						username: user.username,
+						image: user.image,
+					},
+				})
+				.from(components)
+				.leftJoin(user, eq(components.creatorId, user.id))
+				.where(and(...whereConditions))
+				.orderBy(desc(components.createdAt))
+				.limit(limit);
+
+			// Get categories and stats for each component
+			const componentsWithDetails = await Promise.all(
+				results.map(async (component) => {
+					// Get categories
+					const componentCategoriesData = await db
+						.select({ category: categories })
+						.from(componentCategories)
+						.leftJoin(
+							categories,
+							eq(componentCategories.categoryId, categories.id),
+						)
+						.where(eq(componentCategories.componentId, component.id));
+
+					// Get stats
+					const [starsCount] = await db
+						.select({ count: count() })
+						.from(stars)
+						.where(
+							and(
+								eq(stars.itemType, "component"),
+								eq(stars.itemId, component.id),
+							),
+						);
+
+					return {
+						...component,
+						categories: componentCategoriesData
+							.map((cc) => cc.category)
+							.filter(Boolean),
+						starsCount: starsCount.count,
+						githubUrl: component.repoUrl,
+						isStarred: false,
+						forksCount: 0,
+						issuesCount: 0,
+						watchersCount: 0,
+						readme: null,
+						exampleCode: null,
+						previewUrl: null,
+					};
+				}),
+			);
+
+			return {
+				components: componentsWithDetails,
+				total: componentsWithDetails.length,
+			};
+		}),
+
+	// Search suggestions for autocomplete
+	suggestions: publicProcedure
+		.input(
+			z.object({
+				query: z.string().min(1),
+				limit: z.number().int().min(1).max(10).default(5),
+			}),
+		)
+		.query(async ({ input }) => {
+			const { query, limit } = input;
+			const searchTerm = `%${query}%`;
+
+			// Get top component names
+			const componentNames = await db
+				.select({ name: components.name })
+				.from(components)
+				.where(ilike(components.name, searchTerm))
+				.limit(limit);
+
+			// Get top tool names
+			const toolNames = await db
+				.select({ name: tools.name })
+				.from(tools)
+				.where(ilike(tools.name, searchTerm))
+				.limit(limit);
+
+			// Get top project names
+			const projectNames = await db
+				.select({ name: projects.name })
+				.from(projects)
+				.where(
+					and(
+						eq(projects.visibility, "public"),
+						ilike(projects.name, searchTerm),
+					),
+				)
+				.limit(limit);
+
+			const suggestions = [
+				...componentNames.map((c) => c.name),
+				...toolNames.map((t) => t.name),
+				...projectNames.map((p) => p.name),
+			]
+				.filter((name, index, array) => array.indexOf(name) === index) // Remove duplicates
+				.slice(0, limit);
+
+			return suggestions;
+		}),
+});

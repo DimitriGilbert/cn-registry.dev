@@ -169,7 +169,7 @@ async function importGitHubDataForComponents(): Promise<void> {
 			successCount++;
 			
 			// Rate limiting - GitHub allows 60 requests per hour without token, 5000 with token
-			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 100 : 1000));
+			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 1500 : 3000));
 			
 		} catch (error) {
 			console.error(`❌ Failed to fetch GitHub data for ${component.name}:`, error);
@@ -229,7 +229,7 @@ async function importGitHubDataForTools(): Promise<void> {
 			successCount++;
 			
 			// Rate limiting
-			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 100 : 1000));
+			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 1500 : 3000));
 			
 		} catch (error) {
 			console.error(`❌ Failed to fetch GitHub data for ${tool.name}:`, error);

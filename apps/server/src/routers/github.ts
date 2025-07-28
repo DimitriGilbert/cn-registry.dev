@@ -75,6 +75,9 @@ async function fetchGitHubData(
 
 		const repoData = await repoResponse.json();
 
+		// Rate limiting delay before next API call
+		await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000));
+
 		// Fetch README
 		let readme: string | null = null;
 		try {
@@ -98,6 +101,9 @@ async function fetchGitHubData(
 		} catch {
 			// README fetch failed, continue without it
 		}
+
+		// Rate limiting delay before next API call
+		await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000));
 
 		// Fetch latest commit
 		let lastCommit = repoData.updated_at;

@@ -6,6 +6,7 @@ import { componentsRouter } from "./components";
 import { creatorsRouter } from "./creators";
 import { githubRouter } from "./github";
 import { projectsRouter } from "./projects";
+import { searchRouter } from "./search";
 import { themesRouter } from "./themes";
 import { toolsRouter } from "./tools";
 import { usersRouter } from "./users";
@@ -32,6 +33,7 @@ export const appRouter = router({
 	projects: projectsRouter,
 	creators: creatorsRouter,
 	github: githubRouter,
+	search: searchRouter,
 	analytics: analyticsRouter,
 	admin: adminRouter,
 	themes: themesRouter,

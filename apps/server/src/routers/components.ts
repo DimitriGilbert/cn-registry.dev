@@ -6,6 +6,7 @@ import {
 	comments,
 	componentCategories,
 	components,
+	githubCache,
 	ratings,
 	stars,
 	user,
@@ -26,6 +27,36 @@ import {
 	starItemSchema,
 	updateComponentSchema,
 } from "../lib/validation";
+
+// Helper function to get GitHub data from cache
+async function getGitHubDataFromCache(repoUrl: string | null) {
+	if (!repoUrl) return null;
+	
+	try {
+		const cached = await db
+			.select()
+			.from(githubCache)
+			.where(eq(githubCache.repoUrl, repoUrl))
+			.limit(1);
+
+		if (cached[0]) {
+			const data = JSON.parse(cached[0].data);
+			return {
+				readme: data.readme || null,
+				stars: data.stargazers_count || data.stars || 0,
+				forks: data.forks_count || data.forks || 0,
+				issues: data.open_issues_count || data.issues || 0,
+				watchers: data.watchers_count || data.watchers || 0,
+				language: data.language || null,
+				lastCommit: data.lastCommit || data.updated_at || null,
+			};
+		}
+	} catch (error) {
+		console.error('Error fetching GitHub data from cache:', error);
+	}
+	
+	return null;
+}
 
 export const componentsRouter = router({
 	// Public: Get all components with filters and pagination
@@ -118,6 +149,9 @@ export const componentsRouter = router({
 						),
 					);
 
+				// Get GitHub data from cache
+				const githubData = await getGitHubDataFromCache(component.repoUrl);
+
 				return {
 					...component,
 					categories: componentCategoriesData
@@ -126,10 +160,10 @@ export const componentsRouter = router({
 					starsCount: starsCount.count,
 					githubUrl: component.repoUrl,
 					isStarred: false, // Will be updated in protected queries
-					forksCount: 0,
-					issuesCount: 0,
-					watchersCount: 0,
-					readme: null,
+					forksCount: githubData?.forks ?? 0,
+					issuesCount: githubData?.issues ?? 0,
+					watchersCount: githubData?.watchers ?? 0,
+					readme: githubData?.readme || null,
 					exampleCode: null,
 					previewUrl: null,
 				};
@@ -224,6 +258,9 @@ export const componentsRouter = router({
 			isStarred = !!userStar;
 		}
 
+		// Get GitHub data from cache
+		const githubData = await getGitHubDataFromCache(component[0].repoUrl);
+
 		return {
 			...component[0],
 			categories: componentCategoriesData
@@ -235,10 +272,10 @@ export const componentsRouter = router({
 				: null,
 			githubUrl: component[0].repoUrl,
 			isStarred,
-			forksCount: 0,
-			issuesCount: 0,
-			watchersCount: 0,
-			readme: null,
+			forksCount: githubData?.forks ?? 0,
+			issuesCount: githubData?.issues ?? 0,
+			watchersCount: githubData?.watchers ?? 0,
+			readme: githubData?.readme || null,
 			exampleCode: null,
 			previewUrl: null,
 		};
@@ -504,6 +541,9 @@ export const componentsRouter = router({
 							),
 						);
 
+					// Get GitHub data from cache
+					const githubData = await getGitHubDataFromCache(component.repoUrl);
+
 					return {
 						...component,
 						categories: componentCategoriesData
@@ -512,10 +552,10 @@ export const componentsRouter = router({
 						starsCount: starsCount.count,
 						githubUrl: component.repoUrl,
 						isStarred: false, // Will be updated in protected queries
-						forksCount: 0,
-						issuesCount: 0,
-						watchersCount: 0,
-						readme: null,
+						forksCount: githubData?.forks ?? 0,
+						issuesCount: githubData?.issues ?? 0,
+						watchersCount: githubData?.watchers ?? 0,
+						readme: githubData?.readme || null,
 						exampleCode: null,
 						previewUrl: null,
 					};
@@ -582,6 +622,9 @@ export const componentsRouter = router({
 						),
 					);
 
+				// Get GitHub data from cache
+				const githubData = await getGitHubDataFromCache(component.repoUrl);
+
 				return {
 					...component,
 					categories: componentCategoriesData
@@ -590,10 +633,10 @@ export const componentsRouter = router({
 					starsCount: starsCount.count,
 					githubUrl: component.repoUrl,
 					isStarred: false,
-					forksCount: 0,
-					issuesCount: 0,
-					watchersCount: 0,
-					readme: null,
+					forksCount: githubData?.forks ?? 0,
+					issuesCount: githubData?.issues ?? 0,
+					watchersCount: githubData?.watchers ?? 0,
+					readme: githubData?.readme || null,
 					exampleCode: null,
 					previewUrl: null,
 				};

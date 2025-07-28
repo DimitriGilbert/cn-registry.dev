@@ -248,8 +248,8 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 			progress.processed++;
 			progressCache.set(jobId, progress);
 
-			// Rate limiting - wait between requests
-			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 200 : 2000));
+			// Rate limiting - wait between requests (increased delays to avoid rate limiting)
+			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 2000 : 5000));
 		}
 
 		progress.completed = true;
@@ -902,8 +902,8 @@ export const adminRouter = router({
 							stars: repoData.stargazers_count
 						});
 						
-						// Rate limiting
-						await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 100 : 1000));
+						// Rate limiting (increased delays to avoid rate limiting)
+						await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 1500 : 3000));
 						
 					} catch (error) {
 						result.errors++;

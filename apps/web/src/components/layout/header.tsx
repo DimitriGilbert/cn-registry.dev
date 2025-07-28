@@ -1,12 +1,11 @@
 "use client";
 
-import { Search } from "lucide-react";
 import Link from "next/link";
 import { CartButton } from "@/components/features/cart";
+import { GlobalSearch } from "@/components/features/global-search";
 import { Container } from "@/components/layout/container";
 import { ThemeSelector } from "@/components/theme-selector";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Input } from "@/components/ui/input";
 import {
 	NavigationMenu,
 	NavigationMenuContent,
@@ -136,14 +135,7 @@ export function Header() {
 					</div>
 
 					<div className="flex items-center space-x-4">
-						<div className="relative">
-							<Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-							<Input
-								type="search"
-								placeholder="Search components..."
-								className="w-[300px] pl-8"
-							/>
-						</div>
+						<GlobalSearch className="w-[300px]" />
 						<CartButton />
 						<ThemeSelector />
 						<ThemeToggle />

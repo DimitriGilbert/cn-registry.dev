@@ -254,6 +254,77 @@ export default function ProjectDetailPage({
 		}),
 	);
 
+	// Remove collaborator mutation
+	const removeCollaborator = useMutation(
+		trpc.projects.removeCollaborator.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: ["projects", "getBySlugWithRole", { slug }],
+				});
+				toast.success("Collaborator removed from project");
+			},
+			onError: (error) => {
+				toast.error(`Failed to remove collaborator: ${error.message}`);
+			},
+		}),
+	);
+
+	// Update collaborator role mutation
+	const updateCollaboratorRole = useMutation(
+		trpc.projects.updateCollaboratorRole.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: ["projects", "getBySlugWithRole", { slug }],
+				});
+				toast.success("Collaborator role updated");
+			},
+			onError: (error) => {
+				toast.error(`Failed to update collaborator role: ${error.message}`);
+			},
+		}),
+	);
+
+	// Delete project mutation
+	const deleteProject = useMutation(
+		trpc.projects.delete.mutationOptions({
+			onSuccess: () => {
+				toast.success("Project deleted successfully");
+				router.push("/projects");
+			},
+			onError: (error) => {
+				toast.error(`Failed to delete project: ${error.message}`);
+			},
+		}),
+	);
+
+	// Handler functions
+	const handleRemoveCollaborator = (userId: string) => {
+		if (!project) return;
+		
+		removeCollaborator.mutate({
+			projectId: project.id,
+			userId,
+		});
+	};
+
+	const handleRoleChange = (userId: string, role: string) => {
+		if (!project) return;
+		
+		updateCollaboratorRole.mutate({
+			projectId: project.id,
+			userId,
+			role: role as "owner" | "editor" | "viewer",
+		});
+	};
+
+	const handleDeleteProject = () => {
+		if (!project) return;
+		
+		if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+			deleteProject.mutate({ id: project.id });
+		}
+	};
+
 	// Generate install config function
 	const handleGenerateConfig = async (
 		format: "registry" | "cli" | "package-json",
@@ -510,10 +581,10 @@ export default function ProjectDetailPage({
 										image: collaborator.user.image || undefined,
 									}}
 									onRemove={() => {
-										// TODO: Implement remove collaborator
+										handleRemoveCollaborator(collaborator.userId);
 									}}
 									onRoleChange={(newRole) => {
-										// TODO: Implement role change
+										handleRoleChange(collaborator.userId, newRole);
 									}}
 									canManage={isOwner}
 									isOwner={collaborator.role === "owner"}
@@ -538,7 +609,7 @@ export default function ProjectDetailPage({
 											<p className="mb-4 text-muted-foreground text-sm">
 												These actions cannot be undone.
 											</p>
-											<Button variant="destructive">
+											<Button variant="destructive" onClick={handleDeleteProject}>
 												<Trash2 className="mr-2 h-4 w-4" />
 												Delete Project
 											</Button>

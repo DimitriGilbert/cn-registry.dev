@@ -260,7 +260,7 @@ export default function ToolDetailPage({
 								stars={tool.starsCount || 0}
 								forks={tool.forksCount || 0}
 								issues={tool.issuesCount || 0}
-								watchers={tool.watchersCount || 0}
+								githubStars={tool.watchersCount || 0}
 							/>
 						)}
 

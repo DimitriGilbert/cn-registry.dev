@@ -31,6 +31,7 @@ async function getGitHubDataFromCache(repoUrl: string | null) {
 				watchers: data.watchers_count || data.watchers || 0,
 				language: data.language || null,
 				lastCommit: data.lastCommit || data.updated_at || null,
+				readme: data.readme || null,
 			};
 		}
 	} catch (dbError) {

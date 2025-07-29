@@ -5,15 +5,15 @@ interface RepoStatsProps {
 	stars: number;
 	forks: number;
 	issues: number;
-	watchers: number;
+	githubStars: number;
 }
 
-export function RepoStats({ stars, forks, issues, watchers }: RepoStatsProps) {
+export function RepoStats({ stars, forks, issues, githubStars }: RepoStatsProps) {
 	const stats = [
 		{ label: "Stars", value: stars, icon: Star },
 		{ label: "Forks", value: forks, icon: GitFork },
+		{ label: "GitHub Stars", value: githubStars, icon: Star },
 		{ label: "Issues", value: issues, icon: AlertCircle },
-		{ label: "GitHub Stars", value: stars, icon: Star },
 	];
 
 	return (

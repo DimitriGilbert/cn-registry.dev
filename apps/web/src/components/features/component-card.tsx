@@ -148,14 +148,6 @@ export function ComponentCard({
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="mb-4 flex items-center justify-between text-muted-foreground text-sm">
-					<div className="flex items-center gap-4">
-						<div className="flex items-center gap-1">
-							<Star className="h-3 w-3" />
-							{starsCount || 0}
-						</div>
-					</div>
-				</div>
 				<div className="flex items-center gap-2">
 					<Button asChild size="sm" className="flex-1">
 						<Link href={`/components/${id}`}>View Details</Link>

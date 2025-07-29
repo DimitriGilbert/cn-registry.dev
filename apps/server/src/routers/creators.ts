@@ -1,8 +1,44 @@
 import { count, desc, eq, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
-import { components, projects, stars, user } from "../db/schema";
+import { components, githubCache, projects, stars, user } from "../db/schema";
 import { protectedProcedure, publicProcedure, router } from "../lib/trpc";
+
+// Helper function to get GitHub data from cache
+async function getGitHubDataFromCache(repoUrl: string | null) {
+	if (!repoUrl) return null;
+	
+	try {
+		const cached = await db
+			.select()
+			.from(githubCache)
+			.where(eq(githubCache.repoUrl, repoUrl))
+			.limit(1);
+
+		if (cached[0]) {
+			let data;
+			try {
+				data = JSON.parse(cached[0].data);
+			} catch (parseError) {
+				console.error('Error parsing cached GitHub data for', repoUrl, ':', parseError);
+				return null;
+			}
+			
+			return {
+				stars: data.stargazers_count || data.stars || 0,
+				forks: data.forks_count || data.forks || 0,
+				issues: data.open_issues_count || data.issues || 0,
+				watchers: data.watchers_count || data.watchers || 0,
+				language: data.language || null,
+				lastCommit: data.lastCommit || data.updated_at || null,
+			};
+		}
+	} catch (dbError) {
+		console.error('Database error fetching GitHub data from cache for', repoUrl, ':', dbError);
+	}
+	
+	return null;
+}
 
 const usernameSchema = z.object({
 	username: z.string().min(1),
@@ -140,19 +176,20 @@ export const creatorsRouter = router({
 				.limit(limit)
 				.offset(offset);
 
-			// Get star counts for each component
+			// Get star counts and GitHub data for each component
 			const componentsWithStats = await Promise.all(
 				creatorComponents.map(async (component) => {
-					const starCount = await db
-						.select({ count: count() })
-						.from(stars)
-						.where(
-							sql`${stars.itemType} = 'component' AND ${stars.itemId} = ${component.id}`,
-						);
+					// Get GitHub data from cache
+					const githubData = await getGitHubDataFromCache(component.repoUrl);
 
 					return {
 						...component,
-						starsCount: starCount[0]?.count || 0,
+						starsCount: githubData?.stars ?? 0,
+						githubUrl: component.repoUrl,
+						forksCount: githubData?.forks ?? 0,
+						issuesCount: githubData?.issues ?? 0,
+						watchersCount: githubData?.watchers ?? 0,
+						readme: githubData?.readme || null,
 					};
 				}),
 			);

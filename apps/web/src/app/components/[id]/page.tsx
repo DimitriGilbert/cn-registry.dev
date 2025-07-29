@@ -286,8 +286,8 @@ export default function ComponentDetailPage({
 							<RepoStats
 								stars={component.starsCount || 0}
 								forks={component.forksCount || 0}
+								githubStars={component.githubStarsCount || 0}
 								issues={component.issuesCount || 0}
-								watchers={component.starsCount || 0}
 							/>
 						)}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, ExternalLink, Globe, MapPin, Users } from "lucide-react";
+import { CalendarDays, ExternalLink, Github, Globe, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import React from "react";
@@ -94,7 +94,16 @@ export default function CreatorProfilePage({ params }: PageProps) {
 		});
 	};
 
-	const socialLinks = (creator.socialLinks as Record<string, string>) || {};
+	let socialLinks = (creator.socialLinks as Record<string, string>) || {};
+	
+	// If GitHub URL is in bio (bad data), extract it and add to socialLinks
+	const githubMatch = creator.bio?.match(/GitHub:\s*(https?:\/\/github\.com\/[^\s]+)/);
+	if (githubMatch && !socialLinks.github) {
+		socialLinks = { ...socialLinks, github: githubMatch[1] };
+	}
+	
+	// Clean bio by removing GitHub link
+	const cleanBio = creator.bio?.replace(/GitHub:\s*https?:\/\/github\.com\/[^\s]+/g, '').trim();
 
 	return (
 		<Container>
@@ -128,8 +137,8 @@ export default function CreatorProfilePage({ params }: PageProps) {
 							<p className="text-muted-foreground">@{creator.username}</p>
 						</div>
 
-						{creator.bio && (
-							<p className="text-lg leading-relaxed">{creator.bio}</p>
+						{cleanBio && (
+							<p className="text-lg leading-relaxed">{cleanBio}</p>
 						)}
 
 						<div className="flex flex-wrap gap-4 text-muted-foreground text-sm">
@@ -168,7 +177,14 @@ export default function CreatorProfilePage({ params }: PageProps) {
 							{Object.entries(socialLinks).map(([platform, url]) => (
 								<Button key={platform} variant="outline" size="sm" asChild>
 									<a href={url} target="_blank" rel="noopener noreferrer">
-										{platform}
+										{platform === 'github' ? (
+											<>
+												<Github className="mr-2 h-4 w-4" />
+												GitHub
+											</>
+										) : (
+											platform
+										)}
 										<ExternalLink className="ml-1 h-3 w-3" />
 									</a>
 								</Button>
@@ -256,12 +272,7 @@ export default function CreatorProfilePage({ params }: PageProps) {
 										key={component.id}
 										{...component}
 										categories={[]}
-										githubUrl={component.repoUrl}
 										isStarred={false}
-										forksCount={0}
-										issuesCount={0}
-										watchersCount={0}
-										readme={null}
 										exampleCode={null}
 										previewUrl={null}
 										creator={{

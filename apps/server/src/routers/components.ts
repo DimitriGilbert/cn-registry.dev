@@ -285,6 +285,7 @@ export const componentsRouter = router({
 				: null,
 			githubUrl: component[0].repoUrl,
 			isStarred,
+			githubStarsCount: githubData?.stars ?? 0,
 			forksCount: githubData?.forks ?? 0,
 			issuesCount: githubData?.issues ?? 0,
 			watchersCount: githubData?.watchers ?? 0,

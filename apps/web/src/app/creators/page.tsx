@@ -5,6 +5,7 @@ import { Search, Star, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { z } from "zod";
+import { Pagination } from "@/components/ui/pagination";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -149,6 +150,8 @@ const searchSchema = z.object({
 
 export default function CreatorsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
+	const [trendingPage, setTrendingPage] = useState(1);
+	const [searchPage, setSearchPage] = useState(1);
 
 	const { Form: SearchForm } = useFormedible({
 		schema: searchSchema,
@@ -163,6 +166,7 @@ export default function CreatorsPage() {
 			defaultValues: { query: "" },
 			onSubmit: async ({ value }) => {
 				setSearchQuery(value.query);
+				setSearchPage(1); // Reset to first page on new search
 			},
 		},
 		showSubmitButton: false,
@@ -171,14 +175,15 @@ export default function CreatorsPage() {
 	const { data: searchResults, isLoading: searchLoading } = useQuery(
 		trpc.creators.search.queryOptions({
 			query: searchQuery || undefined,
-			page: 1,
-			limit: 20,
+			page: searchPage,
+			limit: 12,
 		}),
 	);
 
-	const { data: trending, isLoading: trendingLoading } = useQuery(
+	const { data: trendingData, isLoading: trendingLoading } = useQuery(
 		trpc.creators.getTrending.queryOptions({
 			period: "month",
+			page: trendingPage,
 			limit: 12,
 		}),
 	);
@@ -208,12 +213,23 @@ export default function CreatorsPage() {
 
 							{trendingLoading ? (
 								<CreatorsSkeleton />
-							) : trending && trending.length > 0 ? (
-								<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-									{trending.map((creator) => (
-										<CreatorCard key={creator.id} creator={creator} />
-									))}
-								</div>
+							) : trendingData?.creators && trendingData.creators.length > 0 ? (
+								<>
+									<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+										{trendingData.creators.map((creator) => (
+											<CreatorCard key={creator.id} creator={creator} />
+										))}
+									</div>
+									{trendingData.totalPages > 1 && (
+										<div className="flex justify-center mt-8">
+											<Pagination
+												currentPage={trendingPage}
+												totalPages={trendingData.totalPages}
+												onPageChange={setTrendingPage}
+											/>
+										</div>
+									)}
+								</>
 							) : (
 								<Card>
 									<CardContent className="p-8 text-center">
@@ -240,12 +256,23 @@ export default function CreatorsPage() {
 
 							{searchLoading ? (
 								<CreatorsSkeleton />
-							) : searchResults && searchResults.length > 0 ? (
-								<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-									{searchResults.map((creator) => (
-										<CreatorCard key={creator.id} creator={creator} />
-									))}
-								</div>
+							) : searchResults?.creators && searchResults.creators.length > 0 ? (
+								<>
+									<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+										{searchResults.creators.map((creator) => (
+											<CreatorCard key={creator.id} creator={creator} />
+										))}
+									</div>
+									{searchResults.totalPages > 1 && (
+										<div className="flex justify-center mt-8">
+											<Pagination
+												currentPage={searchPage}
+												totalPages={searchResults.totalPages}
+												onPageChange={setSearchPage}
+											/>
+										</div>
+									)}
+								</>
 							) : searchQuery ? (
 								<Card>
 									<CardContent className="p-8 text-center">

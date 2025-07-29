@@ -82,9 +82,9 @@ export function CollectionSection({
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{items.map((item) => {
 						if (itemType === "component") {
-							return <ComponentCard key={item.id} {...item} />;
+							return <ComponentCard key={item.id} {...item} disableHoverEffects={false} />;
 						}
-						return <ToolCard key={item.id} {...item} />;
+						return <ToolCard key={item.id} {...item} disableHoverEffects={false} />;
 					})}
 				</div>
 			);
@@ -118,9 +118,9 @@ export function CollectionSection({
 							className="pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
 						>
 							{itemType === "component" ? (
-								<ComponentCard {...item} />
+								<ComponentCard {...item} disableHoverEffects={true} />
 							) : (
-								<ToolCard {...item} />
+								<ToolCard {...item} disableHoverEffects={true} />
 							)}
 						</CarouselItem>
 					))}

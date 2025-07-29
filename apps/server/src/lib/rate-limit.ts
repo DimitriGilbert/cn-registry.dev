@@ -57,6 +57,6 @@ export function createRateLimit(limit: number, windowMs: number) {
 }
 
 // Pre-configured rate limiters
-export const apiRateLimit = createRateLimit(100, 15 * 60 * 1000); // 100 requests per 15 minutes
-export const authRateLimit = createRateLimit(5, 15 * 60 * 1000); // 5 requests per 15 minutes
-export const adminRateLimit = createRateLimit(1000, 15 * 60 * 1000); // 1000 requests per 15 minutes for admin
+export const apiRateLimit = createRateLimit(5000, 15 * 60 * 1000); // 5000 requests per 15 minutes
+export const authRateLimit = createRateLimit(2000, 15 * 60 * 1000); // 2000 requests per 15 minutes
+export const adminRateLimit = createRateLimit(10000, 15 * 60 * 1000); // 10000 requests per 15 minutes for admin

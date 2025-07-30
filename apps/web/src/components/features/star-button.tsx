@@ -27,7 +27,7 @@ export function StarButton({
 			disabled={isLoading}
 			className={cn(
 				"flex items-center gap-1 p-1",
-				isStarred && "text-yellow-500",
+				isStarred && "text-warning",
 			)}
 		>
 			<Star className={cn("h-4 w-4", isStarred && "fill-current")} />

@@ -93,7 +93,7 @@ export function CollectionSection({
 
 		const plugins = [
 			Autoplay({
-				delay: 2000,
+				delay: 5000,
 			}),
 			...(animationType === "fade" ? [Fade()] : []),
 		];

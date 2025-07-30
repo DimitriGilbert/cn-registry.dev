@@ -105,7 +105,7 @@ function SaveProjectDialog({
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
               placeholder="My Component Library"
-              className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isLoading}
             />
           </div>
@@ -122,7 +122,7 @@ function SaveProjectDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="A collection of components for my project"
               rows={3}
-              className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isLoading}
             />
           </div>

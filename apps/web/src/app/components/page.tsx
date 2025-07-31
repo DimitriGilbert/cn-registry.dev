@@ -2,9 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { ComponentCard } from "@/components/features/component-card";
 import { FilterPanel } from "@/components/features/filter-panel";
-import { SearchBar } from "@/components/features/search-bar";
+import { useFormedible } from "@/hooks/use-formedible";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import {
@@ -25,6 +26,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/utils/trpc";
 
+const searchSchema = z.object({
+	query: z.string(),
+});
+
 export default function ComponentsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -32,6 +37,25 @@ export default function ComponentsPage() {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	const itemsPerPage = 12;
+
+	const { Form: SearchForm } = useFormedible({
+		schema: searchSchema,
+		fields: [
+			{
+				name: "query",
+				type: "text",
+				placeholder: "Search components...",
+			},
+		],
+		formOptions: {
+			defaultValues: { query: "" },
+			onSubmit: async ({ value }) => {
+				setSearchQuery(value.query);
+				setCurrentPage(1);
+			},
+		},
+		showSubmitButton: false,
+	});
 
 	// Fetch categories for filtering
 	const { data: categories } = useQuery(trpc.categories.getAll.queryOptions());
@@ -89,11 +113,7 @@ export default function ComponentsPage() {
 						<div className="relative bg-card/50 backdrop-blur-sm border rounded-2xl p-6 shadow-sm">
 							<div className="flex flex-col gap-6 lg:flex-row lg:items-end">
 								<div className="flex-1">
-									<SearchBar
-										placeholder="Search components..."
-										onSearch={setSearchQuery}
-										suggestions={["data table", "form", "chart", "calendar"]}
-									/>
+									<SearchForm />
 								</div>
 								<div className="flex items-center gap-4">
 									<FilterPanel

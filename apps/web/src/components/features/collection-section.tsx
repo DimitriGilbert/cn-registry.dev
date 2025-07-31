@@ -17,7 +17,7 @@ import {
 } from "@/components/features/enhanced-carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type AnimationType = "default" | "fade" | "scale" | "opacity";
+type AnimationType = "fade" | "scale" | "opacity" | "grow-opacity";
 
 interface CollectionSectionProps {
 	title: string;
@@ -42,7 +42,7 @@ export function CollectionSection({
 	layout = "carousel",
 	emptyMessage,
 	skeletonCount = 4,
-	animationType = "default",
+	animationType = "scale",
 }: CollectionSectionProps) {
 	const renderSkeleton = () => {
 		if (layout === "grid") {
@@ -93,12 +93,14 @@ export function CollectionSection({
 
 		const plugins = [
 			Autoplay({
-				delay: 5000,
+				delay: 10000,
+				stopOnInteraction: false,
+				stopOnMouseEnter: true,
 			}),
 			...(animationType === "fade" ? [Fade()] : []),
 		];
 
-		const tweenEffect = animationType === "scale" || animationType === "opacity" ? animationType : null;
+		const tweenEffect = animationType === "scale" || animationType === "opacity" || animationType === "grow-opacity" ? animationType : null;
 
 		return (
 			<Carousel

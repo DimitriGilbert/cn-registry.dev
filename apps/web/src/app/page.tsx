@@ -227,58 +227,70 @@ export default function HomePage() {
               </p>
             </div>
             
-            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="rounded-lg bg-destructive/10 p-2">
-                    <AlertTriangle className="h-6 w-6 text-destructive" />
+            <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+              {/* Problem Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-destructive/20 bg-gradient-to-br from-destructive/5 via-destructive/2 to-transparent p-8 transition-all hover:border-destructive/30 hover:shadow-lg hover:shadow-destructive/5">
+                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-destructive/10 blur-xl transition-all group-hover:bg-destructive/15"></div>
+                <div className="relative">
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 ring-1 ring-destructive/20 transition-all group-hover:bg-destructive/15 group-hover:ring-destructive/30">
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
+                    </div>
+                    <h3 className="text-2xl font-bold">The Problem</h3>
                   </div>
-                  <h3 className="text-xl font-semibold">The Problem</h3>
+                  <p className="text-lg leading-relaxed text-muted-foreground">
+                    You want a gradient card or a dashboard chart but instead you're crawling Reddit, Discord, npm, and some guy's Notion doc from 2022.
+                  </p>
+                  <div className="mt-6 flex items-center gap-2 text-sm text-destructive font-medium">
+                    <div className="h-1.5 w-1.5 rounded-full bg-destructive"></div>
+                    Frustrating developer experience
+                  </div>
                 </div>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  You want a gradient card or a dashboard chart but instead you're crawling Reddit, Discord, npm, and some guy's Notion doc from 2022.
-                </p>
               </div>
               
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="rounded-lg bg-green-500/10 p-2">
-                    <Sparkles className="h-6 w-6 text-green-500" />
-                  </div>
-                  <h3 className="text-xl font-semibold">The Solution</h3>
-                </div>
-                <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  This registry brings it all to one place:
-                </p>
-                
-                <div className="space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-lg p-3" style={{backgroundColor: 'color-mix(in srgb, var(--chart-1) 10%, transparent)'}}>
-                      <Eye className="h-5 w-5" style={{color: 'var(--chart-1)'}} />
+              {/* Solution Card */}
+              <div className="group relative overflow-hidden rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/5 via-green-500/2 to-transparent p-8 transition-all hover:border-green-500/30 hover:shadow-lg hover:shadow-green-500/5">
+                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-green-500/10 blur-xl transition-all group-hover:bg-green-500/15"></div>
+                <div className="relative">
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/10 ring-1 ring-green-500/20 transition-all group-hover:bg-green-500/15 group-hover:ring-green-500/30">
+                      <Sparkles className="h-6 w-6 text-green-500" />
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="font-semibold">Live previews</h4>
-                      <p className="text-muted-foreground text-sm">(coming soon™)</p>
-                    </div>
+                    <h3 className="text-2xl font-bold">The Solution</h3>
                   </div>
+                  <p className="text-lg leading-relaxed text-muted-foreground mb-8">
+                    This registry brings it all to one place:
+                  </p>
                   
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-lg p-3" style={{backgroundColor: 'color-mix(in srgb, var(--chart-2) 10%, transparent)'}}>
-                      <GitBranch className="h-5 w-5" style={{color: 'var(--chart-2)'}} />
+                  <div className="space-y-6">
+                    <div className="flex items-start gap-4 rounded-xl bg-background/50 p-4 ring-1 ring-border/50 transition-all hover:ring-border">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{backgroundColor: 'color-mix(in srgb, var(--chart-1) 15%, transparent)'}}>
+                        <Eye className="h-5 w-5" style={{color: 'var(--chart-1)'}} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold">Live previews</h4>
+                        <p className="text-muted-foreground text-sm">(coming soon™)</p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="font-semibold">Complete metadata</h4>
-                      <p className="text-muted-foreground text-sm">GitHub metadata, install commands, and README in one view</p>
+                    
+                    <div className="flex items-start gap-4 rounded-xl bg-background/50 p-4 ring-1 ring-border/50 transition-all hover:ring-border">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{backgroundColor: 'color-mix(in srgb, var(--chart-2) 15%, transparent)'}}>
+                        <GitBranch className="h-5 w-5" style={{color: 'var(--chart-2)'}} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold">Complete metadata</h4>
+                        <p className="text-muted-foreground text-sm">GitHub metadata, install commands, and README in one view</p>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-lg p-3" style={{backgroundColor: 'color-mix(in srgb, var(--chart-3) 10%, transparent)'}}>
-                      <Filter className="h-5 w-5" style={{color: 'var(--chart-3)'}} />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-semibold">Actually works</h4>
-                      <p className="text-muted-foreground text-sm">Tags, categories, and filters that actually work</p>
+                    
+                    <div className="flex items-start gap-4 rounded-xl bg-background/50 p-4 ring-1 ring-border/50 transition-all hover:ring-border">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" style={{backgroundColor: 'color-mix(in srgb, var(--chart-3) 15%, transparent)'}}>
+                        <Filter className="h-5 w-5" style={{color: 'var(--chart-3)'}} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold">Actually works</h4>
+                        <p className="text-muted-foreground text-sm">Tags, categories, and filters that actually work</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -321,7 +333,7 @@ export default function HomePage() {
           itemType="tool"
           layout="carousel"
           skeletonCount={10}
-          animationType="default"
+          animationType="grow-opacity"
         />
       </div>
     </Container>

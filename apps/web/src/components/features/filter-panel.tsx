@@ -71,14 +71,14 @@ export function FilterPanel({
 						)}
 					</Button>
 				</SheetTrigger>
-				<SheetContent>
-					<SheetHeader>
+				<SheetContent className="p-6">
+					<SheetHeader className="pb-6">
 						<SheetTitle>Filters</SheetTitle>
 						<SheetDescription>
 							Filter components by category and features
 						</SheetDescription>
 					</SheetHeader>
-					<div className="mt-6 space-y-6">
+					<div className="space-y-6">
 						{filterGroups.map((group) => (
 							<div key={group.id} className="space-y-3">
 								<h4 className="font-medium">{group.label}</h4>
@@ -111,7 +111,7 @@ export function FilterPanel({
 						))}
 					</div>
 					{selectedFilters.length > 0 && (
-						<div className="mt-6">
+						<div className="pt-6 border-t">
 							<Button
 								variant="outline"
 								onClick={clearFilters}

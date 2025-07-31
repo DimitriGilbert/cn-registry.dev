@@ -17,7 +17,7 @@ type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
 type CarouselOptions = UseCarouselParameters[0];
 type CarouselPlugin = UseCarouselParameters[1];
 
-type TweenEffect = "scale" | "opacity" | null;
+type TweenEffect = "scale" | "opacity" | "grow-opacity" | null;
 
 type CarouselProps = {
 	opts?: CarouselOptions;
@@ -25,6 +25,7 @@ type CarouselProps = {
 	orientation?: "horizontal" | "vertical";
 	setApi?: (api: CarouselApi) => void;
 	tweenEffect?: TweenEffect;
+	pauseOnHover?: boolean;
 };
 
 type CarouselContextProps = {
@@ -35,6 +36,11 @@ type CarouselContextProps = {
 	canScrollPrev: boolean;
 	canScrollNext: boolean;
 } & CarouselProps;
+
+type CarouselState = {
+	isHovered: boolean;
+	isAutoplayPaused: boolean;
+};
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
@@ -60,6 +66,7 @@ function Carousel({
 	setApi,
 	plugins,
 	tweenEffect,
+	pauseOnHover = true,
 	className,
 	children,
 	...props
@@ -73,6 +80,7 @@ function Carousel({
 	);
 	const [canScrollPrev, setCanScrollPrev] = React.useState(false);
 	const [canScrollNext, setCanScrollNext] = React.useState(false);
+	const [isHovered, setIsHovered] = React.useState(false);
 	const tweenFactor = React.useRef(0);
 	const tweenNodes = React.useRef<HTMLElement[]>([]);
 
@@ -176,6 +184,52 @@ function Carousel({
 		[]
 	);
 
+	const tweenGrowOpacity = React.useCallback(
+		(emblaApi: EmblaCarouselType, eventName?: EmblaEventType) => {
+			const engine = emblaApi.internalEngine();
+			const scrollProgress = emblaApi.scrollProgress();
+			const slidesInView = emblaApi.slidesInView();
+			const isScrollEvent = eventName === 'scroll';
+
+			emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
+				let diffToTarget = scrollSnap - scrollProgress;
+				const slidesInSnap = engine.slideRegistry[snapIndex];
+
+				slidesInSnap.forEach((slideIndex) => {
+					if (isScrollEvent && !slidesInView.includes(slideIndex)) return;
+
+					if (engine.options.loop) {
+						engine.slideLooper.loopPoints.forEach((loopItem) => {
+							const target = loopItem.target();
+
+							if (slideIndex === loopItem.index && target !== 0) {
+								const sign = Math.sign(target);
+
+								if (sign === -1) {
+									diffToTarget = scrollSnap - (1 + scrollProgress);
+								}
+								if (sign === 1) {
+									diffToTarget = scrollSnap + (1 - scrollProgress);
+								}
+							}
+						});
+					}
+
+					const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current);
+					const scale = numberWithinRange(tweenValue, 0, 1).toString();
+					const opacity = numberWithinRange(tweenValue, 0, 1).toString();
+					
+					const tweenNode = tweenNodes.current[slideIndex];
+					const slideNode = emblaApi.slideNodes()[slideIndex];
+					
+					tweenNode.style.transform = `scale(${scale})`;
+					slideNode.style.opacity = opacity;
+				});
+			});
+		},
+		[]
+	);
+
 	const onSelect = React.useCallback((api: CarouselApi) => {
 		if (!api) return;
 		setCanScrollPrev(api.canScrollPrev());
@@ -212,6 +266,26 @@ function Carousel({
 		},
 		[orientation, scrollPrev, scrollNext],
 	);
+
+	const handleMouseEnter = React.useCallback(() => {
+		setIsHovered(true);
+		if (pauseOnHover && api) {
+			const autoplayPlugin = plugins?.find(plugin => plugin.name === 'autoplay');
+			if (autoplayPlugin && 'stop' in autoplayPlugin) {
+				(autoplayPlugin as any).stop();
+			}
+		}
+	}, [pauseOnHover, api, plugins]);
+
+	const handleMouseLeave = React.useCallback(() => {
+		setIsHovered(false);
+		if (pauseOnHover && api) {
+			const autoplayPlugin = plugins?.find(plugin => plugin.name === 'autoplay');
+			if (autoplayPlugin && 'play' in autoplayPlugin) {
+				(autoplayPlugin as any).play();
+			}
+		}
+	}, [pauseOnHover, api, plugins]);
 
 	React.useEffect(() => {
 		if (!api || !setApi) return;
@@ -268,8 +342,27 @@ function Carousel({
 				api?.off('scroll', tweenOpacity);
 				api?.off('slideFocus', tweenOpacity);
 			};
+		} else if (tweenEffect === "grow-opacity") {
+			setTweenNodes(api);
+			setTweenFactorScale(api);
+			tweenGrowOpacity(api);
+
+			api
+				.on('reInit', setTweenNodes)
+				.on('reInit', setTweenFactorScale)
+				.on('reInit', tweenGrowOpacity)
+				.on('scroll', tweenGrowOpacity)
+				.on('slideFocus', tweenGrowOpacity);
+
+			return () => {
+				api?.off('reInit', setTweenNodes);
+				api?.off('reInit', setTweenFactorScale);
+				api?.off('reInit', tweenGrowOpacity);
+				api?.off('scroll', tweenGrowOpacity);
+				api?.off('slideFocus', tweenGrowOpacity);
+			};
 		}
-	}, [api, tweenEffect, setTweenNodes, setTweenFactorScale, setTweenFactorOpacity, tweenScale, tweenOpacity]);
+	}, [api, tweenEffect, setTweenNodes, setTweenFactorScale, setTweenFactorOpacity, tweenScale, tweenOpacity, tweenGrowOpacity]);
 
 	return (
 		<CarouselContext.Provider
@@ -288,6 +381,8 @@ function Carousel({
 		>
 			<div
 				onKeyDownCapture={handleKeyDown}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
 				className={cn("relative", className)}
 				role="region"
 				aria-roledescription="carousel"

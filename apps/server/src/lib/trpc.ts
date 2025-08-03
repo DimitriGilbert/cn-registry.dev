@@ -73,9 +73,9 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 			message: "Admin role required",
 		});
 	}
-	
+
 	// Apply admin rate limit (higher limit)
 	adminRateLimit(ctx.user.id);
-	
+
 	return next({ ctx });
 });

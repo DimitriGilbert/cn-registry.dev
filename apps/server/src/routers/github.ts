@@ -54,29 +54,38 @@ async function fetchGitHubData(
 					Accept: "application/vnd.github.v3+json",
 					"User-Agent": "CN-Registry",
 					...(process.env.GITHUB_TOKEN && {
-						"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-					})
+						Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+					}),
 				},
 			},
 		);
 
 		if (!repoResponse.ok) {
 			const errorText = await repoResponse.text();
-			console.error(`GitHub API error for ${owner}/${repo}: ${repoResponse.status} ${repoResponse.statusText}`, errorText);
-			
+			console.error(
+				`GitHub API error for ${owner}/${repo}: ${repoResponse.status} ${repoResponse.statusText}`,
+				errorText,
+			);
+
 			if (repoResponse.status === 403) {
-				throw new Error(`GitHub API rate limit exceeded. Please wait and try again later.`);
+				throw new Error(
+					"GitHub API rate limit exceeded. Please wait and try again later.",
+				);
 			}
 			if (repoResponse.status === 404) {
 				throw new Error(`Repository ${owner}/${repo} not found.`);
 			}
-			throw new Error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`);
+			throw new Error(
+				`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`,
+			);
 		}
 
 		const repoData = await repoResponse.json();
 
 		// Rate limiting delay before next API call
-		await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000));
+		await new Promise((resolve) =>
+			setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000),
+		);
 
 		// Fetch README
 		let readme: string | null = null;
@@ -88,8 +97,8 @@ async function fetchGitHubData(
 						Accept: "application/vnd.github.v3+json",
 						"User-Agent": "CN-Registry",
 						...(process.env.GITHUB_TOKEN && {
-							"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-						})
+							Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+						}),
 					},
 				},
 			);
@@ -103,7 +112,9 @@ async function fetchGitHubData(
 		}
 
 		// Rate limiting delay before next API call
-		await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000));
+		await new Promise((resolve) =>
+			setTimeout(resolve, process.env.GITHUB_TOKEN ? 500 : 1000),
+		);
 
 		// Fetch latest commit
 		let lastCommit = repoData.updated_at;
@@ -115,8 +126,8 @@ async function fetchGitHubData(
 						Accept: "application/vnd.github.v3+json",
 						"User-Agent": "CN-Registry",
 						...(process.env.GITHUB_TOKEN && {
-							"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-						})
+							Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+						}),
 					},
 				},
 			);
@@ -247,8 +258,8 @@ export const githubRouter = router({
 							Accept: "application/vnd.github.v3+json",
 							"User-Agent": "CN-Registry",
 							...(process.env.GITHUB_TOKEN && {
-								"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-							})
+								Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+							}),
 						},
 					},
 				);
@@ -312,23 +323,30 @@ export const githubRouter = router({
 							Accept: "application/vnd.github.v3+json",
 							"User-Agent": "CN-Registry",
 							...(process.env.GITHUB_TOKEN && {
-								"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-							})
+								Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+							}),
 						},
 					},
 				);
 
 				if (!repoResponse.ok) {
 					const errorText = await repoResponse.text();
-					console.error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`, errorText);
-					
+					console.error(
+						`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`,
+						errorText,
+					);
+
 					if (repoResponse.status === 403) {
-						throw new Error(`GitHub API rate limit exceeded. Please wait and try again later.`);
+						throw new Error(
+							"GitHub API rate limit exceeded. Please wait and try again later.",
+						);
 					}
 					if (repoResponse.status === 404) {
-						throw new Error(`Repository not found.`);
+						throw new Error("Repository not found.");
 					}
-					throw new Error(`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`);
+					throw new Error(
+						`GitHub API error: ${repoResponse.status} ${repoResponse.statusText}`,
+					);
 				}
 
 				const repoData = await repoResponse.json();

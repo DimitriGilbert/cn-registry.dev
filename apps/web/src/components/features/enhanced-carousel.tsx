@@ -1,5 +1,6 @@
 "use client";
 
+import type { EmblaCarouselType, EmblaEventType } from "embla-carousel";
 import useEmblaCarousel, {
 	type UseEmblaCarouselType,
 } from "embla-carousel-react";
@@ -7,10 +8,6 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type {
-	EmblaCarouselType,
-	EmblaEventType,
-} from "embla-carousel";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -84,31 +81,42 @@ function Carousel({
 	const tweenFactor = React.useRef(0);
 	const tweenNodes = React.useRef<HTMLElement[]>([]);
 
-	const setTweenNodes = React.useCallback((emblaApi: EmblaCarouselType): void => {
-		tweenNodes.current = emblaApi.slideNodes().map((slideNode) => {
-			const firstChild = slideNode.firstElementChild;
-			if (!firstChild || !(firstChild instanceof HTMLElement)) {
-				console.warn('Slide node missing HTMLElement child');
-				return slideNode as HTMLElement; // fallback to the slide node itself
-			}
-			return firstChild;
-		});
-	}, []);
+	const setTweenNodes = React.useCallback(
+		(emblaApi: EmblaCarouselType): void => {
+			tweenNodes.current = emblaApi.slideNodes().map((slideNode) => {
+				const firstChild = slideNode.firstElementChild;
+				if (!firstChild || !(firstChild instanceof HTMLElement)) {
+					console.warn("Slide node missing HTMLElement child");
+					return slideNode as HTMLElement; // fallback to the slide node itself
+				}
+				return firstChild;
+			});
+		},
+		[],
+	);
 
-	const setTweenFactorScale = React.useCallback((emblaApi: EmblaCarouselType) => {
-		tweenFactor.current = TWEEN_FACTOR_BASE_SCALE * emblaApi.scrollSnapList().length;
-	}, []);
+	const setTweenFactorScale = React.useCallback(
+		(emblaApi: EmblaCarouselType) => {
+			tweenFactor.current =
+				TWEEN_FACTOR_BASE_SCALE * emblaApi.scrollSnapList().length;
+		},
+		[],
+	);
 
-	const setTweenFactorOpacity = React.useCallback((emblaApi: EmblaCarouselType) => {
-		tweenFactor.current = TWEEN_FACTOR_BASE_OPACITY * emblaApi.scrollSnapList().length;
-	}, []);
+	const setTweenFactorOpacity = React.useCallback(
+		(emblaApi: EmblaCarouselType) => {
+			tweenFactor.current =
+				TWEEN_FACTOR_BASE_OPACITY * emblaApi.scrollSnapList().length;
+		},
+		[],
+	);
 
 	const tweenScale = React.useCallback(
 		(emblaApi: EmblaCarouselType, eventName?: EmblaEventType) => {
 			const engine = emblaApi.internalEngine();
 			const scrollProgress = emblaApi.scrollProgress();
 			const slidesInView = emblaApi.slidesInView();
-			const isScrollEvent = eventName === 'scroll';
+			const isScrollEvent = eventName === "scroll";
 
 			emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
 				let diffToTarget = scrollSnap - scrollProgress;
@@ -141,7 +149,7 @@ function Carousel({
 				});
 			});
 		},
-		[]
+		[],
 	);
 
 	const tweenOpacity = React.useCallback(
@@ -149,7 +157,7 @@ function Carousel({
 			const engine = emblaApi.internalEngine();
 			const scrollProgress = emblaApi.scrollProgress();
 			const slidesInView = emblaApi.slidesInView();
-			const isScrollEvent = eventName === 'scroll';
+			const isScrollEvent = eventName === "scroll";
 
 			emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
 				let diffToTarget = scrollSnap - scrollProgress;
@@ -181,7 +189,7 @@ function Carousel({
 				});
 			});
 		},
-		[]
+		[],
 	);
 
 	const tweenGrowOpacity = React.useCallback(
@@ -189,7 +197,7 @@ function Carousel({
 			const engine = emblaApi.internalEngine();
 			const scrollProgress = emblaApi.scrollProgress();
 			const slidesInView = emblaApi.slidesInView();
-			const isScrollEvent = eventName === 'scroll';
+			const isScrollEvent = eventName === "scroll";
 
 			emblaApi.scrollSnapList().forEach((scrollSnap, snapIndex) => {
 				let diffToTarget = scrollSnap - scrollProgress;
@@ -218,16 +226,16 @@ function Carousel({
 					const tweenValue = 1 - Math.abs(diffToTarget * tweenFactor.current);
 					const scale = numberWithinRange(tweenValue, 0, 1).toString();
 					const opacity = numberWithinRange(tweenValue, 0, 1).toString();
-					
+
 					const tweenNode = tweenNodes.current[slideIndex];
 					const slideNode = emblaApi.slideNodes()[slideIndex];
-					
+
 					tweenNode.style.transform = `scale(${scale})`;
 					slideNode.style.opacity = opacity;
 				});
 			});
 		},
-		[]
+		[],
 	);
 
 	const onSelect = React.useCallback((api: CarouselApi) => {
@@ -270,8 +278,10 @@ function Carousel({
 	const handleMouseEnter = React.useCallback(() => {
 		setIsHovered(true);
 		if (pauseOnHover && api) {
-			const autoplayPlugin = plugins?.find(plugin => plugin.name === 'autoplay');
-			if (autoplayPlugin && 'stop' in autoplayPlugin) {
+			const autoplayPlugin = plugins?.find(
+				(plugin) => plugin.name === "autoplay",
+			);
+			if (autoplayPlugin && "stop" in autoplayPlugin) {
 				(autoplayPlugin as any).stop();
 			}
 		}
@@ -280,8 +290,10 @@ function Carousel({
 	const handleMouseLeave = React.useCallback(() => {
 		setIsHovered(false);
 		if (pauseOnHover && api) {
-			const autoplayPlugin = plugins?.find(plugin => plugin.name === 'autoplay');
-			if (autoplayPlugin && 'play' in autoplayPlugin) {
+			const autoplayPlugin = plugins?.find(
+				(plugin) => plugin.name === "autoplay",
+			);
+			if (autoplayPlugin && "play" in autoplayPlugin) {
 				(autoplayPlugin as any).play();
 			}
 		}
@@ -313,56 +325,67 @@ function Carousel({
 			tweenScale(api);
 
 			api
-				.on('reInit', setTweenNodes)
-				.on('reInit', setTweenFactorScale)
-				.on('reInit', tweenScale)
-				.on('scroll', tweenScale)
-				.on('slideFocus', tweenScale);
+				.on("reInit", setTweenNodes)
+				.on("reInit", setTweenFactorScale)
+				.on("reInit", tweenScale)
+				.on("scroll", tweenScale)
+				.on("slideFocus", tweenScale);
 
 			return () => {
-				api?.off('reInit', setTweenNodes);
-				api?.off('reInit', setTweenFactorScale);
-				api?.off('reInit', tweenScale);
-				api?.off('scroll', tweenScale);
-				api?.off('slideFocus', tweenScale);
+				api?.off("reInit", setTweenNodes);
+				api?.off("reInit", setTweenFactorScale);
+				api?.off("reInit", tweenScale);
+				api?.off("scroll", tweenScale);
+				api?.off("slideFocus", tweenScale);
 			};
-		} else if (tweenEffect === "opacity") {
+		}
+		if (tweenEffect === "opacity") {
 			setTweenFactorOpacity(api);
 			tweenOpacity(api);
 
 			api
-				.on('reInit', setTweenFactorOpacity)
-				.on('reInit', tweenOpacity)
-				.on('scroll', tweenOpacity)
-				.on('slideFocus', tweenOpacity);
+				.on("reInit", setTweenFactorOpacity)
+				.on("reInit", tweenOpacity)
+				.on("scroll", tweenOpacity)
+				.on("slideFocus", tweenOpacity);
 
 			return () => {
-				api?.off('reInit', setTweenFactorOpacity);
-				api?.off('reInit', tweenOpacity);
-				api?.off('scroll', tweenOpacity);
-				api?.off('slideFocus', tweenOpacity);
+				api?.off("reInit", setTweenFactorOpacity);
+				api?.off("reInit", tweenOpacity);
+				api?.off("scroll", tweenOpacity);
+				api?.off("slideFocus", tweenOpacity);
 			};
-		} else if (tweenEffect === "grow-opacity") {
+		}
+		if (tweenEffect === "grow-opacity") {
 			setTweenNodes(api);
 			setTweenFactorScale(api);
 			tweenGrowOpacity(api);
 
 			api
-				.on('reInit', setTweenNodes)
-				.on('reInit', setTweenFactorScale)
-				.on('reInit', tweenGrowOpacity)
-				.on('scroll', tweenGrowOpacity)
-				.on('slideFocus', tweenGrowOpacity);
+				.on("reInit", setTweenNodes)
+				.on("reInit", setTweenFactorScale)
+				.on("reInit", tweenGrowOpacity)
+				.on("scroll", tweenGrowOpacity)
+				.on("slideFocus", tweenGrowOpacity);
 
 			return () => {
-				api?.off('reInit', setTweenNodes);
-				api?.off('reInit', setTweenFactorScale);
-				api?.off('reInit', tweenGrowOpacity);
-				api?.off('scroll', tweenGrowOpacity);
-				api?.off('slideFocus', tweenGrowOpacity);
+				api?.off("reInit", setTweenNodes);
+				api?.off("reInit", setTweenFactorScale);
+				api?.off("reInit", tweenGrowOpacity);
+				api?.off("scroll", tweenGrowOpacity);
+				api?.off("slideFocus", tweenGrowOpacity);
 			};
 		}
-	}, [api, tweenEffect, setTweenNodes, setTweenFactorScale, setTweenFactorOpacity, tweenScale, tweenOpacity, tweenGrowOpacity]);
+	}, [
+		api,
+		tweenEffect,
+		setTweenNodes,
+		setTweenFactorScale,
+		setTweenFactorOpacity,
+		tweenScale,
+		tweenOpacity,
+		tweenGrowOpacity,
+	]);
 
 	return (
 		<CarouselContext.Provider

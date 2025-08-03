@@ -48,7 +48,13 @@ export function ReadmeViewer({
 							rehypePlugins={[rehypeHighlight, rehypeRaw]}
 							components={{
 								// Custom components for better styling
-								code: ({ node, inline, className, children, ...props }: any) => {
+								code: ({
+									node,
+									inline,
+									className,
+									children,
+									...props
+								}: any) => {
 									const match = /language-(\w+)/.exec(className || "");
 									return !inline && match ? (
 										<code className={className} {...props}>
@@ -56,7 +62,7 @@ export function ReadmeViewer({
 										</code>
 									) : (
 										<code
-											className="px-1 py-0.5 bg-muted rounded text-sm font-mono"
+											className="rounded bg-muted px-1 py-0.5 font-mono text-sm"
 											{...props}
 										>
 											{children}
@@ -65,7 +71,7 @@ export function ReadmeViewer({
 								},
 								pre: ({ children, ...props }: any) => (
 									<pre
-										className="bg-muted p-4 rounded-lg overflow-x-auto text-sm"
+										className="overflow-x-auto rounded-lg bg-muted p-4 text-sm"
 										{...props}
 									>
 										{children}
@@ -73,7 +79,7 @@ export function ReadmeViewer({
 								),
 								blockquote: ({ children, ...props }: any) => (
 									<blockquote
-										className="border-l-4 border-muted-foreground/20 pl-4 italic text-muted-foreground"
+										className="border-muted-foreground/20 border-l-4 pl-4 text-muted-foreground italic"
 										{...props}
 									>
 										{children}

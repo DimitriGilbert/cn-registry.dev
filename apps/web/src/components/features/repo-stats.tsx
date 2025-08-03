@@ -8,7 +8,12 @@ interface RepoStatsProps {
 	githubStars: number;
 }
 
-export function RepoStats({ stars, forks, issues, githubStars }: RepoStatsProps) {
+export function RepoStats({
+	stars,
+	forks,
+	issues,
+	githubStars,
+}: RepoStatsProps) {
 	const stats = [
 		{ label: "Stars", value: stars, icon: Star },
 		{ label: "Forks", value: forks, icon: GitFork },

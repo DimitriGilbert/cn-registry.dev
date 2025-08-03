@@ -11,16 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
 
-const importSchema = z.object({
-	componentsJson: z.string().optional(),
-	jsonFile: z.instanceof(File).optional(),
-}).refine(
-	(data) => data.componentsJson || data.jsonFile,
-	{
+const importSchema = z
+	.object({
+		componentsJson: z.string().optional(),
+		jsonFile: z.instanceof(File).optional(),
+	})
+	.refine((data) => data.componentsJson || data.jsonFile, {
 		message: "Please either paste JSON content or upload a file",
 		path: ["componentsJson"],
-	}
-);
+	});
 
 type ImportFormData = z.infer<typeof importSchema>;
 
@@ -121,7 +120,7 @@ export default function ImportPage() {
 			onSubmit: async ({ value }) => {
 				try {
 					let content: any;
-					
+
 					if (value.jsonFile) {
 						// Handle file upload
 						const fileContent = await value.jsonFile.text();
@@ -130,9 +129,11 @@ export default function ImportPage() {
 						// Handle textarea content
 						content = JSON.parse(value.componentsJson);
 					} else {
-						throw new Error("Please provide JSON content either by file upload or textarea");
+						throw new Error(
+							"Please provide JSON content either by file upload or textarea",
+						);
 					}
-					
+
 					if (!Array.isArray(content)) {
 						throw new Error("JSON must contain an array of components");
 					}
@@ -177,7 +178,7 @@ export default function ImportPage() {
 							<Upload className="h-5 w-5" />
 							Import Components
 						</CardTitle>
-						<p className="text-sm text-muted-foreground">
+						<p className="text-muted-foreground text-sm">
 							Upload a JSON file or paste JSON content directly
 						</p>
 					</CardHeader>

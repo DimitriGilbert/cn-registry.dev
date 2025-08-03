@@ -28,7 +28,7 @@ export default function SearchPage() {
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const urlQuery = searchParams.get("q") || "";
-	
+
 	const [searchQuery, setSearchQuery] = useState(urlQuery);
 	const [selectedCategory, setSelectedCategory] = useState<string>("");
 	const [activeTab, setActiveTab] = useState("all");
@@ -96,10 +96,10 @@ export default function SearchPage() {
 	const totalTools = toolsData?.totalCount || 0;
 	const globalTotal = globalSearchResults?.total || 0;
 	const totalResults =
-		activeTab === "all" 
+		activeTab === "all"
 			? globalTotal
-			: activeTab === "components" 
-				? totalComponents 
+			: activeTab === "components"
+				? totalComponents
 				: totalTools;
 
 	// Helper functions for global search results
@@ -136,7 +136,7 @@ export default function SearchPage() {
 										{item.name}
 									</Link>
 								</CardTitle>
-								<div className="flex items-center gap-2 mt-1">
+								<div className="mt-1 flex items-center gap-2">
 									<Badge variant="secondary" className="text-xs">
 										{item.type}
 									</Badge>
@@ -154,20 +154,18 @@ export default function SearchPage() {
 							</div>
 						</div>
 					</div>
-					<CardDescription className="line-clamp-2 mt-2">
+					<CardDescription className="mt-2 line-clamp-2">
 						{item.description}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<div className="flex items-center justify-between text-sm text-muted-foreground">
+					<div className="flex items-center justify-between text-muted-foreground text-sm">
 						<div className="flex items-center gap-4">
 							{item.creator && (
 								<span>by {item.creator.name || item.creator.username}</span>
 							)}
 						</div>
-						<div>
-							{new Date(item.createdAt).toLocaleDateString()}
-						</div>
+						<div>{new Date(item.createdAt).toLocaleDateString()}</div>
 					</div>
 					<div className="mt-4">
 						<Button asChild size="sm" className="w-full">
@@ -209,7 +207,9 @@ export default function SearchPage() {
 		// Simple approach: assume first filter is category, second is type
 		const categoryFilter =
 			filters.find((f) => categories?.some((cat) => cat.id === f)) || "";
-		const typeFilter = filters.find((f) => ["all", "component", "tool"].includes(f));
+		const typeFilter = filters.find((f) =>
+			["all", "component", "tool"].includes(f),
+		);
 
 		setSelectedCategory(categoryFilter);
 		if (typeFilter === "all") {
@@ -248,11 +248,11 @@ export default function SearchPage() {
 
 					<div className="mt-8 text-center">
 						<Search className="mx-auto h-12 w-12 text-muted-foreground" />
-						<h3 className="mt-4 text-lg font-semibold">Start searching</h3>
+						<h3 className="mt-4 font-semibold text-lg">Start searching</h3>
 						<p className="mt-2 text-muted-foreground">
 							Enter a search term above to find components, tools, and projects.
 						</p>
-						<div className="mt-4 flex gap-2 justify-center">
+						<div className="mt-4 flex justify-center gap-2">
 							<Button asChild variant="outline">
 								<Link href="/components">Browse Components</Link>
 							</Button>
@@ -343,10 +343,11 @@ export default function SearchPage() {
 									<Skeleton key={i} className="h-48" />
 								))}
 							</div>
-						) : !globalSearchResults || globalSearchResults.results.length === 0 ? (
+						) : !globalSearchResults ||
+							globalSearchResults.results.length === 0 ? (
 							<div className="py-12 text-center">
 								<Search className="mx-auto h-12 w-12 text-muted-foreground" />
-								<h3 className="mt-4 text-lg font-semibold">No results found</h3>
+								<h3 className="mt-4 font-semibold text-lg">No results found</h3>
 								<p className="mt-2 text-muted-foreground">
 									Try adjusting your search terms or browse our categories.
 								</p>

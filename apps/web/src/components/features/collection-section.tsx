@@ -6,8 +6,6 @@ import Fade from "embla-carousel-fade";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentCard } from "@/components/features/component-card";
-import { ToolCard } from "@/components/features/tool-card";
-import { Button } from "@/components/ui/button";
 import {
 	Carousel,
 	CarouselContent,
@@ -15,6 +13,8 @@ import {
 	CarouselNext,
 	CarouselPrevious,
 } from "@/components/features/enhanced-carousel";
+import { ToolCard } from "@/components/features/tool-card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type AnimationType = "fade" | "scale" | "opacity" | "grow-opacity";
@@ -82,14 +82,21 @@ export function CollectionSection({
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{items.map((item) => {
 						if (itemType === "component") {
-							return <ComponentCard key={item.id} {...item} disableHoverEffects={false} />;
+							return (
+								<ComponentCard
+									key={item.id}
+									{...item}
+									disableHoverEffects={false}
+								/>
+							);
 						}
-						return <ToolCard key={item.id} {...item} disableHoverEffects={false} />;
+						return (
+							<ToolCard key={item.id} {...item} disableHoverEffects={false} />
+						);
 					})}
 				</div>
 			);
 		}
-
 
 		const plugins = [
 			Autoplay({
@@ -100,7 +107,12 @@ export function CollectionSection({
 			...(animationType === "fade" ? [Fade()] : []),
 		];
 
-		const tweenEffect = animationType === "scale" || animationType === "opacity" || animationType === "grow-opacity" ? animationType : null;
+		const tweenEffect =
+			animationType === "scale" ||
+			animationType === "opacity" ||
+			animationType === "grow-opacity"
+				? animationType
+				: null;
 
 		return (
 			<Carousel

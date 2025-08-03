@@ -85,8 +85,8 @@ export default function ToolsPage() {
 				{/* Enhanced Search and Filter Section */}
 				<div className="mb-12 space-y-6">
 					<div className="relative">
-						<div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 via-blue-500/5 to-purple-500/5 rounded-2xl" />
-						<div className="relative bg-card/50 backdrop-blur-sm border rounded-2xl p-6 shadow-sm">
+						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-500/5 via-blue-500/5 to-purple-500/5" />
+						<div className="relative rounded-2xl border bg-card/50 p-6 shadow-sm backdrop-blur-sm">
 							<div className="flex flex-col gap-6 lg:flex-row lg:items-end">
 								<div className="flex-1">
 									<SearchBar
@@ -121,17 +121,20 @@ export default function ToolsPage() {
 
 					{/* Results Summary */}
 					{!isLoading && !error && (
-						<div className="flex items-center justify-between text-sm text-muted-foreground">
+						<div className="flex items-center justify-between text-muted-foreground text-sm">
 							<p>
-								{tools.length > 0 
+								{tools.length > 0
 									? `Showing ${tools.length} of ${totalCount} tools`
-									: "No tools found"
-								}
+									: "No tools found"}
 								{searchQuery && ` for "${searchQuery}"`}
-								{selectedCategory && categories && ` in ${categories.find(c => c.id === selectedCategory)?.name}`}
+								{selectedCategory &&
+									categories &&
+									` in ${categories.find((c) => c.id === selectedCategory)?.name}`}
 							</p>
 							{totalCount > 0 && (
-								<p>Page {currentPage} of {totalPages}</p>
+								<p>
+									Page {currentPage} of {totalPages}
+								</p>
 							)}
 						</div>
 					)}
@@ -156,13 +159,25 @@ export default function ToolsPage() {
 				) : error ? (
 					<div className="py-24 text-center">
 						<div className="mx-auto max-w-md space-y-4">
-							<div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-								<svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+							<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+								<svg
+									className="h-8 w-8 text-destructive"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+									/>
 								</svg>
 							</div>
 							<div>
-								<h3 className="font-semibold text-lg mb-1">Failed to load tools</h3>
+								<h3 className="mb-1 font-semibold text-lg">
+									Failed to load tools
+								</h3>
 								<p className="text-muted-foreground">
 									Something went wrong. Please try refreshing the page.
 								</p>
@@ -172,9 +187,9 @@ export default function ToolsPage() {
 				) : (
 					<div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
 						{tools.map((tool, index) => (
-							<div 
-								key={tool.id} 
-								className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+							<div
+								key={tool.id}
+								className="fade-in slide-in-from-bottom-4 animate-in duration-300"
 								style={{ animationDelay: `${index * 0.1}s` }}
 							>
 								<ToolCard {...tool} />
@@ -186,7 +201,7 @@ export default function ToolsPage() {
 				{totalPages > 1 && (
 					<div className="flex justify-center">
 						<Pagination>
-							<PaginationContent className="bg-card/50 backdrop-blur-sm border rounded-lg p-2">
+							<PaginationContent className="rounded-lg border bg-card/50 p-2 backdrop-blur-sm">
 								<PaginationItem>
 									<PaginationPrevious
 										href="#"
@@ -235,18 +250,27 @@ export default function ToolsPage() {
 				{!isLoading && !error && tools.length === 0 && (
 					<div className="py-24 text-center">
 						<div className="mx-auto max-w-md space-y-6">
-							<div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-orange-500/10 to-blue-500/10 flex items-center justify-center">
-								<svg className="h-10 w-10 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+							<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/10 to-blue-500/10">
+								<svg
+									className="h-10 w-10 text-muted-foreground"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={1.5}
+										d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+									/>
 								</svg>
 							</div>
 							<div>
-								<h3 className="font-semibold text-xl mb-2">No tools found</h3>
-								<p className="text-muted-foreground mb-4">
-									{searchQuery || selectedCategory 
+								<h3 className="mb-2 font-semibold text-xl">No tools found</h3>
+								<p className="mb-4 text-muted-foreground">
+									{searchQuery || selectedCategory
 										? "Try adjusting your search criteria or filters."
-										: "It looks like there are no tools available yet."
-									}
+										: "It looks like there are no tools available yet."}
 								</p>
 								{(searchQuery || selectedCategory) && (
 									<button
@@ -254,7 +278,7 @@ export default function ToolsPage() {
 											setSearchQuery("");
 											setSelectedCategory("");
 										}}
-										className="text-orange-500 hover:text-orange-600 font-medium"
+										className="font-medium text-orange-500 hover:text-orange-600"
 									>
 										Clear all filters
 									</button>

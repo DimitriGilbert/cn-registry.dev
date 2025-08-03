@@ -1,4 +1,14 @@
-import { and, asc, avg, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	avg,
+	count,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	or,
+} from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db";
 import {
@@ -31,7 +41,7 @@ import {
 // Helper function to get GitHub data from cache
 async function getGitHubDataFromCache(repoUrl: string | null) {
 	if (!repoUrl) return null;
-	
+
 	try {
 		const cached = await db
 			.select()
@@ -40,20 +50,25 @@ async function getGitHubDataFromCache(repoUrl: string | null) {
 			.limit(1);
 
 		if (cached[0]) {
-			let data;
+			let data: any;
 			try {
 				data = JSON.parse(cached[0].data);
 			} catch (parseError) {
-				console.error('Error parsing cached GitHub data for', repoUrl, ':', parseError);
+				console.error(
+					"Error parsing cached GitHub data for",
+					repoUrl,
+					":",
+					parseError,
+				);
 				return null;
 			}
-			
+
 			// Validate that data is an object
-			if (!data || typeof data !== 'object') {
-				console.error('Invalid cached GitHub data format for', repoUrl);
+			if (!data || typeof data !== "object") {
+				console.error("Invalid cached GitHub data format for", repoUrl);
 				return null;
 			}
-			
+
 			return {
 				readme: data.readme || null,
 				stars: data.stargazers_count || data.stars || 0,
@@ -65,16 +80,28 @@ async function getGitHubDataFromCache(repoUrl: string | null) {
 			};
 		}
 	} catch (dbError) {
-		console.error('Database error fetching GitHub data from cache for', repoUrl, ':', dbError);
+		console.error(
+			"Database error fetching GitHub data from cache for",
+			repoUrl,
+			":",
+			dbError,
+		);
 	}
-	
+
 	return null;
 }
 
 export const componentsRouter = router({
 	// Public: Get all components with filters and pagination
 	getAll: publicProcedure.input(searchSchema).query(async ({ input }) => {
-		const { query, categoryId, page, limit, sort = "createdAt", order = "desc" } = input;
+		const {
+			query,
+			categoryId,
+			page,
+			limit,
+			sort = "createdAt",
+			order = "desc",
+		} = input;
 		const offset = (page - 1) * limit;
 
 		// Build WHERE conditions
@@ -124,9 +151,17 @@ export const componentsRouter = router({
 			.limit(limit)
 			.offset(offset)
 			.orderBy(
-				sort === "name" ? (order === "asc" ? asc(components.name) : desc(components.name)) :
-				sort === "updatedAt" ? (order === "asc" ? asc(components.updatedAt) : desc(components.updatedAt)) :
-				order === "asc" ? asc(components.createdAt) : desc(components.createdAt)
+				sort === "name"
+					? order === "asc"
+						? asc(components.name)
+						: desc(components.name)
+					: sort === "updatedAt"
+						? order === "asc"
+							? asc(components.updatedAt)
+							: desc(components.updatedAt)
+						: order === "asc"
+							? asc(components.createdAt)
+							: desc(components.createdAt),
 			);
 
 		const results =

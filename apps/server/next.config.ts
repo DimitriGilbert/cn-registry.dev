@@ -6,8 +6,10 @@ const nextConfig: NextConfig = {
 	async headers() {
 		const corsOrigin = process.env.CORS_ORIGIN || "";
 		const isDev = process.env.NODE_ENV === "development";
-		const devConnections = isDev ? " http://localhost:3001 http://localhost:3000" : "";
-		
+		const devConnections = isDev
+			? " http://localhost:3001 http://localhost:3000"
+			: "";
+
 		return [
 			{
 				source: "/(.*)",

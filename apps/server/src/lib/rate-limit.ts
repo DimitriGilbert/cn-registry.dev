@@ -7,17 +7,20 @@ interface RateLimitEntry {
 
 class InMemoryRateLimit {
 	private store = new Map<string, RateLimitEntry>();
-	
+
 	// Clean up expired entries every 5 minutes
 	constructor() {
-		setInterval(() => {
-			const now = Date.now();
-			for (const [key, entry] of this.store.entries()) {
-				if (now > entry.resetTime) {
-					this.store.delete(key);
+		setInterval(
+			() => {
+				const now = Date.now();
+				for (const [key, entry] of this.store.entries()) {
+					if (now > entry.resetTime) {
+						this.store.delete(key);
+					}
 				}
-			}
-		}, 5 * 60 * 1000);
+			},
+			5 * 60 * 1000,
+		);
 	}
 
 	check(key: string, limit: number, windowMs: number): boolean {
@@ -27,7 +30,7 @@ class InMemoryRateLimit {
 		if (!entry || now > entry.resetTime) {
 			this.store.set(key, {
 				count: 1,
-				resetTime: now + windowMs
+				resetTime: now + windowMs,
 			});
 			return true;
 		}
@@ -46,7 +49,7 @@ const rateLimiter = new InMemoryRateLimit();
 export function createRateLimit(limit: number, windowMs: number) {
 	return (identifier: string) => {
 		const allowed = rateLimiter.check(identifier, limit, windowMs);
-		
+
 		if (!allowed) {
 			throw new TRPCError({
 				code: "TOO_MANY_REQUESTS",

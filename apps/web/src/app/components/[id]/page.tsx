@@ -291,39 +291,40 @@ export default function ComponentDetailPage({
 							/>
 						)}
 
-						{component.creator && (component.creator.id || component.creator.name) && (
-							<div className="space-y-4">
-								<h3 className="font-semibold">Created by</h3>
-								<div className="flex items-center gap-3">
-									<Image
-										src={getUserAvatarUrl(component.creator)}
-										alt={component.creator.name || "Unknown"}
-										className="h-10 w-10 rounded-full"
-										width={40}
-										height={40}
-									/>
-									<div>
-										{component.creator.username ? (
-											<Link
-												href={`/creators/${component.creator.username}`}
-												className="font-medium hover:underline"
-											>
-												{component.creator.name || "Unknown"}
-											</Link>
-										) : (
-											<p className="font-medium">
-												{component.creator.name || "Unknown"}
-											</p>
-										)}
-										{component.creator.username && (
-											<p className="text-muted-foreground text-sm">
-												@{component.creator.username}
-											</p>
-										)}
+						{component.creator &&
+							(component.creator.id || component.creator.name) && (
+								<div className="space-y-4">
+									<h3 className="font-semibold">Created by</h3>
+									<div className="flex items-center gap-3">
+										<Image
+											src={getUserAvatarUrl(component.creator)}
+											alt={component.creator.name || "Unknown"}
+											className="h-10 w-10 rounded-full"
+											width={40}
+											height={40}
+										/>
+										<div>
+											{component.creator.username ? (
+												<Link
+													href={`/creators/${component.creator.username}`}
+													className="font-medium hover:underline"
+												>
+													{component.creator.name || "Unknown"}
+												</Link>
+											) : (
+												<p className="font-medium">
+													{component.creator.name || "Unknown"}
+												</p>
+											)}
+											{component.creator.username && (
+												<p className="text-muted-foreground text-sm">
+													@{component.creator.username}
+												</p>
+											)}
+										</div>
 									</div>
 								</div>
-							</div>
-						)}
+							)}
 
 						{component.averageRating && (
 							<div className="space-y-4">

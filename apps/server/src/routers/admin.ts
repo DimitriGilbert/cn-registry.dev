@@ -28,32 +28,40 @@ export interface ImportResult {
 }
 
 // Progress tracking for bulk operations
-const progressCache = new Map<string, {
-	total: number;
-	processed: number;
-	success: number;
-	errors: number;
-	completed: boolean;
-	items: Array<{
-		name: string;
-		status: "success" | "error" | "processing";
-		stars?: number;
-		error?: string;
-	}>;
-}>();
+const progressCache = new Map<
+	string,
+	{
+		total: number;
+		processed: number;
+		success: number;
+		errors: number;
+		completed: boolean;
+		items: Array<{
+			name: string;
+			status: "success" | "error" | "processing";
+			stars?: number;
+			error?: string;
+		}>;
+	}
+>();
 
 function getGitHubRefreshProgress(jobId: string) {
-	return progressCache.get(jobId) || {
-		total: 0,
-		processed: 0,
-		success: 0,
-		errors: 0,
-		completed: false,
-		items: []
-	};
+	return (
+		progressCache.get(jobId) || {
+			total: 0,
+			processed: 0,
+			success: 0,
+			errors: 0,
+			completed: false,
+			items: [],
+		}
+	);
 }
 
-async function processBulkGitHubRefresh(jobId: string, type: "components" | "tools" | "all") {
+async function processBulkGitHubRefresh(
+	jobId: string,
+	type: "components" | "tools" | "all",
+) {
 	const progress = {
 		total: 0,
 		processed: 0,
@@ -65,25 +73,34 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 			status: "success" | "error" | "processing";
 			stars?: number;
 			error?: string;
-		}>
+		}>,
 	};
 
 	try {
 		// Get all items with GitHub URLs
-		const allItems: Array<{ id: string; name: string; repoUrl: string; type: string }> = [];
+		const allItems: Array<{
+			id: string;
+			name: string;
+			repoUrl: string;
+			type: string;
+		}> = [];
 
 		if (type === "components" || type === "all") {
 			const componentsList = await db
 				.select({
 					id: components.id,
 					name: components.name,
-					repoUrl: components.repoUrl
+					repoUrl: components.repoUrl,
 				})
 				.from(components);
 
-			allItems.push(...componentsList
-				.filter((c): c is typeof c & { repoUrl: string } => c.repoUrl !== null && c.repoUrl.includes("github.com"))
-				.map(c => ({ ...c, type: "component" }))
+			allItems.push(
+				...componentsList
+					.filter(
+						(c): c is typeof c & { repoUrl: string } =>
+							c.repoUrl !== null && c.repoUrl.includes("github.com"),
+					)
+					.map((c) => ({ ...c, type: "component" })),
 			);
 		}
 
@@ -92,18 +109,22 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 				.select({
 					id: tools.id,
 					name: tools.name,
-					repoUrl: tools.repoUrl
+					repoUrl: tools.repoUrl,
 				})
 				.from(tools);
 
-			allItems.push(...toolsList
-				.filter((t): t is typeof t & { repoUrl: string } => t.repoUrl !== null && t.repoUrl.includes("github.com"))
-				.map(t => ({ ...t, type: "tool" }))
+			allItems.push(
+				...toolsList
+					.filter(
+						(t): t is typeof t & { repoUrl: string } =>
+							t.repoUrl !== null && t.repoUrl.includes("github.com"),
+					)
+					.map((t) => ({ ...t, type: "tool" })),
 			);
 		}
 
 		// Group by unique repo URLs to avoid duplicate fetches
-		const uniqueRepos = new Map<string, Array<typeof allItems[0]>>();
+		const uniqueRepos = new Map<string, Array<(typeof allItems)[0]>>();
 		for (const item of allItems) {
 			const cleanUrl = item.repoUrl.replace(/\.git$/, "").toLowerCase();
 			if (!uniqueRepos.has(cleanUrl)) {
@@ -121,7 +142,7 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 			for (const item of items) {
 				progress.items.push({
 					name: item.name,
-					status: "processing"
+					status: "processing",
 				});
 			}
 			progressCache.set(jobId, progress);
@@ -141,16 +162,19 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					// Use cached data
 					const cachedData = JSON.parse(cached[0].data);
 					for (const item of items) {
-						const itemProgress = progress.items.find(p => p.name === item.name);
+						const itemProgress = progress.items.find(
+							(p) => p.name === item.name,
+						);
 						if (itemProgress) {
 							itemProgress.status = "success";
-							itemProgress.stars = cachedData.stars || cachedData.stargazers_count;
+							itemProgress.stars =
+								cachedData.stars || cachedData.stargazers_count;
 						}
 					}
 					progress.success++;
 				} else {
 					// Fetch fresh data
-					const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+					const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
 					if (!match) {
 						throw new Error("Invalid GitHub URL");
 					}
@@ -158,15 +182,18 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					const [, owner, repo] = match;
 					const cleanRepo = repo.replace(/\.git$/, "");
 
-					const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`, {
-						headers: {
-							"User-Agent": "cn-registry-admin",
-							"Accept": "application/vnd.github.v3+json",
-							...(process.env.GITHUB_TOKEN && {
-								"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-							})
-						}
-					});
+					const repoResponse = await fetch(
+						`https://api.github.com/repos/${owner}/${cleanRepo}`,
+						{
+							headers: {
+								"User-Agent": "cn-registry-admin",
+								Accept: "application/vnd.github.v3+json",
+								...(process.env.GITHUB_TOKEN && {
+									Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+								}),
+							},
+						},
+					);
 
 					if (!repoResponse.ok) {
 						throw new Error(`GitHub API error: ${repoResponse.status}`);
@@ -177,19 +204,25 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					// Fetch README
 					let readme = "";
 					try {
-						const readmeResponse = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}/readme`, {
-							headers: {
-								"User-Agent": "cn-registry-admin",
-								"Accept": "application/vnd.github.v3+json",
-								...(process.env.GITHUB_TOKEN && {
-									"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-								})
-							}
-						});
+						const readmeResponse = await fetch(
+							`https://api.github.com/repos/${owner}/${cleanRepo}/readme`,
+							{
+								headers: {
+									"User-Agent": "cn-registry-admin",
+									Accept: "application/vnd.github.v3+json",
+									...(process.env.GITHUB_TOKEN && {
+										Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+									}),
+								},
+							},
+						);
 
 						if (readmeResponse.ok) {
 							const readmeData = await readmeResponse.json();
-							readme = Buffer.from(readmeData.content, readmeData.encoding as BufferEncoding).toString();
+							readme = Buffer.from(
+								readmeData.content,
+								readmeData.encoding as BufferEncoding,
+							).toString();
 						}
 					} catch (error) {
 						// README fetch failed, continue without it
@@ -199,7 +232,7 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					const githubData = {
 						...repoData,
 						readme,
-						fetched_at: new Date().toISOString()
+						fetched_at: new Date().toISOString(),
 					};
 
 					const expiresAt = new Date();
@@ -211,20 +244,22 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 							repoUrl,
 							data: JSON.stringify(githubData),
 							lastFetched: new Date(),
-							expiresAt
+							expiresAt,
 						})
 						.onConflictDoUpdate({
 							target: githubCache.repoUrl,
 							set: {
 								data: JSON.stringify(githubData),
 								lastFetched: new Date(),
-								expiresAt
-							}
+								expiresAt,
+							},
 						});
 
 					// Update progress for all items using this repo
 					for (const item of items) {
-						const itemProgress = progress.items.find(p => p.name === item.name);
+						const itemProgress = progress.items.find(
+							(p) => p.name === item.name,
+						);
 						if (itemProgress) {
 							itemProgress.status = "success";
 							itemProgress.stars = repoData.stargazers_count;
@@ -232,14 +267,14 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 					}
 					progress.success++;
 				}
-
 			} catch (error) {
 				// Mark all items from this repo as failed
 				for (const item of items) {
-					const itemProgress = progress.items.find(p => p.name === item.name);
+					const itemProgress = progress.items.find((p) => p.name === item.name);
 					if (itemProgress) {
 						itemProgress.status = "error";
-						itemProgress.error = error instanceof Error ? error.message : String(error);
+						itemProgress.error =
+							error instanceof Error ? error.message : String(error);
 					}
 				}
 				progress.errors++;
@@ -249,17 +284,21 @@ async function processBulkGitHubRefresh(jobId: string, type: "components" | "too
 			progressCache.set(jobId, progress);
 
 			// Rate limiting - wait between requests (increased delays to avoid rate limiting)
-			await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 2000 : 5000));
+			await new Promise((resolve) =>
+				setTimeout(resolve, process.env.GITHUB_TOKEN ? 2000 : 5000),
+			);
 		}
 
 		progress.completed = true;
 		progressCache.set(jobId, progress);
 
 		// Clean up after 10 minutes
-		setTimeout(() => {
-			progressCache.delete(jobId);
-		}, 10 * 60 * 1000);
-
+		setTimeout(
+			() => {
+				progressCache.delete(jobId);
+			},
+			10 * 60 * 1000,
+		);
 	} catch (error) {
 		progress.completed = true;
 		progress.errors = progress.total;
@@ -759,35 +798,37 @@ export const adminRouter = router({
 
 	// Import GitHub data for all components and tools
 	importGitHubData: adminProcedure
-		.input(z.object({
-			type: z.enum(["components", "tools", "all"]).default("all"),
-			force: z.boolean().default(false) // Force refresh even if cached
-		}))
+		.input(
+			z.object({
+				type: z.enum(["components", "tools", "all"]).default("all"),
+				force: z.boolean().default(false), // Force refresh even if cached
+			}),
+		)
 		.mutation(async ({ input }) => {
 			const { type, force } = input;
-			
+
 			async function importGitHubForItems(
 				items: Array<{ id: string; name: string; repoUrl: string | null }>,
-				itemType: string
+				itemType: string,
 			): Promise<ImportResult> {
 				const result: ImportResult = {
 					type: itemType,
 					total: 0,
 					success: 0,
 					errors: 0,
-					items: []
+					items: [],
 				};
-				
-				const githubItems = items.filter(item => 
-					item.repoUrl && item.repoUrl.includes("github.com")
+
+				const githubItems = items.filter(
+					(item) => item.repoUrl && item.repoUrl.includes("github.com"),
 				);
-				
+
 				result.total = githubItems.length;
-				
+
 				for (const item of githubItems) {
 					try {
 						const repoUrl = item.repoUrl!;
-						
+
 						// Check cache if not forcing refresh
 						if (!force) {
 							const cached = await db
@@ -795,188 +836,208 @@ export const adminRouter = router({
 								.from(githubCache)
 								.where(eq(githubCache.repoUrl, repoUrl))
 								.limit(1);
-							
-							if (cached.length > 0 && new Date(cached[0].expiresAt) > new Date()) {
+
+							if (
+								cached.length > 0 &&
+								new Date(cached[0].expiresAt) > new Date()
+							) {
 								result.success++;
 								const cachedData = JSON.parse(cached[0].data);
 								result.items.push({
 									name: item.name,
 									status: "cached",
-									stars: cachedData.stars || cachedData.stargazers_count
+									stars: cachedData.stars || cachedData.stargazers_count,
 								});
 								continue;
 							}
 						}
-						
+
 						// Extract owner/repo from URL
-						const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+						const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
 						if (!match) {
 							result.errors++;
 							result.items.push({
 								name: item.name,
 								status: "error",
-								error: "Invalid GitHub URL"
+								error: "Invalid GitHub URL",
 							});
 							continue;
 						}
-						
+
 						const [, owner, repo] = match;
 						const cleanRepo = repo.replace(/\.git$/, "");
-						
+
 						// Fetch GitHub data
-						const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`, {
-							headers: {
-								"User-Agent": "cn-registry-admin",
-								"Accept": "application/vnd.github.v3+json",
-								...(process.env.GITHUB_TOKEN && {
-									"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-								})
-							}
-						});
-						
+						const repoResponse = await fetch(
+							`https://api.github.com/repos/${owner}/${cleanRepo}`,
+							{
+								headers: {
+									"User-Agent": "cn-registry-admin",
+									Accept: "application/vnd.github.v3+json",
+									...(process.env.GITHUB_TOKEN && {
+										Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+									}),
+								},
+							},
+						);
+
 						if (!repoResponse.ok) {
 							result.errors++;
 							result.items.push({
 								name: item.name,
 								status: "error",
-								error: `GitHub API error: ${repoResponse.status}`
+								error: `GitHub API error: ${repoResponse.status}`,
 							});
 							continue;
 						}
-						
+
 						const repoData = await repoResponse.json();
-						
+
 						// Fetch README
 						let readme = "";
 						try {
-							const readmeResponse = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}/readme`, {
-								headers: {
-									"User-Agent": "cn-registry-admin",
-									"Accept": "application/vnd.github.v3+json",
-									...(process.env.GITHUB_TOKEN && {
-										"Authorization": `Bearer ${process.env.GITHUB_TOKEN}`
-									})
-								}
-							});
-							
+							const readmeResponse = await fetch(
+								`https://api.github.com/repos/${owner}/${cleanRepo}/readme`,
+								{
+									headers: {
+										"User-Agent": "cn-registry-admin",
+										Accept: "application/vnd.github.v3+json",
+										...(process.env.GITHUB_TOKEN && {
+											Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+										}),
+									},
+								},
+							);
+
 							if (readmeResponse.ok) {
 								const readmeData = await readmeResponse.json();
-								readme = Buffer.from(readmeData.content, readmeData.encoding as BufferEncoding).toString();
+								readme = Buffer.from(
+									readmeData.content,
+									readmeData.encoding as BufferEncoding,
+								).toString();
 							}
 						} catch (error) {
 							// README fetch failed, continue without it
 						}
-						
+
 						// Prepare cached data
 						const githubData = {
 							...repoData,
 							readme,
-							fetched_at: new Date().toISOString()
+							fetched_at: new Date().toISOString(),
 						};
-						
+
 						// Update cache
 						const expiresAt = new Date();
 						expiresAt.setHours(expiresAt.getHours() + 6);
-						
+
 						await db
 							.insert(githubCache)
 							.values({
 								repoUrl,
 								data: JSON.stringify(githubData),
 								lastFetched: new Date(),
-								expiresAt
+								expiresAt,
 							})
 							.onConflictDoUpdate({
 								target: githubCache.repoUrl,
 								set: {
 									data: JSON.stringify(githubData),
 									lastFetched: new Date(),
-									expiresAt
-								}
+									expiresAt,
+								},
 							});
-						
+
 						result.success++;
 						result.items.push({
 							name: item.name,
 							status: "success",
-							stars: repoData.stargazers_count
+							stars: repoData.stargazers_count,
 						});
-						
+
 						// Rate limiting (increased delays to avoid rate limiting)
-						await new Promise(resolve => setTimeout(resolve, process.env.GITHUB_TOKEN ? 1500 : 3000));
-						
+						await new Promise((resolve) =>
+							setTimeout(resolve, process.env.GITHUB_TOKEN ? 1500 : 3000),
+						);
 					} catch (error) {
 						result.errors++;
 						result.items.push({
 							name: item.name,
 							status: "error",
-							error: error instanceof Error ? error.message : String(error)
+							error: error instanceof Error ? error.message : String(error),
 						});
 					}
 				}
-				
+
 				return result;
 			}
-			
+
 			const results: ImportResult[] = [];
-			
+
 			// Import components
 			if (type === "components" || type === "all") {
 				const componentsList = await db
 					.select({
 						id: components.id,
 						name: components.name,
-						repoUrl: components.repoUrl
+						repoUrl: components.repoUrl,
 					})
 					.from(components);
-				
-				const componentResult = await importGitHubForItems(componentsList, "components");
+
+				const componentResult = await importGitHubForItems(
+					componentsList,
+					"components",
+				);
 				results.push(componentResult);
 			}
-			
+
 			// Import tools
 			if (type === "tools" || type === "all") {
 				const toolsList = await db
 					.select({
 						id: tools.id,
 						name: tools.name,
-						repoUrl: tools.repoUrl
+						repoUrl: tools.repoUrl,
 					})
 					.from(tools);
-				
+
 				const toolResult = await importGitHubForItems(toolsList, "tools");
 				results.push(toolResult);
 			}
-			
+
 			return {
 				results,
 				summary: {
 					totalItems: results.reduce((sum, r) => sum + r.total, 0),
 					totalSuccess: results.reduce((sum, r) => sum + r.success, 0),
-					totalErrors: results.reduce((sum, r) => sum + r.errors, 0)
-				}
+					totalErrors: results.reduce((sum, r) => sum + r.errors, 0),
+				},
 			};
 		}),
 
 	// Bulk GitHub refresh with progress tracking
 	bulkGitHubRefresh: adminProcedure
-		.input(z.object({
-			type: z.enum(["components", "tools", "all"]).default("all"),
-		}))
+		.input(
+			z.object({
+				type: z.enum(["components", "tools", "all"]).default("all"),
+			}),
+		)
 		.mutation(async ({ input }) => {
 			const jobId = `github-refresh-${Date.now()}`;
-			
+
 			// Start the background job
 			setImmediate(() => processBulkGitHubRefresh(jobId, input.type));
-			
+
 			return { jobId };
 		}),
 
 	// Get GitHub refresh progress
 	getGitHubRefreshProgress: adminProcedure
-		.input(z.object({
-			jobId: z.string(),
-		}))
+		.input(
+			z.object({
+				jobId: z.string(),
+			}),
+		)
 		.query(async ({ input }) => {
 			const progress = getGitHubRefreshProgress(input.jobId);
 			return progress;

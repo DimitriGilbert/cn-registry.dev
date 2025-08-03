@@ -111,7 +111,7 @@ export function FilterPanel({
 						))}
 					</div>
 					{selectedFilters.length > 0 && (
-						<div className="pt-6 border-t">
+						<div className="border-t pt-6">
 							<Button
 								variant="outline"
 								onClick={clearFilters}

@@ -20,10 +20,13 @@ const nextConfig: NextConfig = {
 		],
 	},
 	async headers() {
-		const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";
+		const serverUrl =
+			process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";
 		const isDev = process.env.NODE_ENV === "development";
-		const devConnections = isDev ? " http://localhost:3001 http://localhost:3000" : "";
-		
+		const devConnections = isDev
+			? " http://localhost:3001 http://localhost:3000"
+			: "";
+
 		return [
 			{
 				source: "/(.*)",

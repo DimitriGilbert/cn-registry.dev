@@ -300,7 +300,7 @@ export default function ProjectDetailPage({
 	// Handler functions
 	const handleRemoveCollaborator = (userId: string) => {
 		if (!project) return;
-		
+
 		removeCollaborator.mutate({
 			projectId: project.id,
 			userId,
@@ -309,7 +309,7 @@ export default function ProjectDetailPage({
 
 	const handleRoleChange = (userId: string, role: string) => {
 		if (!project) return;
-		
+
 		updateCollaboratorRole.mutate({
 			projectId: project.id,
 			userId,
@@ -319,8 +319,12 @@ export default function ProjectDetailPage({
 
 	const handleDeleteProject = () => {
 		if (!project) return;
-		
-		if (confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+
+		if (
+			confirm(
+				"Are you sure you want to delete this project? This action cannot be undone.",
+			)
+		) {
 			deleteProject.mutate({ id: project.id });
 		}
 	};
@@ -609,7 +613,10 @@ export default function ProjectDetailPage({
 											<p className="mb-4 text-muted-foreground text-sm">
 												These actions cannot be undone.
 											</p>
-											<Button variant="destructive" onClick={handleDeleteProject}>
+											<Button
+												variant="destructive"
+												onClick={handleDeleteProject}
+											>
 												<Trash2 className="mr-2 h-4 w-4" />
 												Delete Project
 											</Button>

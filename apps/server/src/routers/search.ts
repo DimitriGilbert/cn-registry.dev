@@ -5,11 +5,11 @@ import {
 	categories,
 	componentCategories,
 	components,
-	projects,
 	projectCollaborators,
+	projects,
 	stars,
-	tools,
 	toolCategories,
+	tools,
 	user,
 } from "../db/schema";
 import { publicProcedure, router } from "../lib/trpc";
@@ -75,7 +75,10 @@ export const searchRouter = router({
 				.from(tools)
 				.leftJoin(user, eq(tools.creatorId, user.id))
 				.where(
-					or(ilike(tools.name, searchTerm), ilike(tools.description, searchTerm)),
+					or(
+						ilike(tools.name, searchTerm),
+						ilike(tools.description, searchTerm),
+					),
 				)
 				.orderBy(desc(tools.createdAt))
 				.limit(Math.floor(limit / 3) + 1);
@@ -112,9 +115,17 @@ export const searchRouter = router({
 
 			// Combine results and sort by relevance/date
 			const allResults = [
-				...componentResults.map((r) => ({ ...r, type: "component" as const, score: 1 })),
+				...componentResults.map((r) => ({
+					...r,
+					type: "component" as const,
+					score: 1,
+				})),
 				...toolResults.map((r) => ({ ...r, type: "tool" as const, score: 1 })),
-				...projectResults.map((r) => ({ ...r, type: "project" as const, score: 1 })),
+				...projectResults.map((r) => ({
+					...r,
+					type: "project" as const,
+					score: 1,
+				})),
 			]
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.slice(0, limit);
@@ -178,8 +189,8 @@ export const searchRouter = router({
 					componentCategories,
 					and(
 						eq(componentCategories.componentId, components.id),
-						eq(componentCategories.categoryId, categoryId)
-					)
+						eq(componentCategories.categoryId, categoryId),
+					),
 				);
 			}
 
@@ -190,13 +201,13 @@ export const searchRouter = router({
 				.offset(offset);
 
 			// Batch fetch categories and stats to avoid N+1 queries
-			const componentIds = results.map(r => r.id);
-			
+			const componentIds = results.map((r) => r.id);
+
 			// Batch fetch categories
 			const allCategories = await db
 				.select({
 					componentId: componentCategories.componentId,
-					category: categories
+					category: categories,
 				})
 				.from(componentCategories)
 				.leftJoin(categories, eq(componentCategories.categoryId, categories.id))
@@ -206,24 +217,26 @@ export const searchRouter = router({
 			const starCounts = await db
 				.select({
 					itemId: stars.itemId,
-					count: count()
+					count: count(),
 				})
 				.from(stars)
 				.where(
 					and(
 						eq(stars.itemType, "component"),
-						inArray(stars.itemId, componentIds)
-					)
+						inArray(stars.itemId, componentIds),
+					),
 				)
 				.groupBy(stars.itemId);
 
 			// Map the data
-			const componentsWithDetails = results.map(component => {
-				const cats = allCategories.filter(c => c.componentId === component.id);
-				const starCount = starCounts.find(s => s.itemId === component.id);
+			const componentsWithDetails = results.map((component) => {
+				const cats = allCategories.filter(
+					(c) => c.componentId === component.id,
+				);
+				const starCount = starCounts.find((s) => s.itemId === component.id);
 				return {
 					...component,
-					categories: cats.map(c => c.category).filter(Boolean),
+					categories: cats.map((c) => c.category).filter(Boolean),
 					starsCount: starCount?.count || 0,
 					githubUrl: component.repoUrl,
 					isStarred: false,

@@ -136,19 +136,21 @@ export function GlobalSearch({
 							)}
 
 							{/* Search Suggestions */}
-							{query.length > 0 && query.length <= 2 && suggestions.length > 0 && (
-								<CommandGroup heading="Suggestions">
-									{suggestions.map((suggestion) => (
-										<CommandItem
-											key={suggestion}
-											onSelect={() => handleSearch(suggestion)}
-										>
-											<Search className="mr-2 h-4 w-4" />
-											{suggestion}
-										</CommandItem>
-									))}
-								</CommandGroup>
-							)}
+							{query.length > 0 &&
+								query.length <= 2 &&
+								suggestions.length > 0 && (
+									<CommandGroup heading="Suggestions">
+										{suggestions.map((suggestion) => (
+											<CommandItem
+												key={suggestion}
+												onSelect={() => handleSearch(suggestion)}
+											>
+												<Search className="mr-2 h-4 w-4" />
+												{suggestion}
+											</CommandItem>
+										))}
+									</CommandGroup>
+								)}
 
 							{/* Search Results */}
 							{searchResults && searchResults.results.length > 0 && (
@@ -164,7 +166,9 @@ export function GlobalSearch({
 												.map((item) => (
 													<CommandItem
 														key={`${item.type}-${item.id}`}
-														onSelect={() => handleItemSelect(item as SearchResultItem)}
+														onSelect={() =>
+															handleItemSelect(item as SearchResultItem)
+														}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">
@@ -189,7 +193,9 @@ export function GlobalSearch({
 												.map((item) => (
 													<CommandItem
 														key={`${item.type}-${item.id}`}
-														onSelect={() => handleItemSelect(item as SearchResultItem)}
+														onSelect={() =>
+															handleItemSelect(item as SearchResultItem)
+														}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">
@@ -214,14 +220,18 @@ export function GlobalSearch({
 												.map((item) => (
 													<CommandItem
 														key={`${item.type}-${(item as any).slug}`}
-														onSelect={() => handleItemSelect(item as SearchResultItem)}
+														onSelect={() =>
+															handleItemSelect(item as SearchResultItem)
+														}
 													>
 														{getItemIcon(item.type)}
 														<div className="ml-2 flex-1">
 															<div className="flex items-center gap-2">
 																<span className="font-medium">{item.name}</span>
 																<Badge variant="secondary" className="text-xs">
-																	{"visibility" in item ? item.visibility : "public"}
+																	{"visibility" in item
+																		? item.visibility
+																		: "public"}
 																</Badge>
 															</div>
 															<div className="text-muted-foreground text-sm">

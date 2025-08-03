@@ -1,12 +1,22 @@
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Eye, Github, RefreshCw, Star, GitFork, AlertCircle, Calendar } from "lucide-react";
+import {
+	AlertCircle,
+	ArrowLeft,
+	Calendar,
+	Eye,
+	GitFork,
+	Github,
+	RefreshCw,
+	Star,
+} from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
+import { Badge } from "@/components/ui/badge";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -17,7 +27,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
@@ -70,15 +79,17 @@ export default function EditComponentPage({
 	);
 
 	// Fetch GitHub data ONLY when manually triggered
-	const { data: githubData, isLoading: isLoadingGithub, refetch: refetchGithub } = useQuery(
-		{
-			...trpc.github.getRepoData.queryOptions({
-				repoUrl: component?.repoUrl || ""
-			}),
-			enabled: false, // NEVER auto-fetch on page load
-			staleTime: 5 * 60 * 1000, // 5 minutes
-		}
-	);
+	const {
+		data: githubData,
+		isLoading: isLoadingGithub,
+		refetch: refetchGithub,
+	} = useQuery({
+		...trpc.github.getRepoData.queryOptions({
+			repoUrl: component?.repoUrl || "",
+		}),
+		enabled: false, // NEVER auto-fetch on page load
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
 
 	// Update mutation
 	const updateMutation = useMutation(
@@ -254,7 +265,9 @@ export default function EditComponentPage({
 								}}
 								disabled={isLoadingGithub}
 							>
-								<RefreshCw className={`mr-2 h-4 w-4 ${isLoadingGithub ? 'animate-spin' : ''}`} />
+								<RefreshCw
+									className={`mr-2 h-4 w-4 ${isLoadingGithub ? "animate-spin" : ""}`}
+								/>
 								{isLoadingGithub ? "Loading..." : "Load GitHub Data"}
 							</Button>
 						)}
@@ -289,64 +302,79 @@ export default function EditComponentPage({
 								</div>
 							) : githubData ? (
 								<div className="space-y-4">
-									<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+									<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 										<div className="flex items-center gap-2">
 											<Star className="h-4 w-4 text-yellow-500" />
 											<span className="font-medium">{githubData.stars}</span>
-											<span className="text-muted-foreground text-sm">stars</span>
+											<span className="text-muted-foreground text-sm">
+												stars
+											</span>
 										</div>
 										<div className="flex items-center gap-2">
 											<GitFork className="h-4 w-4 text-blue-500" />
 											<span className="font-medium">{githubData.forks}</span>
-											<span className="text-muted-foreground text-sm">forks</span>
+											<span className="text-muted-foreground text-sm">
+												forks
+											</span>
 										</div>
 										<div className="flex items-center gap-2">
 											<AlertCircle className="h-4 w-4 text-red-500" />
 											<span className="font-medium">{githubData.issues}</span>
-											<span className="text-muted-foreground text-sm">issues</span>
+											<span className="text-muted-foreground text-sm">
+												issues
+											</span>
 										</div>
 										<div className="flex items-center gap-2">
 											<Calendar className="h-4 w-4 text-green-500" />
 											<span className="text-muted-foreground text-sm">
-												{githubData.lastCommit ? new Date(githubData.lastCommit).toLocaleDateString() : 'N/A'}
+												{githubData.lastCommit
+													? new Date(githubData.lastCommit).toLocaleDateString()
+													: "N/A"}
 											</span>
 										</div>
 									</div>
-									
+
 									{githubData.language && (
 										<div>
 											<Badge variant="secondary">{githubData.language}</Badge>
 										</div>
 									)}
-									
+
 									{githubData.topics && githubData.topics.length > 0 && (
 										<div>
-											<h4 className="text-sm font-medium mb-2">Topics:</h4>
+											<h4 className="mb-2 font-medium text-sm">Topics:</h4>
 											<div className="flex flex-wrap gap-1">
 												{githubData.topics.map((topic: string) => (
-													<Badge key={topic} variant="outline" className="text-xs">
+													<Badge
+														key={topic}
+														variant="outline"
+														className="text-xs"
+													>
 														{topic}
 													</Badge>
 												))}
 											</div>
 										</div>
 									)}
-									
+
 									{githubData.license && (
 										<div>
-											<span className="text-sm text-muted-foreground">License: </span>
+											<span className="text-muted-foreground text-sm">
+												License:{" "}
+											</span>
 											<Badge variant="outline">{githubData.license}</Badge>
 										</div>
 									)}
-									
-									<div className="text-xs text-muted-foreground">
+
+									<div className="text-muted-foreground text-xs">
 										Last fetched: Just now
 									</div>
 								</div>
 							) : (
 								<div className="flex items-center gap-2 text-destructive">
 									<AlertCircle className="h-4 w-4" />
-									Failed to load GitHub data. This could be due to rate limiting, network issues, or invalid repository URL.
+									Failed to load GitHub data. This could be due to rate
+									limiting, network issues, or invalid repository URL.
 								</div>
 							)}
 						</CardContent>

@@ -25,10 +25,7 @@ export function StarButton({
 			size={size}
 			onClick={onToggle}
 			disabled={isLoading}
-			className={cn(
-				"flex items-center gap-1 p-1",
-				isStarred && "text-warning",
-			)}
+			className={cn("flex items-center gap-1 p-1", isStarred && "text-warning")}
 		>
 			<Star className={cn("h-4 w-4", isStarred && "fill-current")} />
 			{count > 0 && <span className="text-sm">{count}</span>}

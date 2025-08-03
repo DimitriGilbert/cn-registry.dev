@@ -8,8 +8,8 @@ import {
 	Github,
 	MoreHorizontal,
 	Plus,
-	Trash2,
 	RefreshCw,
+	Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -169,13 +169,15 @@ export default function ManageComponentsPage() {
 							onClick={() => {
 								githubRefreshMutation.mutate({
 									type: "components",
-									force: false
+									force: false,
 								});
 							}}
 							disabled={githubRefreshMutation.isPending}
 						>
 							<RefreshCw className="mr-2 h-4 w-4" />
-							{githubRefreshMutation.isPending ? "Refreshing..." : "Refresh All GitHub Data"}
+							{githubRefreshMutation.isPending
+								? "Refreshing..."
+								: "Refresh All GitHub Data"}
 						</Button>
 						<Button asChild>
 							<Link href="/admin/components/new">
@@ -278,7 +280,7 @@ export default function ManageComponentsPage() {
 											{component.creator?.name ? (
 												<Link
 													href={`/admin/users/${component.creator.id}/edit`}
-													className="hover:underline text-primary"
+													className="text-primary hover:underline"
 												>
 													{component.creator.name}
 												</Link>
@@ -321,20 +323,21 @@ export default function ManageComponentsPage() {
 															Analytics
 														</Link>
 													</DropdownMenuItem>
-													{component.repoUrl && component.repoUrl.includes("github.com") && (
-														<DropdownMenuItem
-															onClick={() => {
-																githubRefreshMutation.mutate({
-																	type: "components",
-																	force: true
-																});
-															}}
-															disabled={githubRefreshMutation.isPending}
-														>
-															<Github className="mr-2 h-4 w-4" />
-															Refresh GitHub Data
-														</DropdownMenuItem>
-													)}
+													{component.repoUrl &&
+														component.repoUrl.includes("github.com") && (
+															<DropdownMenuItem
+																onClick={() => {
+																	githubRefreshMutation.mutate({
+																		type: "components",
+																		force: true,
+																	});
+																}}
+																disabled={githubRefreshMutation.isPending}
+															>
+																<Github className="mr-2 h-4 w-4" />
+																Refresh GitHub Data
+															</DropdownMenuItem>
+														)}
 													<DropdownMenuItem
 														className="text-destructive"
 														onClick={() =>

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { ComponentCard } from "@/components/features/component-card";
 import { FilterPanel } from "@/components/features/filter-panel";
-import { useFormedible } from "@/hooks/use-formedible";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import {
@@ -24,6 +23,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
 
 const searchSchema = z.object({
@@ -109,8 +109,8 @@ export default function ComponentsPage() {
 				{/* Enhanced Search and Filter Section */}
 				<div className="mb-12 space-y-6">
 					<div className="relative">
-						<div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 rounded-2xl" />
-						<div className="relative bg-card/50 backdrop-blur-sm border rounded-2xl p-6 shadow-sm">
+						<div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5" />
+						<div className="relative rounded-2xl border bg-card/50 p-6 shadow-sm backdrop-blur-sm">
 							<div className="flex flex-col gap-6 lg:flex-row lg:items-end">
 								<div className="flex-1">
 									<SearchForm />
@@ -141,17 +141,20 @@ export default function ComponentsPage() {
 
 					{/* Results Summary */}
 					{!isLoading && !error && (
-						<div className="flex items-center justify-between text-sm text-muted-foreground">
+						<div className="flex items-center justify-between text-muted-foreground text-sm">
 							<p>
-								{components.length > 0 
+								{components.length > 0
 									? `Showing ${components.length} of ${totalCount} components`
-									: "No components found"
-								}
+									: "No components found"}
 								{searchQuery && ` for "${searchQuery}"`}
-								{selectedCategory && categories && ` in ${categories.find(c => c.id === selectedCategory)?.name}`}
+								{selectedCategory &&
+									categories &&
+									` in ${categories.find((c) => c.id === selectedCategory)?.name}`}
 							</p>
 							{totalCount > 0 && (
-								<p>Page {currentPage} of {totalPages}</p>
+								<p>
+									Page {currentPage} of {totalPages}
+								</p>
 							)}
 						</div>
 					)}
@@ -176,13 +179,25 @@ export default function ComponentsPage() {
 				) : error ? (
 					<div className="py-24 text-center">
 						<div className="mx-auto max-w-md space-y-4">
-							<div className="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
-								<svg className="h-8 w-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+							<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+								<svg
+									className="h-8 w-8 text-destructive"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={2}
+										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+									/>
 								</svg>
 							</div>
 							<div>
-								<h3 className="font-semibold text-lg mb-1">Failed to load components</h3>
+								<h3 className="mb-1 font-semibold text-lg">
+									Failed to load components
+								</h3>
 								<p className="text-muted-foreground">
 									Something went wrong. Please try refreshing the page.
 								</p>
@@ -192,9 +207,9 @@ export default function ComponentsPage() {
 				) : (
 					<div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
 						{components.map((component, index) => (
-							<div 
-								key={component.id} 
-								className="animate-in fade-in slide-in-from-bottom-4 duration-300"
+							<div
+								key={component.id}
+								className="fade-in slide-in-from-bottom-4 animate-in duration-300"
 								style={{ animationDelay: `${index * 0.1}s` }}
 							>
 								<ComponentCard {...component} />
@@ -206,7 +221,7 @@ export default function ComponentsPage() {
 				{totalPages > 1 && (
 					<div className="flex justify-center">
 						<Pagination>
-							<PaginationContent className="bg-card/50 backdrop-blur-sm border rounded-lg p-2">
+							<PaginationContent className="rounded-lg border bg-card/50 p-2 backdrop-blur-sm">
 								<PaginationItem>
 									<PaginationPrevious
 										href="#"
@@ -255,18 +270,29 @@ export default function ComponentsPage() {
 				{!isLoading && !error && components.length === 0 && (
 					<div className="py-24 text-center">
 						<div className="mx-auto max-w-md space-y-6">
-							<div className="mx-auto h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
-								<svg className="h-10 w-10 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							<div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted/50">
+								<svg
+									className="h-10 w-10 text-muted-foreground"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth={1.5}
+										d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+									/>
 								</svg>
 							</div>
 							<div>
-								<h3 className="font-semibold text-xl mb-2">No components found</h3>
-								<p className="text-muted-foreground mb-4">
-									{searchQuery || selectedCategory 
+								<h3 className="mb-2 font-semibold text-xl">
+									No components found
+								</h3>
+								<p className="mb-4 text-muted-foreground">
+									{searchQuery || selectedCategory
 										? "Try adjusting your search criteria or filters."
-										: "It looks like there are no components available yet."
-									}
+										: "It looks like there are no components available yet."}
 								</p>
 								{(searchQuery || selectedCategory) && (
 									<button
@@ -274,7 +300,7 @@ export default function ComponentsPage() {
 											setSearchQuery("");
 											setSelectedCategory("");
 										}}
-										className="text-primary hover:text-primary/80 font-medium"
+										className="font-medium text-primary hover:text-primary/80"
 									>
 										Clear all filters
 									</button>

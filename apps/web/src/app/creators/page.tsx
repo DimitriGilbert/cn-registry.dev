@@ -20,7 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFormedible } from "@/hooks/use-formedible";
-import { trpc, type RouterOutputs } from "@/utils/trpc";
+import { type RouterOutputs, trpc } from "@/utils/trpc";
 import { getUserAvatarUrl } from "@/utils/user";
 
 type TrendingCreator = RouterOutputs["creators"]["getTrending"][number];
@@ -92,20 +92,22 @@ function CreatorCard({ creator }: { creator: Creator }) {
 					</p>
 				)}
 
-				{"specialties" in creator && creator.specialties && creator.specialties.length > 0 && (
-					<div className="mb-3 flex flex-wrap gap-1">
-						{creator.specialties.slice(0, 3).map((specialty: string) => (
-							<Badge key={specialty} variant="outline" className="text-xs">
-								{specialty}
-							</Badge>
-						))}
-						{creator.specialties.length > 3 && (
-							<Badge variant="outline" className="text-xs">
-								+{creator.specialties.length - 3}
-							</Badge>
-						)}
-					</div>
-				)}
+				{"specialties" in creator &&
+					creator.specialties &&
+					creator.specialties.length > 0 && (
+						<div className="mb-3 flex flex-wrap gap-1">
+							{creator.specialties.slice(0, 3).map((specialty: string) => (
+								<Badge key={specialty} variant="outline" className="text-xs">
+									{specialty}
+								</Badge>
+							))}
+							{creator.specialties.length > 3 && (
+								<Badge variant="outline" className="text-xs">
+									+{creator.specialties.length - 3}
+								</Badge>
+							)}
+						</div>
+					)}
 
 				<Button asChild size="sm" className="w-full">
 					<Link href={`/creators/${creator.username}`}>View Profile</Link>

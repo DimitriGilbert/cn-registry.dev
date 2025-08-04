@@ -2,18 +2,29 @@ import "server-only";
 import type { RouterInputs, RouterOutputs } from "./trpc";
 
 // Server-side data fetching using HTTP requests to the tRPC API
-const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:3001";
+const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";
 
 async function fetchFromTRPC(path: string, input?: unknown): Promise<unknown> {
-	const url = `${SERVER_URL}/trpc/${path}`;
-	const params = new URLSearchParams();
-	if (input !== undefined) {
-		params.set('input', JSON.stringify(input));
-	}
-	const fullUrl = `${url}?${params.toString()}`;
+	const url = `${SERVER_URL}/trpc`;
 	
-	const response = await fetch(fullUrl, {
-		method: "GET",
+	// Use tRPC batch format
+	const body = JSON.stringify({
+		0: {
+			id: null,
+			method: "query",
+			params: {
+				path,
+				input: input || null,
+			},
+		},
+	});
+	
+	const response = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body,
 	});
 
 	if (!response.ok) {
@@ -22,10 +33,10 @@ async function fetchFromTRPC(path: string, input?: unknown): Promise<unknown> {
 
 	try {
 		const data = await response.json();
-		if (!data?.result) {
+		if (!data || !Array.isArray(data) || !data[0]?.result) {
 			throw new Error('Invalid tRPC response structure');
 		}
-		return data.result.data;
+		return data[0].result.data;
 	} catch (error) {
 		throw new Error(`Failed to parse tRPC response: ${error}`);
 	}

@@ -5,26 +5,18 @@ import type { RouterInputs, RouterOutputs } from "./trpc";
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "https://api.cn-registry.dev";
 
 async function fetchFromTRPC(path: string, input?: unknown): Promise<unknown> {
-	const url = `${SERVER_URL}/trpc`;
+	const url = `${SERVER_URL}/trpc/${path}`;
+	const params = new URLSearchParams();
 	
-	// Use tRPC batch format
-	const body = JSON.stringify({
-		0: {
-			id: null,
-			method: "query",
-			params: {
-				path,
-				input: input || null,
-			},
-		},
-	});
+	// tRPC v11 format: GET /trpc/[procedureName]?input=ENCODED_JSON_INPUT
+	if (input !== undefined) {
+		params.set('input', JSON.stringify(input));
+	}
 	
-	const response = await fetch(url, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body,
+	const fullUrl = `${url}?${params.toString()}`;
+	
+	const response = await fetch(fullUrl, {
+		method: "GET",
 	});
 
 	if (!response.ok) {
@@ -33,10 +25,10 @@ async function fetchFromTRPC(path: string, input?: unknown): Promise<unknown> {
 
 	try {
 		const data = await response.json();
-		if (!data || !Array.isArray(data) || !data[0]?.result) {
+		if (!data?.result) {
 			throw new Error('Invalid tRPC response structure');
 		}
-		return data[0].result.data;
+		return data.result.data;
 	} catch (error) {
 		throw new Error(`Failed to parse tRPC response: ${error}`);
 	}

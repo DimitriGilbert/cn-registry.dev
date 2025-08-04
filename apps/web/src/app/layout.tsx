@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 const baseUrl =
 	process.env.NODE_ENV === "production"
 		? "https://cn-registry.dev"
-		: "http://localhost:3001";
+		: "http://localhost:3002";
 
 export const metadata: Metadata = {
 	title: "cn-registry - shadcn/ui Component Registry",

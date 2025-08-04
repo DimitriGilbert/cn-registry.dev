@@ -24,14 +24,20 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFormedible } from "@/hooks/use-formedible";
 import { trpc } from "@/utils/trpc";
+import type { RouterOutputs } from "@/utils/trpc";
+
+type Component = RouterOutputs["components"]["getAll"]["components"][number];
+type Category = RouterOutputs["categories"]["getAll"][number];
+type ComponentsData = RouterOutputs["components"]["getAll"];
+type CategoriesData = RouterOutputs["categories"]["getAll"];
 
 const searchSchema = z.object({
 	query: z.string(),
 });
 
 interface ComponentsClientProps {
-	initialComponents: any;
-	initialCategories: any;
+	initialComponents: ComponentsData;
+	initialCategories: CategoriesData;
 	searchParams: {
 		query?: string;
 		categoryId?: string;
@@ -99,8 +105,8 @@ export function ComponentsClient({
 
 	const updateURL = (params: { query?: string; categoryId?: string; page?: number; sort?: string }) => {
 		const url = new URL(window.location.href);
-		if (params.query) url.searchParams.set('q', params.query);
-		else url.searchParams.delete('q');
+		if (params.query) url.searchParams.set('query', params.query);
+		else url.searchParams.delete('query');
 		if (params.categoryId) url.searchParams.set('categoryId', params.categoryId);
 		else url.searchParams.delete('categoryId');
 		if (params.page && params.page > 1) url.searchParams.set('page', params.page.toString());
@@ -125,7 +131,7 @@ export function ComponentsClient({
 				{
 					id: "category",
 					label: "Category",
-					options: categories.map((cat: any) => ({
+					options: categories.map((cat: Category) => ({
 						id: cat.id,
 						label: cat.name,
 						count: cat.componentCount || 0,
@@ -187,7 +193,7 @@ export function ComponentsClient({
 							{searchQuery && ` for "${searchQuery}"`}
 							{selectedCategory &&
 								categories &&
-								` in ${categories.find((c: any) => c.id === selectedCategory)?.name}`}
+								` in ${categories.find((c: Category) => c.id === selectedCategory)?.name}`}
 						</p>
 						{totalCount > 0 && (
 							<p>
@@ -244,7 +250,7 @@ export function ComponentsClient({
 				</div>
 			) : (
 				<div className="mb-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-					{components.map((component: any, index: number) => (
+					{components.map((component: Component, index: number) => (
 						<div
 							key={component.id}
 							className="fade-in slide-in-from-bottom-4 animate-in duration-300"

@@ -34,8 +34,13 @@ export const CACHE_TAGS = {
 export const getCachedComponents = unstable_cache(
 	async (
 		options: Parameters<typeof serverCaller.components.getAll>[0] = {},
-	) => {
-		return serverCaller.components.getAll(options);
+	): Promise<RouterOutputs["components"]["getAll"]> => {
+		try {
+			return await serverCaller.components.getAll(options);
+		} catch (error) {
+			console.error("Failed to fetch cached components:", error);
+			throw error;
+		}
 	},
 	["components", "getAll"],
 	{
@@ -44,20 +49,31 @@ export const getCachedComponents = unstable_cache(
 	},
 );
 
-export const getCachedComponentById = unstable_cache(
-	async (id: string) => {
-		return serverCaller.components.getById({ id });
-	},
-	["components", "getById"],
-	{
-		tags: [CACHE_TAGS.components.byId("__id__")],
-		revalidate: DEFAULT_REVALIDATE,
-	},
-);
+export const getCachedComponentById = (id: string) => 
+	unstable_cache(
+		async (): Promise<RouterOutputs["components"]["getById"]> => {
+			try {
+				return await serverCaller.components.getById({ id });
+			} catch (error) {
+				console.error(`Failed to fetch cached component ${id}:`, error);
+				throw error;
+			}
+		},
+		["components", "getById", id],
+		{
+			tags: [CACHE_TAGS.components.byId(id)],
+			revalidate: DEFAULT_REVALIDATE,
+		},
+	)();
 
 export const getCachedTools = unstable_cache(
-	async (options: Parameters<typeof serverCaller.tools.getAll>[0] = {}) => {
-		return serverCaller.tools.getAll(options);
+	async (options: Parameters<typeof serverCaller.tools.getAll>[0] = {}): Promise<RouterOutputs["tools"]["getAll"]> => {
+		try {
+			return await serverCaller.tools.getAll(options);
+		} catch (error) {
+			console.error("Failed to fetch cached tools:", error);
+			throw error;
+		}
 	},
 	["tools", "getAll"],
 	{
@@ -66,20 +82,31 @@ export const getCachedTools = unstable_cache(
 	},
 );
 
-export const getCachedToolById = unstable_cache(
-	async (id: string) => {
-		return serverCaller.tools.getById({ id });
-	},
-	["tools", "getById"],
-	{
-		tags: [CACHE_TAGS.tools.byId("__id__")],
-		revalidate: DEFAULT_REVALIDATE,
-	},
-);
+export const getCachedToolById = (id: string) => 
+	unstable_cache(
+		async (): Promise<RouterOutputs["tools"]["getById"]> => {
+			try {
+				return await serverCaller.tools.getById({ id });
+			} catch (error) {
+				console.error(`Failed to fetch cached tool ${id}:`, error);
+				throw error;
+			}
+		},
+		["tools", "getById", id],
+		{
+			tags: [CACHE_TAGS.tools.byId(id)],
+			revalidate: DEFAULT_REVALIDATE,
+		},
+	)();
 
 export const getCachedCreators = unstable_cache(
-	async (options: Parameters<typeof serverCaller.creators.search>[0] = {}) => {
-		return serverCaller.creators.search(options);
+	async (options: Parameters<typeof serverCaller.creators.search>[0] = {}): Promise<RouterOutputs["creators"]["search"]> => {
+		try {
+			return await serverCaller.creators.search(options);
+		} catch (error) {
+			console.error("Failed to fetch cached creators:", error);
+			throw error;
+		}
 	},
 	["creators", "search"],
 	{
@@ -91,8 +118,13 @@ export const getCachedCreators = unstable_cache(
 export const getCachedTrendingCreators = unstable_cache(
 	async (
 		options: Parameters<typeof serverCaller.creators.getTrending>[0] = {},
-	) => {
-		return serverCaller.creators.getTrending(options);
+	): Promise<RouterOutputs["creators"]["getTrending"]> => {
+		try {
+			return await serverCaller.creators.getTrending(options);
+		} catch (error) {
+			console.error("Failed to fetch cached trending creators:", error);
+			throw error;
+		}
 	},
 	["creators", "getTrending"],
 	{
@@ -101,20 +133,31 @@ export const getCachedTrendingCreators = unstable_cache(
 	},
 );
 
-export const getCachedCreatorByUsername = unstable_cache(
-	async (username: string) => {
-		return serverCaller.creators.getByUsername({ username });
-	},
-	["creators", "getByUsername"],
-	{
-		tags: [CACHE_TAGS.creators.byUsername("__username__")],
-		revalidate: DEFAULT_REVALIDATE,
-	},
-);
+export const getCachedCreatorByUsername = (username: string) => 
+	unstable_cache(
+		async (): Promise<RouterOutputs["creators"]["getByUsername"]> => {
+			try {
+				return await serverCaller.creators.getByUsername({ username });
+			} catch (error) {
+				console.error(`Failed to fetch cached creator ${username}:`, error);
+				throw error;
+			}
+		},
+		["creators", "getByUsername", username],
+		{
+			tags: [CACHE_TAGS.creators.byUsername(username)],
+			revalidate: DEFAULT_REVALIDATE,
+		},
+	)();
 
 export const getCachedCategories = unstable_cache(
-	async () => {
-		return serverCaller.categories.getAll();
+	async (): Promise<RouterOutputs["categories"]["getAll"]> => {
+		try {
+			return await serverCaller.categories.getAll();
+		} catch (error) {
+			console.error("Failed to fetch cached categories:", error);
+			throw error;
+		}
 	},
 	["categories", "getAll"],
 	{
@@ -125,16 +168,22 @@ export const getCachedCategories = unstable_cache(
 
 // Note: projects.getAll is protected and requires auth, so we don't cache it for RSC
 
-export const getCachedProjectBySlug = unstable_cache(
-	async (slug: string) => {
-		return serverCaller.projects.getBySlug({ slug });
-	},
-	["projects", "getBySlug"],
-	{
-		tags: [CACHE_TAGS.projects.bySlug("__slug__")],
-		revalidate: DEFAULT_REVALIDATE,
-	},
-);
+export const getCachedProjectBySlug = (slug: string) => 
+	unstable_cache(
+		async (): Promise<RouterOutputs["projects"]["getBySlug"]> => {
+			try {
+				return await serverCaller.projects.getBySlug({ slug });
+			} catch (error) {
+				console.error(`Failed to fetch cached project ${slug}:`, error);
+				throw error;
+			}
+		},
+		["projects", "getBySlug", slug],
+		{
+			tags: [CACHE_TAGS.projects.bySlug(slug)],
+			revalidate: DEFAULT_REVALIDATE,
+		},
+	)();
 
 // Cache invalidation helpers
 export function invalidateComponents() {

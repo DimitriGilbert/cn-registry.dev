@@ -1,6 +1,3 @@
-"use client";
-
-import { useQuery } from "@tanstack/react-query";
 import {
 	AlertTriangle,
 	Clock,
@@ -10,87 +7,77 @@ import {
 	Sparkles,
 	TrendingUp,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { CollectionSection } from "@/components/features/collection-section";
-import { SearchBar } from "@/components/features/search-bar";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
 import { Marquee } from "@/components/magicui/marquee";
 import { ShineBorder } from "@/components/magicui/shine-border";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/utils/trpc";
 import { getUserAvatarUrl } from "@/utils/user";
+import { getCachedComponents, getCachedTools, getCachedTrendingCreators } from "@/lib/cache";
+import { HomeSearchBar } from "@/components/features/home-search-bar";
+import { AlphaWarning } from "@/components/features/alpha-warning";
+import type { RouterOutputs } from "@/utils/trpc";
 
-export default function HomePage() {
-	const router = useRouter();
+type TrendingCreator = RouterOutputs["creators"]["getTrending"][number];
 
-	// Fetch latest components
-	const { data: latestComponents, isLoading: isLatestLoading } = useQuery(
-		trpc.components.getAll.queryOptions({
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+	// Fetch latest components with error handling
+	let latestComponents: Awaited<ReturnType<typeof getCachedComponents>>;
+	try {
+		latestComponents = await getCachedComponents({
 			page: 1,
 			limit: 10,
-		}),
-	);
+		});
+	} catch (error) {
+		console.error("Failed to fetch latest components:", error);
+		latestComponents = { components: [], totalCount: 0, currentPage: 1, totalPages: 0 };
+	}
 
 	// Fetch trending/popular components (sorted by stars)
-	const { data: trendingComponents, isLoading: isTrendingLoading } = useQuery(
-		trpc.components.getAll.queryOptions({
+	let trendingComponents: Awaited<ReturnType<typeof getCachedComponents>>;
+	try {
+		trendingComponents = await getCachedComponents({
 			page: 1,
 			limit: 10,
 			sort: "name",
 			order: "asc",
-		}),
-	);
+		});
+	} catch (error) {
+		console.error("Failed to fetch trending components:", error);
+		trendingComponents = { components: [], totalCount: 0, currentPage: 1, totalPages: 0 };
+	}
 
-	// Fetch featured tools
-	const { data: featuredTools, isLoading: isToolsLoading } = useQuery(
-		trpc.tools.getAll.queryOptions({
+	// Fetch featured tools  
+	let featuredTools: Awaited<ReturnType<typeof getCachedTools>>;
+	try {
+		featuredTools = await getCachedTools({
 			page: 1,
 			limit: 10,
-		}),
-	);
+		});
+	} catch (error) {
+		console.error("Failed to fetch featured tools:", error);
+		featuredTools = { tools: [], totalCount: 0, currentPage: 1, totalPages: 0 };
+	}
 
 	// Fetch trending creators for marquee
-	const { data: trendingCreators } = useQuery(
-		trpc.creators.getTrending.queryOptions({
+	let trendingCreators: Awaited<ReturnType<typeof getCachedTrendingCreators>> = [];
+	try {
+		trendingCreators = await getCachedTrendingCreators({
 			limit: 12,
-		}),
-	);
-
-	const handleSearch = (query: string) => {
-		if (query.trim()) {
-			router.push(`/search?q=${encodeURIComponent(query)}`);
-		}
-	};
+		});
+	} catch (error) {
+		console.error("Failed to fetch trending creators:", error);
+		trendingCreators = [];
+	}
 
 	return (
 		<Container>
 			<div className="py-12">
 				{/* Alpha Warning */}
-				<div className="mb-8 rounded-lg border border-border bg-muted/50 p-4">
-					<div className="flex items-center gap-3">
-						<AlertTriangle className="h-5 w-5 text-muted-foreground" />
-						<div className="flex-1">
-							<h3 className="font-medium text-foreground">Alpha Version</h3>
-							<p className="mt-1 text-muted-foreground text-sm">
-								This is an alpha version. You might encounter bugs and missing
-								features. Please help us improve by reporting issues!
-							</p>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() =>
-								window.open(
-									"https://github.com/DimitriGilbert/cn-registry.dev/issues",
-									"_blank",
-								)
-							}
-						>
-							Report Issue
-						</Button>
-					</div>
-				</div>
+				<AlphaWarning />
 
 				{/* Hero Section */}
 				<div className="mb-20">
@@ -127,9 +114,8 @@ export default function HomePage() {
 								</div>
 							</div>
 							<div className="mx-auto max-w-md">
-								<SearchBar
+								<HomeSearchBar
 									placeholder="Search components and tools..."
-									onSearch={handleSearch}
 									suggestions={[
 										"data table",
 										"form",
@@ -168,9 +154,8 @@ export default function HomePage() {
 									</div>
 								</div>
 								<div className="max-w-md">
-									<SearchBar
+									<HomeSearchBar
 										placeholder="Search components and tools..."
-										onSearch={handleSearch}
 										suggestions={[
 											"data table",
 											"form",
@@ -190,7 +175,7 @@ export default function HomePage() {
 								>
 									{(trendingCreators || Array(6).fill(null))
 										.slice(0, 6)
-										.map((creator, i) => (
+										.map((creator: TrendingCreator | null, i: number) => (
 											<a
 												key={creator?.id || i}
 												href={
@@ -233,7 +218,7 @@ export default function HomePage() {
 								>
 									{(trendingCreators || Array(6).fill(null))
 										.slice(6, 12)
-										.map((creator, i) => (
+										.map((creator: TrendingCreator | null, i: number) => (
 											<a
 												key={creator?.id || i + 6}
 												href={
@@ -275,9 +260,8 @@ export default function HomePage() {
 
 				<CollectionSection
 					title="Latest Components"
-					icon={Clock}
 					items={latestComponents?.components}
-					isLoading={isLatestLoading}
+					isLoading={false}
 					viewAllLink="/components"
 					itemType="component"
 					layout="carousel"
@@ -428,9 +412,8 @@ export default function HomePage() {
 
 				<CollectionSection
 					title="Popular Components"
-					icon={TrendingUp}
 					items={trendingComponents?.components}
-					isLoading={isTrendingLoading}
+					isLoading={false}
 					viewAllLink="/components?sort=stars"
 					itemType="component"
 					layout="carousel"
@@ -441,9 +424,8 @@ export default function HomePage() {
 
 				<CollectionSection
 					title="Featured Tools"
-					icon={Sparkles}
 					items={featuredTools?.tools}
-					isLoading={isToolsLoading}
+					isLoading={false}
 					viewAllLink="/tools"
 					itemType="tool"
 					layout="carousel"

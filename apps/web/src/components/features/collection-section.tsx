@@ -3,9 +3,11 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
-import { ArrowRight, type LucideIcon } from "lucide-react";
+import { ArrowRight, Clock, TrendingUp, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { ComponentCard } from "@/components/features/component-card";
+import { ToolCard } from "@/components/features/tool-card";
+import { Button } from "@/components/ui/button";
 import {
 	Carousel,
 	CarouselContent,
@@ -13,15 +15,12 @@ import {
 	CarouselNext,
 	CarouselPrevious,
 } from "@/components/features/enhanced-carousel";
-import { ToolCard } from "@/components/features/tool-card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type AnimationType = "fade" | "scale" | "opacity" | "grow-opacity";
 
 interface CollectionSectionProps {
 	title: string;
-	icon: LucideIcon;
 	items?: any[];
 	isLoading: boolean;
 	viewAllLink: string;
@@ -34,7 +33,6 @@ interface CollectionSectionProps {
 
 export function CollectionSection({
 	title,
-	icon: Icon,
 	items = [],
 	isLoading,
 	viewAllLink,
@@ -44,6 +42,10 @@ export function CollectionSection({
 	skeletonCount = 4,
 	animationType = "scale",
 }: CollectionSectionProps) {
+	// Hardcode the icons based on title
+	const Icon = title.includes("Latest") ? Clock : 
+	            title.includes("Popular") ? TrendingUp : 
+	            Sparkles;
 	const renderSkeleton = () => {
 		if (layout === "grid") {
 			return (
@@ -86,6 +88,8 @@ export function CollectionSection({
 								<ComponentCard
 									key={item.id}
 									{...item}
+									createdAt={item.createdAt?.toISOString?.() || item.createdAt}
+									updatedAt={item.updatedAt?.toISOString?.() || item.updatedAt}
 									disableHoverEffects={false}
 								/>
 							);
@@ -107,12 +111,7 @@ export function CollectionSection({
 			...(animationType === "fade" ? [Fade()] : []),
 		];
 
-		const tweenEffect =
-			animationType === "scale" ||
-			animationType === "opacity" ||
-			animationType === "grow-opacity"
-				? animationType
-				: null;
+		const tweenEffect = animationType === "scale" || animationType === "opacity" || animationType === "grow-opacity" ? animationType : null;
 
 		return (
 			<Carousel
@@ -132,7 +131,12 @@ export function CollectionSection({
 							className="pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
 						>
 							{itemType === "component" ? (
-								<ComponentCard {...item} disableHoverEffects={true} />
+								<ComponentCard 
+									{...item} 
+									createdAt={item.createdAt?.toISOString?.() || item.createdAt}
+									updatedAt={item.updatedAt?.toISOString?.() || item.updatedAt}
+									disableHoverEffects={true} 
+								/>
 							) : (
 								<ToolCard {...item} disableHoverEffects={true} />
 							)}
@@ -145,41 +149,36 @@ export function CollectionSection({
 		);
 	};
 
-	const renderEmptyState = () => (
-		<div className="py-12 text-center">
-			<p className="text-muted-foreground">
-				{emptyMessage || `No ${itemType}s available yet.`}
-			</p>
-			<Button variant="outline" className="mt-4" asChild>
-				<Link href={viewAllLink}>
-					Browse {itemType === "component" ? "Components" : "Tools"}
-				</Link>
-			</Button>
-		</div>
-	);
-
 	return (
-		<section className="mb-16">
-			<div className="mb-6 flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<Icon className="h-5 w-5 text-primary" />
-					<h2 className="font-bold text-2xl">{title}</h2>
+		<section className="relative mb-20">
+			<div className="mb-8 flex items-center justify-between">
+				<div className="flex items-center gap-3">
+					<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+						<Icon className="h-5 w-5 text-primary" />
+					</div>
+					<div>
+						<h2 className="font-bold text-2xl tracking-tight">{title}</h2>
+					</div>
 				</div>
-				<Button variant="outline" asChild>
+				<Button asChild variant="ghost" className="group">
 					<Link href={viewAllLink}>
-						<span className="flex items-center gap-2">
-							View All
-							<ArrowRight className="h-4 w-4" />
-						</span>
+						View all
+						<ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
 					</Link>
 				</Button>
 			</div>
 
-			{isLoading
-				? renderSkeleton()
-				: items.length > 0
-					? renderItems()
-					: renderEmptyState()}
+			{isLoading ? (
+				renderSkeleton()
+			) : items.length === 0 ? (
+				<div className="py-12 text-center">
+					<p className="text-muted-foreground">
+						{emptyMessage || "No items to display."}
+					</p>
+				</div>
+			) : (
+				renderItems()
+			)}
 		</section>
 	);
 }

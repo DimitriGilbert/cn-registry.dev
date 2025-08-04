@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { z } from "zod";
 import { ComponentCard } from "@/components/features/component-card";
 import { FilterPanel } from "@/components/features/filter-panel";
@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFormedible } from "@/hooks/use-formedible";
-import { trpc } from "@/utils/trpc";
 import type { RouterOutputs } from "@/utils/trpc";
+import { trpc } from "@/utils/trpc";
 
 type Component = RouterOutputs["components"]["getAll"]["components"][number];
 type Category = RouterOutputs["categories"]["getAll"][number];
@@ -46,16 +46,20 @@ interface ComponentsClientProps {
 	};
 }
 
-export function ComponentsClient({ 
-	initialComponents, 
-	initialCategories, 
-	searchParams 
+export function ComponentsClient({
+	initialComponents,
+	initialCategories,
+	searchParams,
 }: ComponentsClientProps) {
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState(searchParams.query || "");
-	const [selectedCategory, setSelectedCategory] = useState(searchParams.categoryId || "");
+	const [selectedCategory, setSelectedCategory] = useState(
+		searchParams.categoryId || "",
+	);
 	const [sortBy, setSortBy] = useState(searchParams.sort || "latest");
-	const [currentPage, setCurrentPage] = useState(parseInt(searchParams.page || "1"));
+	const [currentPage, setCurrentPage] = useState(
+		Number.parseInt(searchParams.page || "1"),
+	);
 
 	const itemsPerPage = 12;
 
@@ -73,7 +77,12 @@ export function ComponentsClient({
 			onSubmit: async ({ value }) => {
 				setSearchQuery(value.query);
 				setCurrentPage(1);
-				updateURL({ query: value.query, categoryId: selectedCategory, page: 1, sort: sortBy });
+				updateURL({
+					query: value.query,
+					categoryId: selectedCategory,
+					page: 1,
+					sort: sortBy,
+				});
 			},
 		},
 		showSubmitButton: false,
@@ -97,22 +106,32 @@ export function ComponentsClient({
 			page: currentPage,
 			limit: itemsPerPage,
 		}),
-		initialData: searchQuery === (searchParams.query || "") && 
-		           selectedCategory === (searchParams.categoryId || "") && 
-		           currentPage === parseInt(searchParams.page || "1") 
-		           ? initialComponents : undefined,
+		initialData:
+			searchQuery === (searchParams.query || "") &&
+			selectedCategory === (searchParams.categoryId || "") &&
+			currentPage === Number.parseInt(searchParams.page || "1")
+				? initialComponents
+				: undefined,
 	});
 
-	const updateURL = (params: { query?: string; categoryId?: string; page?: number; sort?: string }) => {
+	const updateURL = (params: {
+		query?: string;
+		categoryId?: string;
+		page?: number;
+		sort?: string;
+	}) => {
 		const url = new URL(window.location.href);
-		if (params.query) url.searchParams.set('query', params.query);
-		else url.searchParams.delete('query');
-		if (params.categoryId) url.searchParams.set('categoryId', params.categoryId);
-		else url.searchParams.delete('categoryId');
-		if (params.page && params.page > 1) url.searchParams.set('page', params.page.toString());
-		else url.searchParams.delete('page');
-		if (params.sort && params.sort !== 'latest') url.searchParams.set('sort', params.sort);
-		else url.searchParams.delete('sort');
+		if (params.query) url.searchParams.set("query", params.query);
+		else url.searchParams.delete("query");
+		if (params.categoryId)
+			url.searchParams.set("categoryId", params.categoryId);
+		else url.searchParams.delete("categoryId");
+		if (params.page && params.page > 1)
+			url.searchParams.set("page", params.page.toString());
+		else url.searchParams.delete("page");
+		if (params.sort && params.sort !== "latest")
+			url.searchParams.set("sort", params.sort);
+		else url.searchParams.delete("sort");
 		router.push(url.pathname + url.search, { scroll: false });
 	};
 
@@ -158,14 +177,24 @@ export function ComponentsClient({
 									onFiltersChange={(filters) => {
 										const newCategory = filters[0] || "";
 										setSelectedCategory(newCategory);
-										updateURL({ query: searchQuery, categoryId: newCategory, page: 1, sort: sortBy });
+										updateURL({
+											query: searchQuery,
+											categoryId: newCategory,
+											page: 1,
+											sort: sortBy,
+										});
 									}}
 								/>
-								<Select 
-									value={sortBy} 
+								<Select
+									value={sortBy}
 									onValueChange={(value) => {
 										setSortBy(value);
-										updateURL({ query: searchQuery, categoryId: selectedCategory, page: currentPage, sort: value });
+										updateURL({
+											query: searchQuery,
+											categoryId: selectedCategory,
+											page: currentPage,
+											sort: value,
+										});
 									}}
 								>
 									<SelectTrigger className="w-[180px] bg-background/50 backdrop-blur-sm">
@@ -272,7 +301,12 @@ export function ComponentsClient({
 									onClick={() => {
 										const newPage = Math.max(1, currentPage - 1);
 										setCurrentPage(newPage);
-										updateURL({ query: searchQuery, categoryId: selectedCategory, page: newPage, sort: sortBy });
+										updateURL({
+											query: searchQuery,
+											categoryId: selectedCategory,
+											page: newPage,
+											sort: sortBy,
+										});
 									}}
 									className="hover:bg-primary/10"
 								/>
@@ -295,7 +329,12 @@ export function ComponentsClient({
 											isActive={page === currentPage}
 											onClick={() => {
 												setCurrentPage(page);
-												updateURL({ query: searchQuery, categoryId: selectedCategory, page, sort: sortBy });
+												updateURL({
+													query: searchQuery,
+													categoryId: selectedCategory,
+													page,
+													sort: sortBy,
+												});
 											}}
 											className="hover:bg-primary/10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
 										>
@@ -310,7 +349,12 @@ export function ComponentsClient({
 									onClick={() => {
 										const newPage = Math.min(totalPages, currentPage + 1);
 										setCurrentPage(newPage);
-										updateURL({ query: searchQuery, categoryId: selectedCategory, page: newPage, sort: sortBy });
+										updateURL({
+											query: searchQuery,
+											categoryId: selectedCategory,
+											page: newPage,
+											sort: sortBy,
+										});
 									}}
 									className="hover:bg-primary/10"
 								/>
@@ -352,7 +396,12 @@ export function ComponentsClient({
 									onClick={() => {
 										setSearchQuery("");
 										setSelectedCategory("");
-										updateURL({ query: "", categoryId: "", page: 1, sort: sortBy });
+										updateURL({
+											query: "",
+											categoryId: "",
+											page: 1,
+											sort: sortBy,
+										});
 									}}
 									className="font-medium text-primary hover:text-primary/80"
 								>

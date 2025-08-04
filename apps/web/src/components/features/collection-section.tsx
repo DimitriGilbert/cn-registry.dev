@@ -3,11 +3,15 @@
 
 import Autoplay from "embla-carousel-autoplay";
 import Fade from "embla-carousel-fade";
-import { ArrowRight, Clock, TrendingUp, Sparkles, type LucideIcon } from "lucide-react";
+import {
+	ArrowRight,
+	Clock,
+	type LucideIcon,
+	Sparkles,
+	TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import { ComponentCard } from "@/components/features/component-card";
-import { ToolCard } from "@/components/features/tool-card";
-import { Button } from "@/components/ui/button";
 import {
 	Carousel,
 	CarouselContent,
@@ -15,6 +19,8 @@ import {
 	CarouselNext,
 	CarouselPrevious,
 } from "@/components/features/enhanced-carousel";
+import { ToolCard } from "@/components/features/tool-card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type AnimationType = "fade" | "scale" | "opacity" | "grow-opacity";
@@ -43,9 +49,11 @@ export function CollectionSection({
 	animationType = "scale",
 }: CollectionSectionProps) {
 	// Hardcode the icons based on title
-	const Icon = title.includes("Latest") ? Clock : 
-	            title.includes("Popular") ? TrendingUp : 
-	            Sparkles;
+	const Icon = title.includes("Latest")
+		? Clock
+		: title.includes("Popular")
+			? TrendingUp
+			: Sparkles;
 	const renderSkeleton = () => {
 		if (layout === "grid") {
 			return (
@@ -111,7 +119,12 @@ export function CollectionSection({
 			...(animationType === "fade" ? [Fade()] : []),
 		];
 
-		const tweenEffect = animationType === "scale" || animationType === "opacity" || animationType === "grow-opacity" ? animationType : null;
+		const tweenEffect =
+			animationType === "scale" ||
+			animationType === "opacity" ||
+			animationType === "grow-opacity"
+				? animationType
+				: null;
 
 		return (
 			<Carousel
@@ -131,11 +144,11 @@ export function CollectionSection({
 							className="pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
 						>
 							{itemType === "component" ? (
-								<ComponentCard 
-									{...item} 
+								<ComponentCard
+									{...item}
 									createdAt={item.createdAt?.toISOString?.() || item.createdAt}
 									updatedAt={item.updatedAt?.toISOString?.() || item.updatedAt}
-									disableHoverEffects={true} 
+									disableHoverEffects={true}
 								/>
 							) : (
 								<ToolCard {...item} disableHoverEffects={true} />

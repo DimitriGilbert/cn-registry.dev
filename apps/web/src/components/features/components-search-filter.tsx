@@ -43,22 +43,35 @@ export function ComponentsSearchAndFilter({
 		formOptions: {
 			defaultValues: { query: currentQuery },
 			onSubmit: async ({ value }) => {
-				updateURL({ query: value.query, categoryId: currentCategory, page: 1, sort: currentSort });
+				updateURL({
+					query: value.query,
+					categoryId: currentCategory,
+					page: 1,
+					sort: currentSort,
+				});
 			},
 		},
 		showSubmitButton: false,
 	});
 
-	const updateURL = (params: { query?: string; categoryId?: string; page?: number; sort?: string }) => {
+	const updateURL = (params: {
+		query?: string;
+		categoryId?: string;
+		page?: number;
+		sort?: string;
+	}) => {
 		const url = new URL(window.location.href);
-		if (params.query) url.searchParams.set('q', params.query);
-		else url.searchParams.delete('q');
-		if (params.categoryId) url.searchParams.set('categoryId', params.categoryId);
-		else url.searchParams.delete('categoryId');
-		if (params.page && params.page > 1) url.searchParams.set('page', params.page.toString());
-		else url.searchParams.delete('page');
-		if (params.sort && params.sort !== 'latest') url.searchParams.set('sort', params.sort);
-		else url.searchParams.delete('sort');
+		if (params.query) url.searchParams.set("q", params.query);
+		else url.searchParams.delete("q");
+		if (params.categoryId)
+			url.searchParams.set("categoryId", params.categoryId);
+		else url.searchParams.delete("categoryId");
+		if (params.page && params.page > 1)
+			url.searchParams.set("page", params.page.toString());
+		else url.searchParams.delete("page");
+		if (params.sort && params.sort !== "latest")
+			url.searchParams.set("sort", params.sort);
+		else url.searchParams.delete("sort");
 		router.push(url.pathname + url.search);
 	};
 
@@ -92,13 +105,23 @@ export function ComponentsSearchAndFilter({
 								selectedFilters={currentCategory ? [currentCategory] : []}
 								onFiltersChange={(filters) => {
 									const newCategory = filters[0] || "";
-									updateURL({ query: currentQuery, categoryId: newCategory, page: 1, sort: currentSort });
+									updateURL({
+										query: currentQuery,
+										categoryId: newCategory,
+										page: 1,
+										sort: currentSort,
+									});
 								}}
 							/>
-							<Select 
-								value={currentSort} 
+							<Select
+								value={currentSort}
 								onValueChange={(value) => {
-									updateURL({ query: currentQuery, categoryId: currentCategory, page: 1, sort: value });
+									updateURL({
+										query: currentQuery,
+										categoryId: currentCategory,
+										page: 1,
+										sort: value,
+									});
 								}}
 							>
 								<SelectTrigger className="w-[180px] bg-background/50 backdrop-blur-sm">

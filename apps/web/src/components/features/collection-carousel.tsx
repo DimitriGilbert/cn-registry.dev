@@ -15,16 +15,23 @@ interface CollectionCarouselProps {
 	animationType?: "fade" | "scale" | "opacity" | "grow-opacity";
 }
 
-export function CollectionCarousel({ children, animationType = "fade" }: CollectionCarouselProps) {
+export function CollectionCarousel({
+	children,
+	animationType = "fade",
+}: CollectionCarouselProps) {
 	const plugins = [];
 	let tweenEffect = null;
-	
+
 	if (animationType === "fade") {
 		plugins.push(Fade());
-	} else if (animationType === "scale" || animationType === "opacity" || animationType === "grow-opacity") {
+	} else if (
+		animationType === "scale" ||
+		animationType === "opacity" ||
+		animationType === "grow-opacity"
+	) {
 		tweenEffect = animationType;
 	}
-	
+
 	plugins.push(Autoplay({ delay: 4000, stopOnInteraction: true }));
 
 	return (
@@ -41,7 +48,7 @@ export function CollectionCarousel({ children, animationType = "fade" }: Collect
 				{children.map((child, index) => (
 					<CarouselItem
 						key={index}
-						className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3"
+						className="pl-2 md:basis-1/2 md:pl-4 lg:basis-1/3"
 					>
 						{child}
 					</CarouselItem>

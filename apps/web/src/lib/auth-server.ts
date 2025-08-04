@@ -8,7 +8,7 @@ export async function getSession() {
 	try {
 		const cookieStore = await cookies();
 		const sessionCookie = cookieStore.get("better-auth-session");
-		
+
 		if (!sessionCookie) {
 			return null;
 		}

@@ -1,17 +1,17 @@
+import { searchSchema } from "@/../../server/src/lib/validation";
 import { ComponentCard } from "@/components/features/component-card";
+import { ComponentsPagination } from "@/components/features/components-pagination";
+import { ComponentsSearchAndFilter } from "@/components/features/components-search-filter";
 import { Container } from "@/components/layout/container";
 import { PageTitle } from "@/components/layout/page-title";
-import { getCachedComponents, getCachedCategories } from "@/lib/cache";
-import { ComponentsSearchAndFilter } from "@/components/features/components-search-filter";
-import { ComponentsPagination } from "@/components/features/components-pagination";
-import { searchSchema } from "@/../../server/src/lib/validation";
+import { getCachedCategories, getCachedComponents } from "@/lib/cache";
 import type { RouterOutputs } from "@/utils/trpc";
 
 type Component = RouterOutputs["components"]["getAll"]["components"][number];
 type Category = RouterOutputs["categories"]["getAll"][number];
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 interface ComponentsPageProps {
 	searchParams: Promise<{
@@ -22,12 +22,14 @@ interface ComponentsPageProps {
 	}>;
 }
 
-export default async function ComponentsPage({ searchParams }: ComponentsPageProps) {
+export default async function ComponentsPage({
+	searchParams,
+}: ComponentsPageProps) {
 	// Parse search params
 	const params = await searchParams;
 	const query = params.q;
 	const categoryId = params.categoryId;
-	const page = parseInt(params.page || "1");
+	const page = Number.parseInt(params.page || "1");
 	const limit = 12;
 
 	// Use the actual schema to validate sort
@@ -46,7 +48,12 @@ export default async function ComponentsPage({ searchParams }: ComponentsPagePro
 		});
 	} catch (error) {
 		console.error("Failed to fetch components:", error);
-		componentsData = { components: [], totalCount: 0, currentPage: 1, totalPages: 0 };
+		componentsData = {
+			components: [],
+			totalCount: 0,
+			currentPage: 1,
+			totalPages: 0,
+		};
 	}
 
 	let categories: Awaited<ReturnType<typeof getCachedCategories>>;
@@ -102,9 +109,7 @@ export default async function ComponentsPage({ searchParams }: ComponentsPagePro
 								className="fade-in slide-in-from-bottom-4 animate-in duration-300"
 								style={{ animationDelay: `${index * 0.1}s` }}
 							>
-								<ComponentCard 
-									{...component}
-								/>
+								<ComponentCard {...component} />
 							</div>
 						))}
 					</div>
@@ -127,7 +132,9 @@ export default async function ComponentsPage({ searchParams }: ComponentsPagePro
 								</svg>
 							</div>
 							<div>
-								<h3 className="mb-2 font-semibold text-xl">No components found</h3>
+								<h3 className="mb-2 font-semibold text-xl">
+									No components found
+								</h3>
 								<p className="mb-4 text-muted-foreground">
 									{query || categoryId
 										? "Try adjusting your search criteria or filters."

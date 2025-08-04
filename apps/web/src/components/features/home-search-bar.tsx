@@ -8,7 +8,10 @@ interface HomeSearchBarProps {
 	suggestions?: string[];
 }
 
-export function HomeSearchBar({ placeholder, suggestions }: HomeSearchBarProps) {
+export function HomeSearchBar({
+	placeholder,
+	suggestions,
+}: HomeSearchBarProps) {
 	const router = useRouter();
 
 	const handleSearch = (query: string) => {

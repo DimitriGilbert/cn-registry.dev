@@ -14,7 +14,9 @@ import {
 const getRevalidationSecret = () => {
 	const secret = process.env.CACHE_REVALIDATION_SECRET;
 	if (!secret) {
-		throw new Error("CACHE_REVALIDATION_SECRET environment variable is required");
+		throw new Error(
+			"CACHE_REVALIDATION_SECRET environment variable is required",
+		);
 	}
 	return secret;
 };
@@ -32,15 +34,21 @@ export async function POST(request: NextRequest) {
 
 		// Parse request body
 		const body = await request.json();
-		
-		if (!body || typeof body !== 'object') {
-			return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+
+		if (!body || typeof body !== "object") {
+			return NextResponse.json(
+				{ error: "Invalid request body" },
+				{ status: 400 },
+			);
 		}
-		
+
 		const { type, id } = body;
-		
-		if (!type || typeof type !== 'string') {
-			return NextResponse.json({ error: "Missing or invalid 'type' field" }, { status: 400 });
+
+		if (!type || typeof type !== "string") {
+			return NextResponse.json(
+				{ error: "Missing or invalid 'type' field" },
+				{ status: 400 },
+			);
 		}
 
 		// Handle different invalidation types

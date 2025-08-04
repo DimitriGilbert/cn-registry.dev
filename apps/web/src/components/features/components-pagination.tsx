@@ -29,14 +29,14 @@ export function ComponentsPagination({
 
 	const updateURL = (page: number) => {
 		const url = new URL(window.location.href);
-		if (currentQuery) url.searchParams.set('q', currentQuery);
-		else url.searchParams.delete('q');
-		if (currentCategory) url.searchParams.set('categoryId', currentCategory);
-		else url.searchParams.delete('categoryId');
-		if (page > 1) url.searchParams.set('page', page.toString());
-		else url.searchParams.delete('page');
-		if (currentSort !== 'latest') url.searchParams.set('sort', currentSort);
-		else url.searchParams.delete('sort');
+		if (currentQuery) url.searchParams.set("q", currentQuery);
+		else url.searchParams.delete("q");
+		if (currentCategory) url.searchParams.set("categoryId", currentCategory);
+		else url.searchParams.delete("categoryId");
+		if (page > 1) url.searchParams.set("page", page.toString());
+		else url.searchParams.delete("page");
+		if (currentSort !== "latest") url.searchParams.set("sort", currentSort);
+		else url.searchParams.delete("sort");
 		router.push(url.pathname + url.search);
 	};
 
